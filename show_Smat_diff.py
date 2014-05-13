@@ -1,9 +1,8 @@
 #!/usr/bin/env python2.7
 
-import argh
+import sys 
 import numpy as np
 
-@argh.arg_hack()
 def show_Smat_diff(a, b):
     """Print difference between input files a and b."""
 
@@ -22,4 +21,4 @@ def show_Smat_diff(a, b):
     print a - b
 
 if __name__ == '__main__':
-    argh.dispatch_command(show_Smat_diff, completion=False)
+    show_Smat_diff(sys.argv[1], sys.argv[2])
