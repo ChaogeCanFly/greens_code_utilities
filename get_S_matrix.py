@@ -43,6 +43,7 @@ class S_Matrix:
                 for i, Si in enumerate(S):
                     out.write('# loss iteration {0}\n'.format(i))
                     np.savetxt(outfile, Si)
+
         elif method == 'length' or method == 'heatmap':
             # tune alignment spacing
             spacing = 17 if probabilities else 35
@@ -93,12 +94,13 @@ class S_Matrix:
                     
                     
 def get_amplitudes(input_dir=None, probabilities=False, 
-           outfile=None, diofile="Diodicities.dat"):
+                   outfile=None, diofile="Diodicities.dat"):
     """Calculate transmission and reflection amplitudes."""
 
     # get number of dissipation-steps and S-matrix dimensions
     if input_dir is None:
         input_dir="."
+
     infile = glob("{0}/Smat.*.dat".format(input_dir))[0]
     nloss, ndims = np.loadtxt(infile)[:2]
 
