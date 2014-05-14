@@ -221,10 +221,11 @@ def get_amplitudes_vs_length(outfile=None, d='-', probabilities=False, custom_gl
             try:
                 S = get_amplitudes("{0}/{1}".format(cwd,directory), 
                                    probabilities=probabilities)[0]
+                S[2,0]
             except IndexError as e:
-                print "{}: missing values in {}".format(e,directory)
+                print "{}: missing values in directory {}.".format(e,directory)
                 S = np.zeros((4,4))
-                
+            
             # reflection amplitudes
             r00 = S[0,0]
             r01 = S[0,1]
