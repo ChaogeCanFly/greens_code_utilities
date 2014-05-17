@@ -1,64 +1,128 @@
 #!/usr/bin/env python2.7
 
 import numpy as np
-import argparse as ap
+import argparse
 from glob import glob
 import os
 
 class S_Matrix:
     """S-matrix class"""
-    def __init__(self, indir=None, outfile=None, probabilities=False, d='-'):
-        self.input_directory = os.getcwd() if indir else indir
-        self.outfile = outfile              # S-matrix output file
-        self.probabilities = probabilities  # return abs(S)**2
-        self.d = d                          # loop direction
-        self.get_amplitudes()               # initialize S, nloss and ndims
-    
-    def get_amplitudes(self):
-        """Calculate transmission and reflection amplitudes."""
 
-        # get number of dissipation-steps and S-matrix dimensions
-        infile = glob("{0}/Smat.*.dat".format(self.input_directory))[0]
-        nloss, ndims = np.loadtxt(infile)[:2]
+    def __init__(self, indir=".", infile="Smat.sine_boundary.dat",
+                 outfile="S_matrix.dat", probabilities=False, d="-",
+                 method="amplitudes"):
+        """Reads and processes the S-matrix.
+            
+            Parameters:
+            -----------
+                indir: str
+                    Input directory.
+                infile: str
+                    Input file to read S-matrix from.
+                outfile: str
+                    S-matrix output file.
+                probabilities: bool
+                    Whether to calculate the absulte square abs(S)^2.
+                d: str ('-'|'+')
+                    Loop direction.
+                method: str
+                    Processing method.
+        """
+
+        self.indir = indir
+        self.infile = indir + "/" + infile
+        self.outfile = outfile
+        self.probabilities = probabilities
+        self.d = d
+        #self.custom_glob = custom_glob
+        try:
+            self._get_amplitudes()
+        except IndexError as e:
+            #print "{}: missing values in directory {}.".format(e,directory)
+            self.S = np.zeros((4,4))
+            
+    def __str__(self):
+        """Print reflection/transmission amplitudes/probabilities."""
+        return self._get_data()
+   
+    def _get_amplitudes(self):
+        """Get transmission and reflection amplitudes."""
+        
+        # get number of scheduler steps and S-matrix dimensions
+        nruns, ndims = np.loadtxt(self.infile)[:3:2]
 
         # get real and imaginary parts of S-matrix
-        re, im = np.genfromtxt(infile, usecols=(2,3), autostrip=True,
+        re, im = np.genfromtxt(self.infile, usecols=(2,3), autostrip=True,
                                unpack=True, invalid_raise=False)
 
         # calculate transmission and reflection amplitudes
-        S = (re + 1j*im).reshape((nloss,ndims,ndims))
-    
-        self.S = S
-        self.nloss = nloss
-        self.ndims = ndims
+        S = (re + 1j*im).reshape((nruns,ndims,ndims))
+        print S
+        if self.probabilities:
+            self.S = S
+        else:
+            self.S = abs(S)**2
+        self.nruns = int(nruns)
+        self.ndims = int(ndims)
+
+    def get_header(self):
+        """Prepare data file header."""
         
-    def write(self, method=None):
+        # tune alignment spacing
+        spacing = 17 if self.probabilities else 35
+        
+        header = [ "{}{}{}".format(s,i,j) for s in ("t","r") 
+                                          for i in range(self.ndims//2) 
+                                          for j in range(self.ndims//2) ]   
+        headerfmt = '# {:>10}  {:>12}        '          
+        headerfmt += "  ".join([ '{:>{s}}' for n in range(self.ndims*self.ndims//2) ])
+        
+        return headerfmt.format('eta', 'L', *header, s=spacing)       
+        
+    def _get_data(self, method='amplitudes'):
+        """Prepare S-matrix data for output."""
+            
+        data = [ self.S[i,j,k] for i in range(self.nruns) 
+                               for j in range(self.ndims)
+                               for k in range(self.ndims//2)]       
+        datafmt = '  {:>10}  {:>12}        '          
+        datafmt += "  ".join([ '{:> .10e}' for n in range(self.ndims*self.ndims//2) ])
+
+        if method == 'heatmap':
+            eta, L = [ self.indir.split("_")[i] for i in (1,3) ]
+        elif method == 'length':
+            eta, L = [ self.indir.split("_")[i] for i in (1,5) ]
+        elif method == 'amplitudes':
+            eta, L = 0., 0.
+
+        return datafmt.format(eta, L, *data)
+
+    def write(self, method='length'):
         """Write S_matrix to outfile."""
     
         if method == 'amplitude':
             with file(self.outfile, 'w') as out:
-                S = get_amplitudes("{0}/{1}".format(cwd,directory), 
-                                   probabilities=probabilities)[0]
-                out.write('# S-matrix shape: {0}\n'.format(S.shape))
-                for i, Si in enumerate(S):
+                out.write('# S-matrix shape: {0}\n'.format(self.S.shape))
+                for i, Si in enumerate(self.S):
                     out.write('# loss iteration {0}\n'.format(i))
-                    np.savetxt(outfile, Si)
+                    np.savetxt(self.outfile, Si)
 
         elif method == 'length' or method == 'heatmap':
+            
             # tune alignment spacing
-            spacing = 17 if probabilities else 35
+            spacing = 17 if self.probabilities else 35
             
             with file(self.outfile, 'w') as f:  
-                f.write(('# {:>10}  {:>12}        '
-                         '{:>{s}}  {:>{s}}  {:>{s}}  '
-                         '{:>{s}}  {:>{s}}  {:>{s}}  '
-                         '{:>{s}}  {:>{s}}  \n').format("eta", "L",
-                                                        "t00", "t01", "t10", "t11",
-                                                        "r00", "r01", "r10", "r11",
-                                                        s=spacing))
-                # get correct ordering
-                folders = sorted(glob("eta*_L*_{0}".format(d)), 
-                                 key=lambda x: float(x.split("_")[-2]))
+                
+                header = self._get_header()
+                f.write(header)
+
+                if self.custom_glob:
+                    folders = sorted(glob(custom_glob),
+                                     key=lambda x: float(x.split("_")[-1]))
+                else:
+                    folders = sorted(glob("eta*_L*_{0}".format(d)),
+                                     key=lambda x: float(x.split("_")[-2]))
             
                 for directory in folders:
                     print "Processing directory ", directory
@@ -68,30 +132,33 @@ class S_Matrix:
                     elif method == 'length':
                         eta, L = [ directory.split("_")[i] for i in (1,5) ]
             
-                    S = get_amplitudes("{0}/{1}".format(cwd,directory), 
-                                        probabilities=probabilities)[0]
+#                     S_sliced = [ self.S[i,j] for i in range(self.ndims)
+#                                              for j in range(self.ndims) ]
+                    f.write()  
+
                     
-                    # reflection amplitudes
-                    r00 = S[0,0]
-                    r01 = S[0,1]
-                    r10 = S[1,0]
-                    r11 = S[1,1]
-                
-                    # transmission amplitudes       
-                    t00 = S[2,0]
-                    t01 = S[2,1]
-                    t10 = S[3,0]
-                    t11 = S[3,1]
-                
-                    f.write(('{:>12}  {:>12}        '
-                             '{:> .10e}  {:> .10e}  '
-                             '{:> .10e}  {:> .10e}  '
-                             '{:> .10e}  {:> .10e}  '
-                             '{:> .10e}  {:> .10e}\n').format(eta, L, 
-                                                              t00, t01, t10, t11,
-                                                              r00, r01, r10, r11))
-                    
-                    
+class Multiple_S_Matrices():
+    """
+        Parameters:
+        -----------
+            custom_glob: list
+                List of non-standard input directories.
+    """
+    def __init__(self, custom_glob=None):
+        pass
+        
+    def _parse_directory(self):
+        """Extract variables from directory names."""
+        # get correct ordering
+        if self.custom_glob:
+            folders = sorted(glob(self.custom_glob),
+                             key=lambda x: float(x.split("_")[-1]))
+        else:
+            folders = sorted(glob("eta*_L*_{0}".format(d)),
+                             key=lambda x: float(x.split("_")[-2]))    
+        return folders
+    
+    pass             
                     
 def get_amplitudes(input_dir=None, probabilities=False, 
                    outfile=None, diofile="Diodicities.dat"):
@@ -249,7 +316,7 @@ def get_amplitudes_vs_length(outfile=None, d='-', probabilities=False, custom_gl
     
 if __name__ == '__main__':
 
-    parser = ap.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output-file", default="S_matrix.dat",
                         type=str, help="S-matrix output file")
     parser.add_argument("-d", "--direction", default="-",
