@@ -142,7 +142,6 @@ def natural_sorting(text, glob_arg):
     return float(text.split("_")[idx+1])
     
 
-
 def write_S_matrix(outfile="S_matrix.dat", 
                    **kwargs):
     """Write S-matrix data to file.
