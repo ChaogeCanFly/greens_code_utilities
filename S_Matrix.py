@@ -31,7 +31,7 @@ class S_Matrix:
         self.indir = indir
         self.infile = infile
         self.glob_args = glob_args
-        self.nargs = len(self.glob_args)            
+        self.nargs = len(glob_args) if glob_args else 0
         self.probabilities = probabilities
         
         self.delimiter = delimiter
