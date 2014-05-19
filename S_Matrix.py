@@ -7,13 +7,7 @@ from glob import glob
 import os
 
 class S_Matrix:
-    """S-matrix class"""
-
-    def __init__(self, indir=".", 
-                 infile="Smat.sine_boundary.dat",
-                 probabilities=False,
-                 glob_args=[], delimiter="_"):
-        """Reads and processes the S-matrix.
+    """Reads and processes the S-matrix.
             
             Parameters:
             -----------
@@ -23,26 +17,14 @@ class S_Matrix:
                     Input file to read S-matrix from.
                 probabilities: bool
                     Whether to calculate abs(S)^2.
-                glob_args: list of strings
-                    Directory parsing parameters.
-                delimiter: str
-                    Directory parsing delimiter.
-        """
+    """
+
+    def __init__(self, indir=".", infile="Smat.sine_boundary.dat", probabilities=False):
 
         self.indir = indir
         self.infile = indir + "/" + infile
-        self.glob_args = glob_args
-        self.nargs = len(glob_args) if glob_args else 0
         self.probabilities = probabilities
-        
-        self.delimiter = delimiter
-        #self.glob_pattern = "*".join([ g + d for g in glob_args 
-        #                                     for d in delimiter ]) + "*"
-        #self._get_amplitudes()
-
-    def __str__(self):
-        """Print reflection/transmission amplitudes/probabilities."""
-        return self.data 
+        self._get_amplitudes()        
 
     def _get_amplitudes(self):
         """Get transmission and reflection amplitudes."""
@@ -67,62 +49,6 @@ class S_Matrix:
             
         self.nruns = int(nruns)
         self.ndims = int(ndims)    
-        
-    def _parse_directory(self):
-        """Extract running variables from directory name."""
-
-        dir = self.indir.split(self.delimiter)
-        arg_values = []
-
-        try:
-            for p in self.glob_args:
-                idx = dir.index(p)
-                arg_values.append(dir[idx+1])
-        except ValueError:
-            arg_values.append([])
-            
-        self.arg_values = arg_values
-
-    def get_header(self):
-        """Prepare data file header."""
-        
-        self._get_amplitudes()
-        
-        # tune alignment spacing
-        spacing = 17 if self.probabilities else 35
-        
-        # translate S-matrix into transmission and reflection components
-        header = [ "{}{}{}".format(s,i,j) for s in ("r","t") 
-                                          for i in range(self.ndims//2) 
-                                          for j in range(self.ndims//2) ]
-        headerdim = self.ndims*self.ndims//2  
-        
-        headerfmt = '#'
-        headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "     
-        headerfmt += "  ".join([ '{:>{s}}' for n in range(headerdim) ])
-        
-        self.header = headerfmt.format(*(self.glob_args + header), s=spacing) 
-        
-        return self.header      
-        
-    def get_data(self):
-        """Prepare S-matrix data for output."""
-            
-        self._parse_directory()    
-        self._get_amplitudes()
-        
-        data = [ self.S[i,j,k] for i in range(self.nruns) 
-                               for j in range(self.ndims)
-                               for k in range(self.ndims//2) ]
-        datadim = self.ndims*self.ndims//2   
-     
-        datafmt = " "
-        datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        datafmt += "  ".join([ '{:> .10e}' for n in range(datadim) ])
-        
-        self.data = datafmt.format(*(self.arg_values + data))
-        
-        return self.data
 
 
 def natural_sorting(text, glob_arg):
@@ -140,41 +66,104 @@ def natural_sorting(text, glob_arg):
     idx = text.index(glob_arg)
     
     return float(text.split("_")[idx+1])
+
   
 class Write_S_Matrix:
-	"""Class which handles directories and globbing."""
-	pass
+    """Class which handles directories and globbing.
 
-def write_S_matrix(outfile="S_matrix.dat", 
-                   **kwargs):
-    """Write S-matrix data to file.
-    
         Parameters:
         -----------
             outfile: str
                 S-matrix output file.
-    
-        For kwargs, see S_Matrix class.
+            glob_args: list of str
+                Directory parsing parameters.
+            delimiter: str
+                Directory parsing delimiter.
     """
-
-    S = S_Matrix(**kwargs)
-    glob_args = kwargs['glob_args']
-
-    if glob_args:
-        dir_list = sorted(glob("*" + glob_args[0] + "*"),
-                          key=lambda x: natural_sorting(x, glob_args))
-    else:
-        dir_list = ["."]
     
-    with open(outfile, "w") as f:    
-        kwargs['indir'] = dir_list[0]        
-        S = S_Matrix(**kwargs)
-        f.write("%s\n" % S.get_header())
-        for dir in dir_list:
-            kwargs['indir'] = dir        
-            S = S_Matrix(**kwargs)
-            f.write("%s\n" % S.get_data())   
-      
+    def __init__(self, outfile="S_matrix.dat",
+                       glob_args=[],
+                       delimiter="_", 
+                       **kwargs):
+                       
+        self.outfile = outfile
+        self.glob_args = glob_args
+        self.nargs = len(glob_args) if glob_args else 0
+        self.delimiter = delimiter
+        self.kwargs = kwargs
+        self._process_directories()
+
+    def _parse_directory(self, dir):
+        """Extract running variables from directory name."""
+
+        
+        dir = dir.split(self.delimiter)
+        arg_values = []
+
+        try:
+            for p in self.glob_args:
+                idx = dir.index(p)
+                arg_values.append(dir[idx+1])
+        except ValueError:
+            arg_values.append([])
+            
+        return arg_values     
+
+    def _get_header(self, dir):
+        """Prepare data file header."""
+        
+        S = S_Matrix(**self.kwargs)
+        
+        # tune alignment spacing
+        spacing = 17 if S.probabilities else 35
+        
+        # translate S-matrix into transmission and reflection components
+        header = [ "{}{}{}".format(s,i,j) for s in ("r","t") 
+                                          for i in range(S.ndims//2) 
+                                          for j in range(S.ndims//2) ]
+        headerdim = S.ndims*S.ndims//2  
+        
+        headerfmt = '#'
+        headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "     
+        headerfmt += "  ".join([ '{:>{s}}' for n in range(headerdim) ])
+        
+        header = headerfmt.format(*(self.glob_args + header), s=spacing) 
+        
+        return header   
+
+    def _get_data(self, dir):
+        """Prepare S-matrix data for output."""
+            
+        arg_values = self._parse_directory(dir)    
+        S = S_Matrix(**self.kwargs)
+        
+        data = [ S.S[i,j,k] for i in range(S.nruns) 
+                            for j in range(S.ndims)
+                            for k in range(S.ndims//2) ]
+        datadim = S.ndims*S.ndims//2   
+     
+        datafmt = " "
+        datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
+        datafmt += "  ".join([ '{:> .10e}' for n in range(datadim) ])
+        
+        data = datafmt.format(*(arg_values + data))
+        
+        return data        
+  
+    def _process_directories(self):
+        """Loop through all directories satisfyling the globbing pattern."""
+
+        dirs = ["."]
+        
+        if self.glob_args:
+            dirs = sorted(glob("*" + self.glob_args[0] + "*"),
+                          key=lambda x: natural_sorting(x, self.glob_args))
+        
+        with open(self.outfile, "w") as f:          
+            f.write("%s\n" % self._get_header(dirs[0]))
+            for dir in dirs:
+                f.write("%s\n" % self._get_data(dir))               
+
       
 def parse_arguments():
     """Parse command-line arguments and call write_S_matrix."""
@@ -186,7 +175,6 @@ def parse_arguments():
     parser.add_argument("-p", "--probabilities", action="store_true",
                         help="Wheter to calculate abs(S)^2.")
 
-
     parser.add_argument("-g", "--glob-args", default=[], nargs="*",
                         help="Directory parsing delimiter")
     parser.add_argument("-d", "--delimiter", default="_",
@@ -196,8 +184,7 @@ def parse_arguments():
     
     parse_args = vars(parser.parse_args())
 
-    #print parse_args
-    write_S_matrix(**parse_args)
+    Write_S_Matrix(**parse_args)
 
    
 if __name__ == '__main__':
