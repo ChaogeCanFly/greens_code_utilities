@@ -140,8 +140,10 @@ def natural_sorting(text, glob_arg):
     idx = text.index(glob_arg)
     
     return float(text.split("_")[idx+1])
-	# teststr
-    
+  
+class Write_S_Matrix:
+	"""Class which handles directories and globbing."""
+	pass
 
 def write_S_matrix(outfile="S_matrix.dat", 
                    **kwargs):
