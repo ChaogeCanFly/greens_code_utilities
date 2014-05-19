@@ -29,8 +29,11 @@ class S_Matrix:
     def _get_amplitudes(self):
         """Get transmission and reflection amplitudes."""
         
-        # get number of scheduler steps and S-matrix dimensions
-        nruns, ndims = np.loadtxt(self.infile)[:3:2]
+        try:
+            # get number of scheduler steps and S-matrix dimensions
+            nruns, ndims = np.loadtxt(self.infile)[:3:2]
+        except:
+            nruns, ndims = 0, 0
 
         try:
             # get real and imaginary parts of S-matrix
@@ -42,10 +45,10 @@ class S_Matrix:
             # initialize zero_like S-matrix if no data available
             S = np.zeros((self.ndims,self.ndims))
             
-        if not self.probabilities:
-            self.S = S
-        else:
+        if self.probabilities:
             self.S = abs(S)**2
+        else:
+            self.S = S
             
         self.nruns = int(nruns)
         self.ndims = int(ndims)    
@@ -96,7 +99,6 @@ class Write_S_Matrix:
     def _parse_directory(self, dir):
         """Extract running variables from directory name."""
 
-        
         dir = dir.split(self.delimiter)
         arg_values = []
 
@@ -104,7 +106,7 @@ class Write_S_Matrix:
             for p in self.glob_args:
                 idx = dir.index(p)
                 arg_values.append(dir[idx+1])
-        except ValueError:
+        except:
             arg_values.append([])
             
         return arg_values     
