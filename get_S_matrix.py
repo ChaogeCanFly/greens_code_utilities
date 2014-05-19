@@ -38,8 +38,8 @@ class S_Matrix:
         self.d = d
         
         self.delimiter = delimiter
-        self.glob_pattern = "*".join([ g + d for g in glob_args 
-                                             for d in delimiter ]) + "*"
+        #self.glob_pattern = "*".join([ g + d for g in glob_args 
+        #                                     for d in delimiter ]) + "*"
         self._get_amplitudes()
 
     def __str__(self):
@@ -84,7 +84,7 @@ class S_Matrix:
             
         self.arg_values = arg_values
 
-    def get_header(self): #, glob_args):
+    def get_header(self):
         """Prepare data file header."""
         
         # tune alignment spacing
@@ -126,12 +126,11 @@ class S_Matrix:
 def write_S_matrix(outfile="S_matrix.dat", 
                    **kwargs):
     """Write S-matrix data to file."""
-    
-    #print "glob_args", glob_args
+
     
     S = S_Matrix(**kwargs)
     glob_args = kwargs['glob_args']
-    header = S.get_header() #get_header(glob_args)
+    header = S.get_header()
 
     if glob_args:
         dir_list = sorted(glob("*" + glob_args[0] + "*")) 
@@ -144,6 +143,13 @@ def write_S_matrix(outfile="S_matrix.dat",
             kwargs['indir'] = dir        
             S = S_Matrix(**kwargs)
             f.write("%s\n" % S.get_data())   
+         
+         
+         
+         
+         
+         
+         
          
                     
 def get_amplitudes(input_dir=None, probabilities=False, 
