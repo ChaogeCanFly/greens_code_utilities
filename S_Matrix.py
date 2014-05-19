@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+import re
 import numpy as np
 import argparse
 from glob import glob
@@ -29,7 +30,7 @@ class S_Matrix:
         """
 
         self.indir = indir
-        self.infile = infile
+        self.infile = indir + "/" + infile
         self.glob_args = glob_args
         self.nargs = len(glob_args) if glob_args else 0
         self.probabilities = probabilities
@@ -37,7 +38,7 @@ class S_Matrix:
         self.delimiter = delimiter
         #self.glob_pattern = "*".join([ g + d for g in glob_args 
         #                                     for d in delimiter ]) + "*"
-        self._get_amplitudes()
+        #self._get_amplitudes()
 
     def __str__(self):
         """Print reflection/transmission amplitudes/probabilities."""
@@ -72,6 +73,7 @@ class S_Matrix:
 
         dir = self.indir.split(self.delimiter)
         arg_values = []
+
         try:
             for p in self.glob_args:
                 idx = dir.index(p)
@@ -83,6 +85,8 @@ class S_Matrix:
 
     def get_header(self):
         """Prepare data file header."""
+        
+        self._get_amplitudes()
         
         # tune alignment spacing
         spacing = 17 if self.probabilities else 35
@@ -105,6 +109,7 @@ class S_Matrix:
         """Prepare S-matrix data for output."""
             
         self._parse_directory()    
+        self._get_amplitudes()
         
         data = [ self.S[i,j,k] for i in range(self.nruns) 
                                for j in range(self.ndims)
@@ -118,6 +123,24 @@ class S_Matrix:
         self.data = datafmt.format(*(self.arg_values + data))
         
         return self.data
+
+
+def natural_sorting(text, glob_arg):
+    """Sort text.
+
+        Parameters:
+        -----------
+            text: str
+                String to be sorted.
+            glob_arg: 
+                Directory parsing parameters.
+    """
+
+    glob_arg = glob_arg[0]
+    idx = text.index(glob_arg)
+    
+    return float(text.split("_")[idx+1])
+    
 
 
 def write_S_matrix(outfile="S_matrix.dat", 
@@ -134,15 +157,17 @@ def write_S_matrix(outfile="S_matrix.dat",
 
     S = S_Matrix(**kwargs)
     glob_args = kwargs['glob_args']
-    header = S.get_header()
 
     if glob_args:
-        dir_list = sorted(glob("*" + glob_args[0] + "*")) 
+        dir_list = sorted(glob("*" + glob_args[0] + "*"),
+                          key=lambda x: natural_sorting(x, glob_args))
     else:
         dir_list = ["."]
     
     with open(outfile, "w") as f:    
-        f.write("%s\n" % header)
+        kwargs['indir'] = dir_list[0]        
+        S = S_Matrix(**kwargs)
+        f.write("%s\n" % S.get_header())
         for dir in dir_list:
             kwargs['indir'] = dir        
             S = S_Matrix(**kwargs)
