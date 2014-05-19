@@ -169,7 +169,31 @@ class Write_S_Matrix:
                     f.write("%s\n" % self._get_header(dir))
                 f.write("%s\n" % self._get_data(dir))               
 
+
+def get_S_matrix_difference(a, b):
+    """Print differences between input files.
+        
+        Parameters:
+        -----------
+            a, b: str
+                Relative paths of S-matrix input files.
+    """
+    
+    params = {'unpack': True,
+              'skiprows': 4}
+
+    a, b = [ np.loadtxt(i, **params) for i in (a,b) ]
+
+    print "File a:"
+    print a
+    print
+    print "File b:"
+    print b
+    print
+    print "Difference (a - b):"
+    print a - b
       
+
 def parse_arguments():
     """Parse command-line arguments and call write_S_matrix."""
     
@@ -186,10 +210,17 @@ def parse_arguments():
                         type=str, help="Directory parsing delimiter")
     parser.add_argument("-o", "--outfile", default="S_matrix.dat",
                         type=str, help="S-matrix output file.")                        
-    
-    parse_args = vars(parser.parse_args())
 
-    Write_S_Matrix(**parse_args)
+    parser.add_argument("-D", "--diff", default=[], nargs="*",
+                        help="Print difference between input files.")                        
+    
+    parse_args = parser.parse_args()
+    args = vars(parse_args)
+
+    if parse_args.diff:
+        get_S_matrix_difference(*parse_args.diff)
+    else:
+        Write_S_Matrix(**parse_args)
 
    
 if __name__ == '__main__':
