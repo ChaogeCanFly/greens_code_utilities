@@ -43,7 +43,7 @@ class S_Matrix:
             S = (re + 1j*im).reshape((nruns,ndims,ndims))
         except:
             # initialize zero_like S-matrix if no data available
-            S = np.zeros((self.ndims,self.ndims))
+            S = np.zeros((ndims,ndims))
             
         if self.probabilities:
             self.S = abs(S)**2
@@ -94,6 +94,7 @@ class Write_S_Matrix:
         self.nargs = len(glob_args) if glob_args else 0
         self.delimiter = delimiter
         self.kwargs = kwargs
+
         self._process_directories()
 
     def _parse_directory(self, dir):
@@ -114,7 +115,8 @@ class Write_S_Matrix:
     def _get_header(self, dir):
         """Prepare data file header."""
         
-        S = S_Matrix(**self.kwargs)
+        S = S_Matrix(indir=dir, **self.kwargs)
+        print S.indir
         
         # tune alignment spacing
         spacing = 17 if S.probabilities else 35
@@ -137,7 +139,7 @@ class Write_S_Matrix:
         """Prepare S-matrix data for output."""
             
         arg_values = self._parse_directory(dir)    
-        S = S_Matrix(**self.kwargs)
+        S = S_Matrix(indir=dir, **self.kwargs)
         
         data = [ S.S[i,j,k] for i in range(S.nruns) 
                             for j in range(S.ndims)
@@ -162,8 +164,9 @@ class Write_S_Matrix:
                           key=lambda x: natural_sorting(x, self.glob_args))
         
         with open(self.outfile, "w") as f:          
-            f.write("%s\n" % self._get_header(dirs[0]))
-            for dir in dirs:
+            for n, dir in enumerate(dirs):
+                if not n:
+                    f.write("%s\n" % self._get_header(dir))
                 f.write("%s\n" % self._get_data(dir))               
 
       
