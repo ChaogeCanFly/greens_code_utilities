@@ -160,7 +160,7 @@ def parse_arguments():
                         help="Wheter to calculate abs(S)^2.")
 
 
-    parser.add_argument("-g", "--glob-args", default=None, nargs="*",
+    parser.add_argument("-g", "--glob-args", default=[], nargs="*",
                         help="Directory parsing delimiter")
     parser.add_argument("-d", "--delimiter", default="_",
                         type=str, help="Directory parsing delimiter")
