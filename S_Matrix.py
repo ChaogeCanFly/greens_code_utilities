@@ -3,6 +3,7 @@
 import re
 import numpy as np
 import argparse
+from argparse import ArgumentDefaultsHelpFormatter as default_help
 from glob import glob
 import os
 
@@ -116,7 +117,6 @@ class Write_S_Matrix:
         """Prepare data file header."""
         
         S = S_Matrix(indir=dir, **self.kwargs)
-        print S.indir
         
         # tune alignment spacing
         spacing = 17 if S.probabilities else 35
@@ -197,7 +197,7 @@ def get_S_matrix_difference(a, b):
 def parse_arguments():
     """Parse command-line arguments and call write_S_matrix."""
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=default_help)
 
     parser.add_argument("-i", "--infile", default="Smat.sine_boundary.dat",
                         type=str, help="Input file to read S-matrix from.")
@@ -220,7 +220,8 @@ def parse_arguments():
     if parse_args.diff:
         get_S_matrix_difference(*parse_args.diff)
     else:
-        Write_S_Matrix(**parse_args)
+        del args['diff']
+        Write_S_Matrix(**args)
 
    
 if __name__ == '__main__':
