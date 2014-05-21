@@ -55,19 +55,19 @@ class S_Matrix:
         self.ndims = int(ndims)    
 
 
-def natural_sorting(text, glob_arg):
-    """Sort text.
+def natural_sorting(text, arg):
+    """Sort text with respect to the argument value.
 
         Parameters:
         -----------
             text: str
                 String to be sorted.
-            glob_arg: 
+            arg: str
                 Directory parsing parameters.
     """
 
-    glob_arg = glob_arg[0]
-    idx = text.index(glob_arg)
+    arg = arg[0]
+    idx = text.index(arg)
     
     return float(text.split("_")[idx+1])
 
