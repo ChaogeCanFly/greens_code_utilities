@@ -195,7 +195,7 @@ def get_S_matrix_difference(a, b):
       
 
 def parse_arguments():
-    """Parse command-line arguments and call write_S_matrix."""
+    """Parse command-line arguments and call Write_S_matrix."""
     
     parser = argparse.ArgumentParser(formatter_class=default_help)
 
