@@ -55,7 +55,7 @@ class S_Matrix:
         self.ndims = int(ndims)    
 
 
-def natural_sorting(text, arg):
+def natural_sorting(text):
     """Sort text with respect to the argument value.
 
         Parameters:
@@ -66,12 +66,12 @@ def natural_sorting(text, arg):
                 Directory parsing parameters.
     """
 
-    arg = arg[0]
-    idx = text.index(arg)
-    
-    return float(text.split("_")[idx+1])
+    convert = lambda x: int(x) if x.isdigit() else x 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
 
-  
+    return sorted(text, key=alphanum_key)
+    
+
 class Write_S_Matrix:
     """Class which handles directories and globbing.
 
@@ -160,8 +160,8 @@ class Write_S_Matrix:
         dirs = ["."]
         
         if self.glob_args:
-            dirs = sorted(glob("*" + self.glob_args[0] + "*"),
-                          key=lambda x: natural_sorting(x, self.glob_args))
+            dirs = sorted(glob("*" + self.glob_args[0] + "*"))
+            dirs = natural_sorting(dirs)
         
         with open(self.outfile, "w") as f:          
             for n, dir in enumerate(dirs):
