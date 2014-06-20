@@ -34,7 +34,7 @@ class S_Matrix:
             # get number of scheduler steps and S-matrix dimensions
             nruns, ndims = np.loadtxt(self.infile)[:3:2]
         except:
-            nruns, ndims = 0, 0
+            nruns, ndims = 1, 4
 
         try:
             # get real and imaginary parts of S-matrix
@@ -43,8 +43,9 @@ class S_Matrix:
             # calculate transmission and reflection amplitudes
             S = (re + 1j*im).reshape((nruns,ndims,ndims))
         except:
-            # initialize zero_like S-matrix if no data available
-            S = np.zeros((ndims,ndims))
+            # initialize nan S-matrix if no data available
+            S = np.empty((nruns,ndims,ndims))
+            S[:] = np.nan
             
         if self.probabilities:
             self.S = abs(S)**2
