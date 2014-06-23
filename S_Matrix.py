@@ -56,19 +56,22 @@ class S_Matrix:
         self.ndims = int(ndims)    
 
 
-def natural_sorting(text):
+def natural_sorting(text, args="delta"):
     """Sort text with respect to the argument value.
 
         Parameters:
         -----------
             text: str
                 String to be sorted.
-            arg: str
+            args: str
                 Directory parsing parameters.
     """
 
-    convert = lambda x: int(x) if x.isdigit() else x 
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    #convert = lambda x: int(x) if x.isdigit() else x 
+    #alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+
+    index = lambda text: [ text.split("_").index(arg) for arg in args ]
+    alphanum_key = lambda text: [ float(text.split("_")[i+1]) for i in index(text) ]
 
     return sorted(text, key=alphanum_key)
     
@@ -162,7 +165,7 @@ class Write_S_Matrix:
         
         if self.glob_args:
             dirs = sorted(glob("*" + self.glob_args[0] + "*"))
-            dirs = natural_sorting(dirs)
+            dirs = natural_sorting(dirs, args=self.glob_args)
         
         with open(self.outfile, "w") as f:          
             for n, dir in enumerate(dirs):
