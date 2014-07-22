@@ -34,7 +34,7 @@ class S_Matrix:
             # get number of scheduler steps and S-matrix dimensions
             nruns, ndims = np.loadtxt(self.infile)[:3:2]
         except:
-            nruns, ndims = 0, 0
+            nruns, ndims = 1, 4
 
         try:
             # get real and imaginary parts of S-matrix
@@ -43,8 +43,9 @@ class S_Matrix:
             # calculate transmission and reflection amplitudes
             S = (re + 1j*im).reshape((nruns,ndims,ndims))
         except:
-            # initialize zero_like S-matrix if no data available
-            S = np.zeros((ndims,ndims))
+            # initialize nan S-matrix if no data available
+            S = np.empty((nruns,ndims,ndims))
+            S[:] = np.nan
             
         if self.probabilities:
             self.S = abs(S)**2
@@ -55,23 +56,26 @@ class S_Matrix:
         self.ndims = int(ndims)    
 
 
-def natural_sorting(text, arg):
+def natural_sorting(text, args="delta"):
     """Sort text with respect to the argument value.
 
         Parameters:
         -----------
             text: str
                 String to be sorted.
-            arg: str
+            args: str
                 Directory parsing parameters.
     """
 
-    arg = arg[0]
-    idx = text.index(arg)
-    
-    return float(text.split("_")[idx+1])
+    #convert = lambda x: int(x) if x.isdigit() else x 
+    #alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
 
-  
+    index = lambda text: [ text.split("_").index(arg) for arg in args ]
+    alphanum_key = lambda text: [ float(text.split("_")[i+1]) for i in index(text) ]
+
+    return sorted(text, key=alphanum_key)
+    
+
 class Write_S_Matrix:
     """Class which handles directories and globbing.
 
@@ -160,8 +164,8 @@ class Write_S_Matrix:
         dirs = ["."]
         
         if self.glob_args:
-            dirs = sorted(glob("*" + self.glob_args[0] + "*"),
-                          key=lambda x: natural_sorting(x, self.glob_args))
+            dirs = sorted(glob("*" + self.glob_args[0] + "*"))
+            dirs = natural_sorting(dirs, args=self.glob_args)
         
         with open(self.outfile, "w") as f:          
             for n, dir in enumerate(dirs):
@@ -195,7 +199,7 @@ def get_S_matrix_difference(a, b):
       
 
 def parse_arguments():
-    """Parse command-line arguments and call write_S_matrix."""
+    """Parse command-line arguments and call Write_S_matrix."""
     
     parser = argparse.ArgumentParser(formatter_class=default_help)
 
