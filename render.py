@@ -3,20 +3,22 @@
 import argh
 import subprocess
 
-@argh.arg("-p", "--ppm", required=True)
-@argh.arg("-j", "--jpg", required=True)
-def povray(ppm="in.ppm", jpg="in.jpg", scriptfile="scene.pov",
+def povray(ppm=None, jpg=None, scriptfile="scene.pov",
            outfile="out.png", width=4800, height=2250):
     """Write .pov script and render scene based on the input .ppm and .jpeg files.
         
         Parameters:
         -----------
-            ppm: str
-            jpg: str
+            ppm, jpg: str
+                Input files used to render povray scene.
             outfile: str
-            width: int
-            height: int
+                Output file.
+            width, height: int
+                Output image dimensions.
     """
+
+    if not ppm and not jpg:
+        raise Exception("Error: .ppm and .jpg files are both required!")
 
     scene = """
         #include "colors.inc"
@@ -35,7 +37,9 @@ def povray(ppm="in.ppm", jpg="in.jpg", scriptfile="scene.pov",
 
         #declare cc=<0,1,0>;
 
-        background {color White}
+        background {
+            color White
+        }
 
         camera {
           orthographic
@@ -67,7 +71,7 @@ def povray(ppm="in.ppm", jpg="in.jpg", scriptfile="scene.pov",
             scale <14,field_height,-2>
             translate<-7,0,1>
             no_shadow
-            }
+        }
 
         light_source {
             <0,light_height,0>
