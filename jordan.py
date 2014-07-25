@@ -122,6 +122,7 @@ class Jordan(object):
             print "x, y:", self.values[-1]
             xi, yi = self._iterate()
             self.values.append([xi,yi])
+            self._update_boundary(xi, yi)
 
         print self.values
         np.savetxt(datafile, self.values)
