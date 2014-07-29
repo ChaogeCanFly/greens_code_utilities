@@ -1,20 +1,30 @@
 #!/usr/bin/env python2.7
 
 import argh
+import os
 import subprocess
+from subprocess import CalledProcessError
+import sys
 
 def povray(ppm=None, jpg=None, scriptfile="scene.pov",
-           outfile="out.png", width=4800, height=2250):
-    """Write .pov script and render scene based on the input .ppm and .jpeg files.
-        
+           outfile="out.png", width=4800, height=2250,
+           editor=False):
+    """Write the .pov script and render scene based on the input .ppm and 
+    .jpeg files.
+
         Parameters:
         -----------
             ppm, jpg: str
                 Input files used to render povray scene.
+            scriptfile: str
+                Output file for the povray source.
             outfile: str
-                Output file.
+                Output image file.
             width, height: int
                 Output image dimensions.
+            editor: bool
+                Whether to open the source file with the editor defined via the
+                $EDITOR variable before rendering.
     """
 
     if not ppm and not jpg:
@@ -56,7 +66,7 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
             water_level -10.0
             texture {
                 pigment{
-                    image_map { 
+                    image_map {
                         jpeg JPEG
                         transmit all transmit_value
                         }
@@ -81,11 +91,21 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
             media_interaction 1
             media_attenuation 1
             fade_distance 1
-        }  
+        }
     """ % (ppm, jpg)
 
-    with open(scriptfile, "w") as f:
-        f.write(scene)
+    # only write scene if no external .pov source is supplied
+    if scriptfile == 'scene.pov':
+        with open(scriptfile, "w") as f:
+            f.write(scene)
+
+    if editor:
+        EDITOR = os.environ.get('EDITOR')
+        cmd = "{} {}".format(EDITOR, scriptfile)
+        try:
+            subprocess.check_call(cmd, shell=True)
+        except CalledProcessError:
+            sys.exit("Aborting...")
 
     params = {  'W': width,
                 'H': height,
@@ -99,6 +119,3 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
 if __name__ == '__main__':
     argh.dispatch_command(povray)
 
-  
-
-  
