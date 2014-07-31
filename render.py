@@ -6,15 +6,16 @@ import subprocess
 from subprocess import CalledProcessError
 import sys
 
-def povray(ppm=None, jpg=None, scriptfile="scene.pov",
+
+def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
            outfile="out.png", width=4800, height=2250,
            editor=False):
-    """Write the .pov script and render scene based on the input .ppm and 
+    """Write the .pov script and render scene based on the input .ppm and
     .jpeg files.
 
         Parameters:
         -----------
-            ppm, jpg: str
+            ppm, jpeg: str
                 Input files used to render povray scene.
             scriptfile: str
                 Output file for the povray source.
@@ -27,15 +28,15 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
                 $EDITOR variable before rendering.
     """
 
-    if not ppm and not jpg:
-        raise Exception("Error: .ppm and .jpg files are both required!")
+    if not ppm and not jpeg:
+        raise Exception("Error: .ppm and .jpeg files are both required!")
 
     scene = """
         #include "colors.inc"
         #include "textures.inc"
 
-        #declare PPM = "%s"
-        #declare JPEG = "%s"
+        #declare PPM = "{ppm}"
+        #declare JPEG = "{jpeg}"
 
         #declare zoom=10000000;
         #declare field_height=1;
@@ -92,7 +93,7 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
             media_attenuation 1
             fade_distance 1
         }
-    """ % (ppm, jpg)
+    """.format(ppm=ppm, jpeg=jpeg)
 
     # only write scene if no external .pov source is supplied
     if scriptfile == 'scene.pov':
@@ -107,15 +108,14 @@ def povray(ppm=None, jpg=None, scriptfile="scene.pov",
         except CalledProcessError:
             sys.exit("Aborting...")
 
-    params = {  'W': width,
-                'H': height,
-                'I': scriptfile,
-                'O': outfile
-                }
+    params = { 'W': width,
+               'H': height,
+               'I': scriptfile,
+               'O': outfile
+               }
     cmd = "povray -W{W} -H{H} -I{I} -D -O{O}".format(**params)
     subprocess.check_call(cmd, shell=True)
 
 
 if __name__ == '__main__':
     argh.dispatch_command(povray)
-
