@@ -3,7 +3,7 @@
 import numpy as np
 from numpy import pi
 
-class Transmission_Matrix(object):
+class TransmissionMatrix(object):
     """Transmission matrix class."""
     
     def __init__(self, N=1.01, eta=0.1, delta=0.0, eps=None, eps_factor=1.0, L=50,
@@ -139,7 +139,7 @@ def compare_H_eff_to_S_matrix(N=1.01, eta=0.1, delta=0.0, eps=None,
     plt.clf()
     ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
     
-    T = Transmission_Matrix(N, eta, delta, eps, eps_factor, L, infile)
+    T = TransmissionMatrix(N, eta, delta, eps, eps_factor, L, infile)
    
     # time evolution operator U (effective model)
     x, U00, U01, U10, U11 = T.get_U()
@@ -182,5 +182,5 @@ def compare_H_eff_to_S_matrix(N=1.01, eta=0.1, delta=0.0, eps=None,
     
 if __name__ == '__main__':
     import argh
-    compare_H_eff_to_S_matrix.__doc__ = Transmission_Matrix.__init__.__doc__
+    compare_H_eff_to_S_matrix.__doc__ = TransmissionMatrix.__init__.__doc__
     argh.dispatch_command(compare_H_eff_to_S_matrix)

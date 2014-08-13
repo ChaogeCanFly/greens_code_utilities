@@ -28,7 +28,7 @@ def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
                 $EDITOR variable before rendering.
     """
 
-    if not ppm and not jpeg:
+    if ppm is None and jpeg is None:
         raise Exception("Error: .ppm and .jpeg files are both required!")
 
     scene = """
