@@ -99,7 +99,6 @@ class Jordan(object):
         self.evals = []
         self.rtol = rtol
         self.residual = 1.
-        self.dx = None
 
         self.executable = executable
         self.datafile = datafile
@@ -108,6 +107,7 @@ class Jordan(object):
         self.evalsfile = evalsfile
 
         self.dx = self.xml_params.get("dx")
+        print "self.dx", self.dx
         self.r_nx = self.xml_params.get("r_nx")
         self.modes = self.xml_params.get("modes")
         self.WG = Waveguide(**waveguide_params)
@@ -118,34 +118,32 @@ class Jordan(object):
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
         subprocess.check_call(cmd, shell=True)
 
-    # def _get_dx(self):
-    #     """Extract the grid-spacing dx from the configuration file."""
-    #     with open(self.xml) as f:
-    #         for line in f.readlines():
-    #             if "points_per_halfwave" in line:
-    #                 pphw = re.split("[><]", line)[-3]
-    #                 dx = 1./(float(pphw) + 1)
-    #     return dx
-
-
     @classmethod
-    def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None):
+    def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None, sort=True):
         if evalsfile is None:
             evalsfile = self.evalsfile
         if dx is None:
             dx = self.dx
         if r_nx is None:
             r_nx = self.r_nx
+            r_nx = 1.
 
         beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                          usecols=(0, 1), dtype=complex,
                                          converters={0: convert_to_complex})
         k = np.angle(beta) - 1j*np.log(np.abs(beta))
-        k /= r_nx*dx
+        k /= dx
         k_left = k[:len(k)/2]
         k_right = k[len(k)/2:]
 
-        return k_left[0], k_right[0]
+        if sort:
+            sort_mask = np.argsort(abs(k_left.imag))
+            k_left = k_left[sort_mask]
+            sort_mask = np.argsort(abs(k_right.imag))
+            k_right = k_right[sort_mask]
+
+        # return k_left[0], k_right[0]
+        return k_left, k_right
 
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
