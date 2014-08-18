@@ -1,10 +1,59 @@
 #!/usr/bin/env python2.7
 
-import argh
-import subprocess
-from ep.waveguide import Waveguide
 import numpy as np
 import re
+import subprocess
+
+import argh
+import xml.etree.ElementTree as ET
+
+from ep.waveguide import Waveguide
+
+
+class XML(object):
+    """Simple wrapper class for xml.etree.ElementTree.
+    
+        Parameters:
+        -----------
+            xml: str
+                Input xml file.
+                
+        Attributes:
+        -----------
+            root: Element object
+            params: dict
+                Dictionary of the parameters parsed from the input xml.
+    """
+
+    def __init__(self, xml):
+        self.xml = xml
+        self.root = ET.parse(xml).getroot()
+        self.params = self._read_xml()
+
+    def _read_xml(self):
+        """Read all variables from the input.xml file."""
+
+        params = {}
+        for elem in self.root.iter(tag='param'):
+            name = elem.attrib.get('name')
+            value = elem.text
+            try:
+                params[name] = float(value)
+            except ValueError:
+                pass
+                # params[name] = value
+
+        self.__dict__.update(params)
+
+        self.nyout = self.modes*self.points_per_halfwave
+        self.dx = self.W/(self.nyout + 1.)
+        self.dy = self.dx
+        self.r_nx = int(self.W/self.dx)
+        self.r_ny = int(self.L/self.dy)
+
+        params.update(self.__dict__)
+
+        return params
 
 
 class Jordan(object):
@@ -26,7 +75,7 @@ class Jordan(object):
                 Eigenvalue file.
             xml: str
                Input .xml file name.
-            kwargs:
+            waveguide_params:
                 Parameters of the ep.waveguide.Waveguide class.
 
         Attributes:
@@ -44,21 +93,24 @@ class Jordan(object):
     def __init__(self, x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6,
                  executable='solve_xml_mumps', datafile='jordan.out',
                  evalsfile='Evals.sine_boundary.dat',
-                 xml='input.xml', **kwargs):
+                 xml='input.xml', **waveguide_params):
 
         self.values = [[x0, y0], [x0+dx, y0+dx]]
         self.evals = []
         self.rtol = rtol
-        self.residual = None
+        self.residual = 1.
         self.dx = None
 
         self.executable = executable
         self.datafile = datafile
         self.xml = xml
+        self.xml_params = XML(xml).params
         self.evalsfile = evalsfile
 
-        self._get_dx()
-        self.WG = Waveguide(**kwargs)
+        self.dx = self.xml_params.get("dx")
+        self.r_nx = self.xml_params.get("r_nx")
+        self.modes = self.xml_params.get("modes")
+        self.WG = Waveguide(**waveguide_params)
 
     def _run_code(self):
         params = {'E': self.executable,
@@ -66,48 +118,75 @@ class Jordan(object):
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
         subprocess.check_call(cmd, shell=True)
 
-    def _get_dx(self):
-        with open(self.xml) as f:
-            for line in f.readlines():
-                if "points_per_halfwave" in line:
-                    pph = re.split("[><]", line)[-3]
-                    dx = 1./(float(pph) + 1)
-        self.dx = dx
+    # def _get_dx(self):
+    #     """Extract the grid-spacing dx from the configuration file."""
+    #     with open(self.xml) as f:
+    #         for line in f.readlines():
+    #             if "points_per_halfwave" in line:
+    #                 pphw = re.split("[><]", line)[-3]
+    #                 dx = 1./(float(pphw) + 1)
+    #     return dx
+
 
     @classmethod
-    def _get_eigenvalues(self, evalsfile=None, dx=None):
-        if not evalsfile:
+    def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None):
+        if evalsfile is None:
             evalsfile = self.evalsfile
-        if not dx:
+        if dx is None:
             dx = self.dx
-        beta = np.genfromtxt(evalsfile, unpack=True, dtype=complex, usecols=0,
-                             converters={0: lambda s: convert_to_complex(s)})
-        k = np.angle(beta)/dx
-        k_l = k[:len(k)/2]
-        k_r = k[len(k)/2:]
+        if r_nx is None:
+            r_nx = self.r_nx
 
-        return k_l[0], k_r[0]
+        beta, velocities = np.genfromtxt(evalsfile, unpack=True,
+                                         usecols=(0, 1), dtype=complex,
+                                         converters={0: convert_to_complex})
+        k = np.angle(beta) - 1j*np.log(np.abs(beta))
+        k /= r_nx*dx
+        k_left = k[:len(k)/2]
+        k_right = k[len(k)/2:]
+
+        return k_left[0], k_right[0]
 
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
         dx, dy = x1-x0, y1-y0
 
-        parameters = [ (n,m) for n in x0, x1 for m in y0,y1 ]
+        print "x0, x1", x0, x1
+        print "y0, y1", y0, y1
+        print "dx, dy", dx, dy
+
+        eigenvalues = []
+        parameters = [ (n,m) for n in x0, x1 for m in y0, y1 ]
         for x, y in parameters:
+            # print "n,m", x, y
+            self._update_boundary(x, y)
             self._run_code()
-            e00, e01, e10, e11 = self._get_eigenvalues(x,y)
-            self.evals.append([e00, e01, e10, e11])
+            eigenvalues.append(self.get_eigenvalues(x, y))
 
-        vx = (e10[0]-e10[1]) - (e00[0]-e00[1])
-        vx /= dx
-        vy = (e01[0]-e01[1]) - (e00[0]-e00[1])
-        vy /= dy
+        e1, e2 = eigenvalues[-1]
+        evals = np.asarray(eigenvalues).T.flatten()
+        self.evals.append(eigenvalues)
 
-        norm = np.sqrt(vx**2 + vy**2)
-        res_x = vx/norm * (e00[0] - e00[1])
-        res_y = vy/norm * (e00[0] - e00[1])
+        gradient =  np.array([[0, 1, 0, -1, 0, -1, 0, 1],
+                              [0, 0, 1, -1, 0, 0, -1, 1]])
 
-        self.residual = np.sqrt(res_x**2 + res_y**2)
+        gradient_x, gradient_y = gradient.dot(evals)
+        gradient_x /= dx
+        gradient_y /= dy
+
+        delta = e2-e1
+
+        # norm = (gradient_x**2 + gradient_y**2)
+        norm = (np.abs(gradient_x)**2 + 
+                np.abs(gradient_y)**2)
+
+        res_x = gradient_x/norm * delta
+        res_y = gradient_y/norm * delta
+
+        self.residual = np.sqrt(np.abs(res_x)**2 + np.abs(res_y)**2)
+
+        print "res_x", res_x
+        print "res_y", res_y
 
         x2 = x1 - res_x
         y2 = y1 - res_y
@@ -115,15 +194,19 @@ class Jordan(object):
         return x2, y2
 
     def _update_boundary(self, x, y):
+        x, y = [ np.real(n) for n in x, y ]
         xi_lower, xi_upper = self.WG.get_boundary(eps=x, delta=y)
-        np.savetxt("lower.profile", zip(WG.t, xi_lower))
-        np.savetxt("upper.profile", zip(WG.t, xi_upper))
+        np.savetxt("lower.profile", zip(self.WG.t, xi_lower))
+        np.savetxt("upper.profile", zip(self.WG.t, xi_upper))
 
     def solve(self):
-        while self.residual < self.rtol:
+        #while self.residual > self.rtol:
+        for n in range(5):
+            print "residual", self.residual
+            print "rtol", self.rtol
             print "x, y:", self.values[-1]
             xi, yi = self._iterate()
-            self.values.append([xi,yi])
+            self.values.append([xi, yi])
             self._update_boundary(xi, yi)
 
         print self.values
@@ -139,7 +222,7 @@ def convert_to_complex(s):
 
         Returns:
         -------
-            z: complex
+            z: complex float
     """
 
     regex = re.compile(r'\(([^,\)]+),([^,\)]+)\)')
