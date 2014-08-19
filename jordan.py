@@ -10,6 +10,23 @@ import xml.etree.ElementTree as ET
 from ep.waveguide import Waveguide
 
 
+def convert_to_complex(s):
+    """Convert a string of the form (x,y) to a complex number z = x+1j*y.
+
+        Parameters:
+        -----------
+            s: str
+
+        Returns:
+        -------
+            z: complex float
+    """
+
+    regex = re.compile(r'\(([^,\)]+),([^,\)]+)\)')
+    x, y = map(float, regex.match(s).groups())
+    return x + 1j*y
+
+
 class XML(object):
     """Simple wrapper class for xml.etree.ElementTree.
     
@@ -107,7 +124,6 @@ class Jordan(object):
         self.evalsfile = evalsfile
 
         self.dx = self.xml_params.get("dx")
-        print "self.dx", self.dx
         self.r_nx = self.xml_params.get("r_nx")
         self.modes = self.xml_params.get("modes")
         self.WG = Waveguide(**waveguide_params)
@@ -118,7 +134,7 @@ class Jordan(object):
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
         subprocess.check_call(cmd, shell=True)
 
-    @classmethod
+    @staticmethod
     def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None, sort=True):
         if evalsfile is None:
             evalsfile = self.evalsfile
@@ -126,7 +142,6 @@ class Jordan(object):
             dx = self.dx
         if r_nx is None:
             r_nx = self.r_nx
-            r_nx = 1.
 
         beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                          usecols=(0, 1), dtype=complex,
@@ -209,23 +224,6 @@ class Jordan(object):
 
         print self.values
         np.savetxt(self.datafile, self.values)
-
-
-def convert_to_complex(s):
-    """Convert a string of the form (x,y) to a complex number z = x+1j*y.
-
-        Parameters:
-        -----------
-            s: str
-
-        Returns:
-        -------
-            z: complex float
-    """
-
-    regex = re.compile(r'\(([^,\)]+),([^,\)]+)\)')
-    x, y = map(float, regex.match(s).groups())
-    return x + 1j*y
 
 
 def find_EP(*args, **kwargs):
