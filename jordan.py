@@ -29,12 +29,12 @@ def convert_to_complex(s):
 
 class XML(object):
     """Simple wrapper class for xml.etree.ElementTree.
-    
+
         Parameters:
         -----------
             xml: str
                 Input xml file.
-                
+
         Attributes:
         -----------
             root: Element object
@@ -71,6 +71,49 @@ class XML(object):
         params.update(self.__dict__)
 
         return params
+
+
+def get_Bloch_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
+                          dx=None, r_nx=None, sort=True):
+    """Extract the eigenvalues beta and return the Bloch eigenvalues.
+
+        Parameters:
+        -----------
+            xml: str
+                Input xml file.
+            evalsfile: str
+                Eigenvalues input file.
+            dx: float
+                Grid spacing.
+            r_nx: int
+                Grid dimension in x-direction.
+
+        Returns:
+        --------
+            k_left, k_right: ndarrays
+                Bloch eigenvalues of left and right movers.
+    """
+
+    if dx is None or r_nx is None:
+        params = XML(xml).params
+        dx = params.get("dx")
+        r_nx = params.get("r_nx")
+
+    beta, velocities = np.genfromtxt(evalsfile, unpack=True,
+                                     usecols=(0, 1), dtype=complex,
+                                     converters={0: convert_to_complex})
+    k = np.angle(beta) - 1j*np.log(np.abs(beta))
+    k /= dx*r_nx
+    k_left = k[:len(k)/2]
+    k_right = k[len(k)/2:]
+
+    if sort:
+        sort_mask = np.argsort(abs(k_left.imag))
+        k_left = k_left[sort_mask]
+        sort_mask = np.argsort(abs(k_right.imag))
+        k_right = k_right[sort_mask]
+
+    return k_left, k_right
 
 
 class Jordan(object):
@@ -120,12 +163,9 @@ class Jordan(object):
         self.executable = executable
         self.datafile = datafile
         self.xml = xml
-        self.xml_params = XML(xml).params
+        self.__dict__.update(XML(xml).params)
         self.evalsfile = evalsfile
 
-        self.dx = self.xml_params.get("dx")
-        self.r_nx = self.xml_params.get("r_nx")
-        self.modes = self.xml_params.get("modes")
         self.WG = Waveguide(**waveguide_params)
 
     def _run_code(self):
@@ -133,32 +173,6 @@ class Jordan(object):
                   'I': self.xml}
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
         subprocess.check_call(cmd, shell=True)
-
-    @staticmethod
-    def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None, sort=True):
-        if evalsfile is None:
-            evalsfile = self.evalsfile
-        if dx is None:
-            dx = self.dx
-        if r_nx is None:
-            r_nx = self.r_nx
-
-        beta, velocities = np.genfromtxt(evalsfile, unpack=True,
-                                         usecols=(0, 1), dtype=complex,
-                                         converters={0: convert_to_complex})
-        k = np.angle(beta) - 1j*np.log(np.abs(beta))
-        k /= dx
-        k_left = k[:len(k)/2]
-        k_right = k[len(k)/2:]
-
-        if sort:
-            sort_mask = np.argsort(abs(k_left.imag))
-            k_left = k_left[sort_mask]
-            sort_mask = np.argsort(abs(k_right.imag))
-            k_right = k_right[sort_mask]
-
-        # return k_left[0], k_right[0]
-        return k_left, k_right
 
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
@@ -174,14 +188,15 @@ class Jordan(object):
             # print "n,m", x, y
             self._update_boundary(x, y)
             self._run_code()
-            eigenvalues.append(self.get_eigenvalues(x, y))
+            eigenvalues.append(get_Bloch_eigenvalues(evalsfile=self.evalsfile,
+                                                     dx=self.dx, r_nx=self.r_nx))
 
         e1, e2 = eigenvalues[-1]
         evals = np.asarray(eigenvalues).T.flatten()
         self.evals.append(eigenvalues)
 
-        gradient =  np.array([[0, 1, 0, -1, 0, -1, 0, 1],
-                              [0, 0, 1, -1, 0, 0, -1, 1]])
+        gradient = np.array([[0, 1, 0, -1, 0, -1, 0, 1],
+                             [0, 0, 1, -1, 0, 0, -1, 1]])
 
         gradient_x, gradient_y = gradient.dot(evals)
         gradient_x /= dx
@@ -190,7 +205,7 @@ class Jordan(object):
         delta = e2-e1
 
         # norm = (gradient_x**2 + gradient_y**2)
-        norm = (np.abs(gradient_x)**2 + 
+        norm = (np.abs(gradient_x)**2 +
                 np.abs(gradient_y)**2)
 
         res_x = gradient_x/norm * delta
