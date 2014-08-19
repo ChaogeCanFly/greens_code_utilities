@@ -116,7 +116,7 @@ class Jordan(object):
         params = {'E': self.executable,
                   'I': self.xml}
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
-        subprocess.check_call(cmd, shell=True)
+        subprocess.check_call(cmd.split())
 
     @classmethod
     def get_eigenvalues(self, evalsfile=None, dx=None, r_nx=None, sort=True):
@@ -132,7 +132,7 @@ class Jordan(object):
                                          usecols=(0, 1), dtype=complex,
                                          converters={0: convert_to_complex})
         k = np.angle(beta) - 1j*np.log(np.abs(beta))
-        k /= dx
+        k /= r_nx*dx
         k_left = k[:len(k)/2]
         k_right = k[len(k)/2:]
 
@@ -142,7 +142,6 @@ class Jordan(object):
             sort_mask = np.argsort(abs(k_right.imag))
             k_right = k_right[sort_mask]
 
-        # return k_left[0], k_right[0]
         return k_left, k_right
 
     def _iterate(self):
