@@ -48,43 +48,43 @@ def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
 
         #declare cc=<0,1,0>;
 
-        background {
+        background {{
             color White
-        }
+        }}
 
-        camera {
+        camera {{
           orthographic
           location <-2.5*zoom,5*zoom,7*zoom>
           right cc*image_width/image_height
           direction <2.5*zoom,-9*zoom,-7*zoom>
           angle 0.00001
           look_at <0, 0,0>
-        }
+        }}
 
-        height_field {
+        height_field {{
             ppm PPM
             smooth
             water_level -10.0
-            texture {
-                pigment{
-                    image_map {
+            texture {{
+                pigment {{
+                    image_map {{
                         jpeg JPEG
                         transmit all transmit_value
-                        }
+                        }}
                 rotate x*90
-                }
-                finish {
+                }}
+                finish {{
                     ambient ambient_value
                     diffuse diffuse_value
                     metallic
-                }
-            }
+                }}
+            }}
             scale <14,field_height,-2>
             translate<-7,0,1>
             no_shadow
-        }
+        }}
 
-        light_source {
+        light_source {{
             <0,light_height,0>
             color White
             parallel
@@ -92,7 +92,7 @@ def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
             media_interaction 1
             media_attenuation 1
             fade_distance 1
-        }
+        }}
     """.format(ppm=ppm, jpeg=jpeg)
 
     # only write scene if no external .pov source is supplied
