@@ -101,19 +101,25 @@ def get_Bloch_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                      usecols=(0, 1), dtype=complex,
-                                     converters={0: convert_to_complex})
+                                     converters={0: convert_to_complex,
+                                                 1: convert_to_complex})
+    print velocities
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
     k /= dx*r_nx
     k_left = k[:len(k)/2]
     k_right = k[len(k)/2:]
+    v_left = velocities[:len(k)/2]
+    v_right = velocities[len(k)/2:]
 
     if sort:
         sort_mask = np.argsort(abs(k_left.imag))
         k_left = k_left[sort_mask]
+        v_left = v_left[sort_mask]
         sort_mask = np.argsort(abs(k_right.imag))
         k_right = k_right[sort_mask]
+        v_right = v_right[sort_mask]
 
-    return k_left, k_right
+    return k_left, k_right, v_left, v_right
 
 
 class Jordan(object):
