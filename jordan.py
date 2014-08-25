@@ -5,9 +5,9 @@ import re
 import subprocess
 
 import argh
-import xml.etree.ElementTree as ET
 
 from ep.waveguide import Waveguide
+from xmlparser import XML
 
 
 def convert_to_complex(s):
@@ -27,50 +27,50 @@ def convert_to_complex(s):
     return x + 1j*y
 
 
-class XML(object):
-    """Simple wrapper class for xml.etree.ElementTree.
-
-        Parameters:
-        -----------
-            xml: str
-                Input xml file.
-
-        Attributes:
-        -----------
-            root: Element object
-            params: dict
-                Dictionary of the parameters parsed from the input xml.
-    """
-
-    def __init__(self, xml):
-        self.xml = xml
-        self.root = ET.parse(xml).getroot()
-        self.params = self._read_xml()
-
-    def _read_xml(self):
-        """Read all variables from the input.xml file."""
-
-        params = {}
-        for elem in self.root.iter(tag='param'):
-            name = elem.attrib.get('name')
-            value = elem.text
-            try:
-                params[name] = float(value)
-            except ValueError:
-                pass
-                # params[name] = value
-
-        self.__dict__.update(params)
-
-        self.nyout = self.modes*self.points_per_halfwave
-        self.dx = self.W/(self.nyout + 1.)
-        self.dy = self.dx
-        self.r_nx = int(self.W/self.dx)
-        self.r_ny = int(self.L/self.dy)
-
-        params.update(self.__dict__)
-
-        return params
+# class XML(object):
+#     """Simple wrapper class for xml.etree.ElementTree.
+#
+#         Parameters:
+#         -----------
+#             xml: str
+#                 Input xml file.
+#
+#         Attributes:
+#         -----------
+#             root: Element object
+#             params: dict
+#                 Dictionary of the parameters parsed from the input xml.
+#     """
+#
+#     def __init__(self, xml):
+#         self.xml = xml
+#         self.root = ET.parse(xml).getroot()
+#         self.params = self._read_xml()
+#
+#     def _read_xml(self):
+#         """Read all variables from the input.xml file."""
+#
+#         params = {}
+#         for elem in self.root.iter(tag='param'):
+#             name = elem.attrib.get('name')
+#             value = elem.text
+#             try:
+#                 params[name] = float(value)
+#             except ValueError:
+#                 pass
+#                 # params[name] = value
+#
+#         self.__dict__.update(params)
+#
+#         self.nyout = self.modes*self.points_per_halfwave
+#         self.dx = self.W/(self.nyout + 1.)
+#         self.dy = self.dx
+#         self.r_nx = int(self.L/self.dx)
+#         self.r_ny = int(self.W/self.dy)
+#
+#         params.update(self.__dict__)
+#
+#         return params
 
 
 def get_Bloch_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
@@ -99,15 +99,19 @@ def get_Bloch_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         dx = params.get("dx")
         r_nx = params.get("r_nx")
 
+    print "dx:", dx
+    print "r_nx:", r_nx
+    print "dx*r_nx:", dx*r_nx
+
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                      usecols=(0, 1), dtype=complex,
                                      converters={0: convert_to_complex,
                                                  1: convert_to_complex})
-    print velocities
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
     k /= dx*r_nx
     k_left = k[:len(k)/2]
     k_right = k[len(k)/2:]
+    # dx -> dx*r_nx also for velocities?
     v_left = velocities[:len(k)/2]
     v_right = velocities[len(k)/2:]
 
