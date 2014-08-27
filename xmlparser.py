@@ -35,17 +35,34 @@ class XML(object):
                 params[name] = float(value)
             except ValueError:
                 pass
-                # params[name] = value
 
-        self.__dict__.update(params)
+        # avoid confusion between parameter 'N' from the input-vector object
+        # and the variable 'N' used for modes in the Waveguide class
+        params.pop("N")
+        params.pop("v[i]")
 
-        self.nyout = self.modes*self.points_per_halfwave
-        self.dx = self.W/(self.nyout + 1.)
-        self.dy = self.dx
-        self.r_nx = int(self.L/self.dx)
-        self.r_ny = int(self.W/self.dy)
+        nyout = params.get("modes")*params.get("points_per_halfwave")
+        dx = params.get("W")/(nyout + 1.)
+        dy = dx
+        r_nx = int(params.get("L")/dx)
+        r_ny = int(params.get("W")/dy)
 
-        params.update(self.__dict__)
+        values = {
+                'nyout': nyout,
+                'dx': dx,
+                'dy': dy,
+                'r_nx': r_nx,
+                'r_ny': r_ny}
+
+        params.update(values)
+
+        # self.__dict__.update(params)
+        # self.nyout = self.modes*self.points_per_halfwave
+        # self.dx = self.W/(self.nyout + 1.)
+        # self.dy = self.dx
+        # self.r_nx = int(self.L/self.dx)
+        # self.r_ny = int(self.W/self.dy)
+        # params.update(self.__dict__)
 
         return params
 
