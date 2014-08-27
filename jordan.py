@@ -1,112 +1,31 @@
 #!/usr/bin/env python2.7
 
-import fileinput
 import matplotlib.pyplot as plt
 import numpy as np
-import re
-import subprocess
-
 import os
-import shutil
+import subprocess
 import sys
 
 import argh
 
+import bloch
 from ep.waveguide import Waveguide
 from xmlparser import XML
 
 
-def convert_to_complex(s):
-    """Convert a string of the form (x,y) to a complex number z = x+1j*y.
+def replace_in_file(infile, outfile, **replacements):
+    """Replace some lines in an input file and write to output file. The
+    replacements are supplied via an dictionary."""
 
-        Parameters:
-        -----------
-            s: str
+    with open(infile) as src_xml:
+        src_xml = src_xml.read()
 
-        Returns:
-        -------
-            z: complex float
-    """
+    for src, target in replacements.iteritems():
+        src_xml = src_xml.replace(src, target)
 
-    regex = re.compile(r'\(([^,\)]+),([^,\)]+)\)')
-    x, y = map(float, regex.match(s).groups())
-    return x + 1j*y
-
-
-def get_Bloch_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
-                          modes=None, dx=None, r_nx=None, sort=True, 
-                          fold_back=True, return_velocities=False):
-    """Extract the eigenvalues beta and return the Bloch eigenvalues.
-
-        Parameters:
-        -----------
-            xml: str
-                Input xml file.
-            evalsfile: str
-                Eigenvalues input file.
-            dx: float
-                Grid spacing.
-            r_nx: int
-                Grid dimension in x-direction.
-            fold_back: bool
-                Whether to fold back the Bloch eigenvalues into the 1. BZ.
-            return_velocities: bool
-                Whether to return group velocities.
-
-        Returns:
-        --------
-            k_left, k_right: ndarrays
-                Bloch eigenvalues of left and right movers.
-            v_left, v_right: ndarrays (optional)
-                Velocities of left and right movers.
-    """
-
-    if modes is None or dx is None or r_nx is None:
-        params = XML(xml).params
-        modes = params.get("modes")
-        dx = params.get("dx")
-        r_nx = params.get("r_nx")
-
-    k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0,1) ]
-    kr = k0 - k1
-
-    print "modes", modes
-    print "k0", k0
-    print "k1", k1
-    print "kr", kr
-    print "dx:", dx
-    print "r_nx:", r_nx
-    print "dx*r_nx:", dx*r_nx
-
-    beta, velocities = np.genfromtxt(evalsfile, unpack=True,
-                                     usecols=(0, 1), dtype=complex,
-                                     converters={0: convert_to_complex,
-                                                 1: convert_to_complex})
-
-    k = np.angle(beta) - 1j*np.log(np.abs(beta))
-    k /= dx*r_nx
-    k_left = k[:len(k)/2]
-    k_right = k[len(k)/2:]
-
-    v_left = velocities[:len(k)/2]
-    v_right = velocities[len(k)/2:]
-
-    if sort:
-        sort_mask = np.argsort(abs(k_left.imag))
-        k_left = k_left[sort_mask]
-        v_left = v_left[sort_mask]
-        sort_mask = np.argsort(abs(k_right.imag))
-        k_right = k_right[sort_mask]
-        v_right = v_right[sort_mask]
-
-    if fold_back:
-        k_left = np.mod(k_left.real, kr) + 1j*k_left.imag
-        k_right = np.mod(k_right.real, kr) + 1j*k_right.imag
-
-    if return_velocities:
-        return k_left, k_right, v_left, v_right
-    else:
-        return k_left, k_right
+    out_xml = os.path.abspath(outfile)
+    with open(out_xml, "w") as out_xml:
+        out_xml.write(src_xml)
 
 
 class Jordan(object):
@@ -122,7 +41,7 @@ class Jordan(object):
                 Relative tolerance for convergence measure.
             executable: str
                 Program name to call during optimization.
-            datafile: str
+            outfile: str
                 Parameter output file.
             evalsfile: str
                 Eigenvalue file.
@@ -132,6 +51,8 @@ class Jordan(object):
                 Input .xml template name.
             waveguide_params:
                 Parameters of the ep.waveguide.Waveguide class.
+            interactive: bool
+                Whether to run the program interactively.
 
         Attributes:
         -----------
@@ -146,37 +67,51 @@ class Jordan(object):
     """
 
     def __init__(self, x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6,
-                 executable='solve_xml_mumps', datafile='jordan.out',
+                 executable='solve_xml_mumps', outfile='jordan.out',
                  evalsfile='Evals.sine_boundary.dat',
                  template='input.xml_template',
-                 xml='input.xml', **waveguide_params):
+                 xml='input.xml', interactive=False, **waveguide_params):
 
-        self.values = [[x0, y0], [x0+dx, y0+dx]]
+        self.values = [[x0, y0], [x0+dx, y0+dy]]
         self.evals = []
         self.rtol = rtol
         self.residual = 1.
 
+        self.executable = executable
+        self.outfile = outfile
+        self.evalsfile = evalsfile
+        self.template = template
+        self.xml = xml
         self.waveguide_params = waveguide_params
 
-        self.executable = executable
-        self.datafile = datafile
-        self.xml = xml
-        self.template = template
-        self._update_boundary(x0, y0)
-        print XML(xml).params
-        self.__dict__.update(XML(xml).params)
-        self.evalsfile = evalsfile
+        self.interactive = interactive
 
+        self._update_boundary(x0, y0)
+        self.__dict__.update(XML(xml).params)
+
+    def _setup(self):
+        pass
 
     def _run_code(self):
         params = {'E': self.executable,
                   'I': self.xml}
         cmd = "subSGE.py -l -e {E} -i {I}".format(**params)
-        subprocess.check_call(cmd, shell=True)
+        subprocess.call(cmd.split())
 
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
         dx, dy = x1-x0, y1-y0
+
+        if abs(dx) < self.dx or abs(dy) < self.dx:
+            print """
+                WARNING: dx or dy smaller than discretization!
+
+                abs(dx) = {0}
+                abs(dy) = {1}
+                self.dx = {2}
+            """.format(abs(dx), abs(dy), self.dx)
+            dx = 1.1 * self.dx
+            dy = 1.1 * self.dx
 
         print "x0, x1", x0, x1
         print "y0, y1", y0, y1
@@ -184,41 +119,46 @@ class Jordan(object):
 
         eigenvalues = []
         parameters = [ (n,m) for n in x0, x1 for m in y0, y1 ]
-        for x, y in parameters:
+        # order: (x0, y0)
+        #        (x0, y1)
+        #        (x1, y0)
+        #        (x1, y1)
+        for n, (x, y) in enumerate(parameters):
             print "n,m", x, y
+            self._check_numerical_resolution(x)
             self._update_boundary(x, y)
-            self._run_code()
-            bloch_modes = get_Bloch_eigenvalues(evalsfile=self.evalsfile,
-                                                dx=self.dx, r_nx=self.r_nx)
-            # take the first two right-movers
-            # k1 -> k1 mod kr
-            bloch_modes = np.array(bloch_modes)[1,:2]
-            print "bloch_modes", bloch_modes
-            eigenvalues.append(bloch_modes)
-            print "eigenvalues[-1]", eigenvalues[-1]
 
-        #print eigenvalues
-        e1, e2 = eigenvalues[-1]
-        evals = np.asarray(eigenvalues).T.flatten()
-        self.evals.append(eigenvalues)
-        print "evals", evals
+            # we dont need the values lambda_n(x0, y0)
+            if n > 0:
+                self._run_code()
+                bloch_modes = bloch.get_eigenvalues()
+                # take the first two right-movers & k1 -> k1 mod kr
+                #TODO: why column 0 and not 1 to access the right moving modes?
+                bloch_modes = np.array(bloch_modes)[0,:2]
+                print "bloch_modes", bloch_modes
+                eigenvalues.append(bloch_modes)
 
+        self.evals.append([bloch_modes[0], bloch_modes[1]])
 
-        gradient = np.array([[0, 1, 0, -1, 0, -1, 0, 1],
-                             [0, 0, 1, -1, 0, 0, -1, 1]])
+        e1, e2 = bloch_modes.imag # x1, y1 (last step in parameters)
+        evals = np.asarray(eigenvalues).T.flatten().imag
+
+        gradient = np.array([[1, -1, 0, 0, -1, 1],
+                             [0,  0, 1, -1, -1, 1]])
 
         gradient_x, gradient_y = gradient.dot(evals)
+
         gradient_x /= dx
         gradient_y /= dy
 
         delta = e2-e1
 
-        # norm = (gradient_x**2 + gradient_y**2)
-        norm = (np.abs(gradient_x)**2 +
-                np.abs(gradient_y)**2)
+        normsq = (np.abs(gradient_x)**2 +
+                  np.abs(gradient_y)**2)
+        print "normsq: ", normsq
 
-        res_x = gradient_x/norm * delta
-        res_y = gradient_y/norm * delta
+        res_x = gradient_x/normsq * delta
+        res_y = gradient_y/normsq * delta
 
         self.residual = np.sqrt(np.abs(res_x)**2 + np.abs(res_y)**2)
 
@@ -230,18 +170,31 @@ class Jordan(object):
 
         return x2, y2
 
+    def _check_numerical_resolution(self, x):
+        print """
+            Numerical resolution:
+
+                x:      {0}
+                dx:     {1}
+                x/dx:   {2}
+        """.format(x, self.dx, int(x/self.dx))
 
     def _update_boundary(self, x, y):
-        x, y = [ np.real(n) for n in x, y ]
+        # x, y = [ np.real(n) for n in x, y ]
 
         N = self.waveguide_params.get("N")
+        print "N:", N
         eta = self.waveguide_params.get("eta")
+        print "eta: ", eta
 
         k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
         L = abs(2*np.pi/(k0 - k1 + y))
 
-        WG = Waveguide(N=N, L=L, loop_type='Constant')
+        WG = Waveguide(L=L, loop_type='Constant', **self.waveguide_params)
         self.WG = WG
+
+        print "WG.x_EP", WG.x_EP
+        print "WG.y_EP", WG.y_EP
 
         WG.x_EP = x
         WG.y_EP = y
@@ -250,28 +203,20 @@ class Jordan(object):
 
         np.savetxt("lower.profile", zip(WG.t, xi_lower))
         np.savetxt("upper.profile", zip(WG.t, xi_upper))
-        # np.savetxt("lower_x_{}_y_{}.profile".format(x,y), zip(self.WG.t, xi_lower))
-        # np.savetxt("upper_x_{}_y_{}.profile".format(x,y), zip(self.WG.t, xi_upper))
-
-        # update .xml
 
         N_file = len(WG.t)
-        replacements = {
-                'L"> L':             'L"> {}'.format(L),
-                'N_file"> N_file':   'N_file"> {}'.format(N_file),
-                'Gamma0"> Gamma0':   'Gamma0"> {}'.format(eta)
-                }
+        replacements = {'L"> L':           'L"> {}'.format(L),
+                        'N_file"> N_file': 'N_file"> {}'.format(N_file),
+                        'Gamma0"> Gamma0': 'Gamma0"> {}'.format(eta)}
 
-        with open(self.template) as src_xml:
-            src_xml = src_xml.read()
+        replace_in_file(self.template, self.xml, **replacements)
 
-        for src, target in replacements.iteritems():
-            src_xml = src_xml.replace(src, target)
-
-        out_xml = os.path.abspath(self.xml)
-        with open(out_xml, "w") as out_xml:
-            out_xml.write(src_xml)
-
+    def _print_and_save(self):
+        v1, v2 = np.array(self.values).T
+        e1, e2 = np.array(self.evals).T.imag
+        for a, b, c, d in zip(v1, v2, e1, e2):
+            print a, b, c, d, abs(c-d)
+        np.savetxt(self.outfile, zip(v1, v2, e1, e2), fmt="%.6f")
 
     def solve(self):
         #while self.residual > self.rtol:
@@ -282,38 +227,42 @@ class Jordan(object):
             print "residual", self.residual
             print "rtol", self.rtol
             print "x, y:", self.values[-1]
-            print "x_EP, y_EP = ", self.WG.x_EP, self.WG.y_EP
-            prompt = raw_input("Continue? (y)es/(n)o/(p)lot ")
+
+            if self.interactive:
+                prompt = raw_input("Continue? (y)es/(n)o/(p)lot ")
+            else:
+                prompt = "y"
 
             if not prompt:
                 pass
             elif prompt[0] == 'n':
-                print self.values
-                np.savetxt(self.datafile, self.values)
+                self._print_and_save()
                 sys.exit()
             elif prompt[0] == 'p':
                 f = plt.figure(0)
+                x, y = np.array(self.values).reshape(-1,2).T
+                plt.plot(x, y, "ro-")
                 for n, (x, y) in enumerate(self.values):
-                    plt.plot(x, y, "ro")
+                    # plt.plot(x, y, "ro")
                     plt.text(x, y, str(n), fontsize=12)
                 plt.show()
             else:
                 pass
 
-        print self.values
-        np.savetxt(self.datafile, self.values)
+        self._print_and_save()
 
 
 @argh.arg('x0', type=float)
 @argh.arg('y0', type=float)
 @argh.arg('-N', '--N', type=float)
 @argh.arg('--eta', type=float)
-def find_EP(x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6, executable='solve_xml_mumps', 
-            datafile='jordan.out', evalsfile='Evals.sine_boundary.dat',
-            xml='input.xml', template='input.xml_template', **waveguide_params):
+def find_EP(x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6, executable='solve_xml_mumps',
+            outfile='jordan.out', evalsfile='Evals.sine_boundary.dat',
+            xml='input.xml', template='input.xml_template', interactive=False,
+            **waveguide_params):
     J = Jordan(x0, y0, dx=dx, dy=dy, rtol=rtol, executable=executable,
-               datafile=datafile, evalsfile=evalsfile, xml=xml,
-               template=template, **waveguide_params)
+               outfile=outfile, evalsfile=evalsfile, xml=xml, template=template, 
+               interactive=interactive, **waveguide_params)
     J.solve()
 
 
