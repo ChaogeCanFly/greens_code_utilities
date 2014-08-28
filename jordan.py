@@ -9,23 +9,9 @@ import sys
 import argh
 
 import bloch
+from helpers import replace_in_file
 from ep.waveguide import Waveguide
 from xmlparser import XML
-
-
-def replace_in_file(infile, outfile, **replacements):
-    """Replace some lines in an input file and write to output file. The
-    replacements are supplied via an dictionary."""
-
-    with open(infile) as src_xml:
-        src_xml = src_xml.read()
-
-    for src, target in replacements.iteritems():
-        src_xml = src_xml.replace(src, target)
-
-    out_xml = os.path.abspath(outfile)
-    with open(out_xml, "w") as out_xml:
-        out_xml.write(src_xml)
 
 
 class Jordan(object):
@@ -220,7 +206,7 @@ class Jordan(object):
 
     def solve(self):
         #while self.residual > self.rtol:
-        for n in range(5):
+        for n in range(15):
             xi, yi = self._iterate()
             self.values.append([xi, yi])
             #self._update_boundary(xi, yi)
