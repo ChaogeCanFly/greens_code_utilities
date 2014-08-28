@@ -5,24 +5,8 @@ import re
 
 import argh
 
+from helpers import convert_to_complex
 from xmlparser import XML
-
-
-def convert_to_complex(s):
-    """Convert a string of the form (x,y) to a complex number z = x+1j*y.
-
-        Parameters:
-        -----------
-            s: str
-
-        Returns:
-        -------
-            z: complex float
-    """
-
-    regex = re.compile(r'\(([^,\)]+),([^,\)]+)\)')
-    x, y = map(float, regex.match(s).groups())
-    return x + 1j*y
 
 
 def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
@@ -66,28 +50,18 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         dx = params.get("dx")
         r_nx = params.get("r_nx")
 
+    # get k_x values for both modes
     k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
     kr = k0 - k1
 
-    G = 2*np.pi/L
+    # reciprocal lattice vector
+    G = 2.*np.pi/L
 
-    if verbose:
-        print "modes", modes
-        print "L", L
-        print "G", G
-        print "G/2", G/2
-        print "k0", k0
-        print "k1", k1
-        print "kr", kr
-        print "dx:", dx
-        print "r_nx:", r_nx
-        print "dx*r_nx:", dx*r_nx
-
+    # get beta = exp(ik_x*dx) and group velocities
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                      usecols=(0, 1), dtype=complex,
                                      converters={0: convert_to_complex,
                                                  1: convert_to_complex})
-
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
     k /= dx*r_nx
     k_left = k[:len(k)/2]
@@ -107,11 +81,23 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     if fold_back:
         k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in 
-                                                            k_left, k_right ]
-
+                                                             k_left, k_right ]
+        # map into 1.BZ
         for k in k_left, k_right:
             k[k > G/2] -= G
             k[k < -G/2] += G
+
+    if verbose:
+        print "modes", modes
+        print "L", L
+        print "G", G
+        print "G/2", G/2
+        print "k0", k0
+        print "k1", k1
+        print "kr", kr
+        print "dx:", dx
+        print "r_nx:", r_nx
+        print "dx*r_nx:", dx*r_nx
 
     if return_velocities:
         return k_left, k_right, v_left, v_right
