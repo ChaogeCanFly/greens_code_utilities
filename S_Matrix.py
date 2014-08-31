@@ -1,11 +1,12 @@
 #!/usr/bin/env python2.7
 
-import re
-import numpy as np
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
 from glob import glob
 import os
+import numpy as np
+import re
+
 
 class S_Matrix:
     """Reads and processes the S-matrix.
@@ -58,7 +59,6 @@ class S_Matrix:
 
 def natural_sorting(text, args="delta"):
     """Sort text with respect to the argument value.
-
         Parameters:
         -----------
             text: str
@@ -66,15 +66,12 @@ def natural_sorting(text, args="delta"):
             args: str
                 Directory parsing parameters.
     """
-
-    #convert = lambda x: int(x) if x.isdigit() else x 
+    #convert = lambda x: int(x) if x.isdigit() else x
     #alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
-
     index = lambda text: [ text.split("_").index(arg) for arg in args ]
     alphanum_key = lambda text: [ float(text.split("_")[i+1]) for i in index(text) ]
-
     return sorted(text, key=alphanum_key)
-    
+
 
 class Write_S_Matrix:
     """Class which handles directories and globbing.
