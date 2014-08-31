@@ -4,6 +4,9 @@
     convert_to_complex(s):
         Convert a string of the form (x,y) to a complex number z = x+1j*y.
 
+    natural_sorting(text, args="delta", sep="_")
+        Sort a text with respect to a given argument value.
+
     replace_in_file(infile, outfile, **replacements):
         Replace some lines in an input file and write to output file.
         The replacements are supplied via an dictionary.
