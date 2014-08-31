@@ -206,7 +206,7 @@ class Jordan(object):
 
     def solve(self):
         #while self.residual > self.rtol:
-        for n in range(15):
+        for n in range(25):
             xi, yi = self._iterate()
             self.values.append([xi, yi])
             #self._update_boundary(xi, yi)
