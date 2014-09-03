@@ -48,7 +48,7 @@ def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
 
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                      reorder=False, jumps=100., mayavi=False, lim_mask=False, 
-                     girtsch=False):
+                     girtsch=False, sort=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -69,6 +69,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                 Whether to set x- and y-ranges manually.
             girtsch: bool
                 Whether to account for a wrong eps <-> delta labeling.
+            sort: bool
+                Sorts the eigenvalues such that one is larger than the other.
     """
     if reorder:
         print "reordering..."
@@ -89,33 +91,44 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         ind = np.lexsort((delta, eps))
         eps, delta, ev0, ev1 = [ x[ind] for x in eps, delta, ev0, ev1 ]
 
+    if sort:
+        tmp0, tmp1 = 1.*ev0, 1.*ev1
+        tmp0[ev1 > ev0] = ev1[ev1 > ev0]
+        tmp1[ev1 > ev0] = ev0[ev1 > ev0]
+        
+        ev0, ev1 = 1.*tmp0, 1.*tmp1
+
     # get eps/delta meshgrid
     eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for x in
                                                         eps, delta, ev0, ev1 ]
+
+    # set x/y limits
+    if lim_mask:
+        mask = (eps > -0.02) & (eps < 0.02) & (delta > -0.07) & (delta < 0.2)
+        for X in eps, delta, ev0, ev1:
+            X[~mask] = np.nan
 
     # remove Nan values
     ev0 = np.ma.masked_where(np.isnan(ev0), ev0)
     ev1 = np.ma.masked_where(np.isnan(ev1), ev1)
 
-    # set x/y limits
-    if lim_mask:
-        mask = (eps > 0.01) & (eps < 0.09) & (delta > 0.05) & (delta < 0.5)
-        for X in eps, delta, ev0, ev1:
-            X[~mask] = np.nan
-
     # print maximum of eigenvalue
-    i, j = np.unravel_index(e.imag.argmax(), ev0.shape)
+    i, j = np.unravel_index(ev0.imag.argmax(), ev0.shape)
+    print "ev0.imag data:"
     print "eps_max =", eps[i,j]
     print "delta_max =", delta[i,j]
 
     if mayavi:
         # real part
-        mask = np.zeros_like(eps).astype(bool)
+        # mask = np.zeros_like(eps).astype(bool)
         for e in ev0, ev1:
-            if not jumps:
-                mask[np.abs(np.diff(ev1.real, axis=0)) > 0.07] = True
-                mask[np.abs(np.diff(ev1.real, axis=1)) > 0.07] = True
+            mask = np.zeros_like(eps).astype(bool)
+            mask[np.abs(np.diff(ev0.real, axis=0)) > jumps] = True
+            mask[np.abs(np.diff(ev0.real, axis=1)) > jumps] = True
+            mask[np.abs(np.diff(ev1.real, axis=0)) > jumps] = True
+            mask[np.abs(np.diff(ev1.real, axis=1)) > jumps] = True
 
+            # e[mask] = np.nan
             fig = mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
             m.actor.actor.scale = (1,1,1)
@@ -134,17 +147,29 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                   zlabel="Im(K)")
         mlab.show()
     else:
-        f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=2, ncols=2)
-        plt.title(infile)
-        ax1.pcolormesh(eps, delta, ev0.imag)
-        ax2.pcolormesh(eps, delta, ev1.imag)
-        ax3.pcolormesh(eps, delta, ev0.real)
-        ax4.pcolormesh(eps, delta, ev1.real)
-        plt.colorbar()
-        plt.xlim(eps.min(), eps.max())
-        plt.ylim(delta.min(), delta.max())
+        f, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
+        (ax1, ax2), (ax3, ax4) = axes
+        plt.xticks(rotation=70)
+        plt.suptitle(infile)
+        ax1.set_title("ev0.real")
+        im1 = ax1.pcolormesh(eps, delta, ev0.real)
+        ax2.set_title("ev0.imag")
+        im2 = ax2.pcolormesh(eps, delta, ev0.imag)
+        ax3.set_title("ev1.real")
+        im3 = ax3.pcolormesh(eps, delta, ev1.real)
+        ax4.set_title("ev1.imag")
+        im4 = ax4.pcolormesh(eps, delta, ev1.imag)
+        for im, ax in zip((im1, im2, im3, im4), (ax1, ax2, ax3, ax4)):
+            # ax.colorbar()
+            ax.set_xlabel("epsilon")
+            ax.set_ylabel("delta")
+            ax.set_xlim(eps.min(), eps.max())
+            ax.set_ylim(delta.min(), delta.max())
+            f.colorbar(im, ax=ax)
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        # plt.tight_layout()
         plt.show()
 
 
 if __name__ == '__main__':
-    argh.dispatch_command(plot_mesh)
+    argh.dispatch_command(plot_3D_spectrum)
