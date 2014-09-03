@@ -49,7 +49,7 @@ def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
 @argh.arg("-p", "--png", type=str, default="out.png")
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                      reorder=False, jump=100., mayavi=False, lim_mask=False, 
-                     girtsch=False, sort=False):
+                     girtsch=False, sort=False, png="out.png"):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
