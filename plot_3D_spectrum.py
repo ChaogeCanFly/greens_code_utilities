@@ -46,9 +46,10 @@ def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
     np.savetxt(outfile, v)
 
 
+@argh.arg("-p", "--png", type=str, default="out.png")
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                      reorder=False, jumps=100., mayavi=False, lim_mask=False, 
-                     girtsch=False, sort=False):
+                     girtsch=False, sort=False, png=None):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -168,7 +169,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
             f.colorbar(im, ax=ax)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
         # plt.tight_layout()
-        plt.show()
+        if png:
+            plt.savefig(png)
+        else:
+            plt.show()
 
 
 if __name__ == '__main__':
