@@ -47,7 +47,7 @@ def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
 
 
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
-                     reorder=False, jumps=100., mayavi=False, lim_mask=False, 
+                     reorder=False, jump=100., mayavi=False, lim_mask=False, 
                      girtsch=False, sort=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
@@ -60,8 +60,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                 Output file for reordered arrays.
             reorder: bool
                 Whether to properly sort the input array.
-            jumps: float
-                Whether to remove jumps in the eigenvalue surface that exceed
+            jump: float
+                Whether to remove jump in the eigenvalue surface that exceed
                 a given value.
             mayavi: bool
                 Whether to produce 3D plots. If false, heatmaps are plotted.
@@ -123,15 +123,15 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         # mask = np.zeros_like(eps).astype(bool)
         for e in ev0, ev1:
             mask = np.zeros_like(eps).astype(bool)
-            mask[np.abs(np.diff(ev0.real, axis=0)) > jumps] = True
-            mask[np.abs(np.diff(ev0.real, axis=1)) > jumps] = True
-            mask[np.abs(np.diff(ev1.real, axis=0)) > jumps] = True
-            mask[np.abs(np.diff(ev1.real, axis=1)) > jumps] = True
+            mask[np.abs(np.diff(e.real, axis=0)) > jump] = True
+            mask[np.abs(np.diff(e.real, axis=1)) > jump] = True
+            mask[np.abs(np.diff(e.imag, axis=0)) > jump] = True
+            mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
 
             # e[mask] = np.nan
             fig = mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
-            m.actor.actor.scale = (1,1,1)
+            m.actor.actor.scale = (5,1,1)
 
         mlab.title("Real part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
@@ -141,7 +141,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         fig = mlab.figure(1, bgcolor=(0.5,0.5,0.5))
         for e in ev0, ev1:
             mlab.mesh(eps.real, delta.real, e.imag)
-            m.actor.actor.scale = (1,1,1)
+            m.actor.actor.scale = (5,1,1)
         mlab.title("Imaginary part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
                   zlabel="Im(K)")
