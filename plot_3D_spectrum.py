@@ -175,7 +175,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         im6 = ax6.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
         for im, ax in zip((im1, im2, im3, im4, im5, im6), 
                           (ax1, ax2, ax3, ax4, ax5, ax6)):
-            # ax.colorbar()
             ax.set_xlabel("epsilon")
             ax.set_ylabel("delta")
             ax.set_xlim(eps.min(), eps.max())
