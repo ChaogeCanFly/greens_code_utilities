@@ -117,7 +117,7 @@ class Jordan(object):
             # we dont need the values lambda_n(x0, y0)
             if n > 0:
                 self._run_code()
-                bloch_modes = bloch.get_eigenvalues()
+                bloch_modes = bloch.get_eigensystem()
                 # take the first two right-movers & k1 -> k1 mod kr
                 #TODO: why column 0 and not 1 to access the right moving modes?
                 bloch_modes = np.array(bloch_modes)[0,:2]

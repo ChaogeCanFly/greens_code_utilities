@@ -93,7 +93,7 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
         for d in delta_range:
             update_boundary(e, d)
             run_code(local=local)
-            bloch_modes = bloch.get_eigenvalues()
+            bloch_modes = bloch.get_eigensystem()
             # TODO: why column 0 and not 1 to access the right moving modes?
             bloch_modes = np.array(bloch_modes)[0, :2]
             ev0.append(bloch_modes[0])

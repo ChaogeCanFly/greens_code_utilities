@@ -9,7 +9,7 @@ from helpers import convert_to_complex
 from xmlparser import XML
 
 
-def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
+def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat',
                     modes=None, L=None, dx=None, r_nx=None, sort=True,
                     fold_back=True, return_velocities=False, return_all=False,
@@ -124,4 +124,4 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
 
 if __name__ == '__main__':
-    argh.dispatch_command(get_eigenvalues)
+    argh.dispatch_command(get_eigensystem)
