@@ -12,7 +12,7 @@ from xmlparser import XML
 def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat',
                     modes=None, L=None, dx=None, r_nx=None, sort=True,
-                    fold_back=True, return_velocities=False, return_all=False,
+                    fold_back=True, return_velocities=False, return_eigenvectors=False,
                     verbose=True):
     """Extract the eigenvalues beta and return the Bloch modes.
 
@@ -35,8 +35,8 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
             fold_back: bool
                 Whether to fold back the Bloch modes into the 1. BZ.
             return_velocities: bool
-                Whether to return group velocities.
-            return_all: bool
+                Whether to return eigenvalues and group velocities.
+            return_eigenvectors: bool
                 Whether to return eigenvalues and eigenvectors.
             verbose: bool
                 Print additional output.
@@ -117,7 +117,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     if return_velocities:
         return k_left, k_right, v_left, v_right
-    elif return_all:
+    elif return_eigenvectors:
         return k_left, k_right, chi_left, chi_right
     else:
         return k_left, k_right
