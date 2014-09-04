@@ -60,17 +60,18 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
     kr = k0 - k1
 
-    # reciprocal lattice vector
+    # get reciprocal lattice vector G
     G = 2.*np.pi/L
 
-    # get eigenvectors
+    # get eigenvectors chi_n
     chi = np.loadtxt(evecsfile, dtype=str)
     chi = [ map(convert_to_complex, x) for x in chi ]
     chi = np.asarray(chi)
-    chi_left = chi[:len(chi)//2]
-    chi_right = chi[:len(chi)//2]
 
-    # get beta = exp(ik_x*dx) and group velocities
+    chi_left = chi[:len(chi)//2]
+    chi_right = chi[len(chi)//2:]
+
+    # get beta = exp(i*K_n*dx) and group velocities v_n
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                      usecols=(0, 1), dtype=complex,
                                      converters={0: convert_to_complex,
