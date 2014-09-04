@@ -13,7 +13,7 @@ import argh
 
 def unique_array(a):
     """Remove duplicate entries in an array.
-       Partially taken from https://gist.github.com/jterrace/1337531
+    Partially taken from https://gist.github.com/jterrace/1337531
     """
     ncols = a.shape[1]
     unique_a, idx = np.unique(a.view([('', a.dtype)] * ncols), return_index=True)
@@ -26,7 +26,7 @@ def unique_array(a):
 
 
 def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
-    """Reorder a file containing a function  on a shuffled meshgrid."""
+    """Reorder a file containing a function on a shuffled meshgrid."""
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile, unpack=True)
 
@@ -55,8 +55,9 @@ def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
 
 
 @argh.arg("-p", "--png", type=str)
+@argh.arg("-l", "--limits", type=float, nargs="+")
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
-                     reorder=False, jump=100., mayavi=False, lim_mask=False,
+                     reorder=False, jump=100., mayavi=False, limits=None,
                      girtsch=False, sort=False, png=None):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
@@ -74,8 +75,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                 a given value.
             mayavi: bool
                 Whether to produce 3D plots. If false, heatmaps are plotted.
-            lim_mask: bool
-                Whether to set x- and y-ranges manually.
+            limits: list
+                Set the x- and ylim: [xmin, xmax, ymin, ymax]
             girtsch: bool
                 Whether to account for a wrong eps <-> delta labeling.
             sort: bool
@@ -112,8 +113,11 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                                                         eps, delta, ev0, ev1 ]
 
     # set x/y limits
-    if lim_mask:
-        mask = (eps > -0.02) & (eps < 0.02) & (delta > -0.07) & (delta < 0.2)
+    if limits:
+        eps_min, eps_max = limits[:2]
+        delta_min, delta_max = limits[2:]
+        mask = ((eps > eps_min) & (eps < eps_max) &
+                (delta > delta_min) & (delta < delta_max))
         for X in eps, delta, ev0, ev1:
             X[~mask] = np.nan
 
