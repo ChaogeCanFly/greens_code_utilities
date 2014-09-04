@@ -12,43 +12,51 @@ import argh
 
 
 def unique_array(a):
-    """Remove duplicate entries in an array."""
-    a = np.ascontiguousarray(a)
-    unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
-    b = unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
-    return b
+    """Remove duplicate entries in an array.
+       Partially taken from https://gist.github.com/jterrace/1337531
+    """
+    ncols = a.shape[1]
+    unique_a, idx = np.unique(a.view([('', a.dtype)] * ncols), return_index=True)
+    unique_a = unique_a.view(a.dtype).reshape(-1, a.shape[1])
+
+    # unique returns as int64, so cast back
+    # idx = np.cast['uint32'](idx)
+
+    return unique_a, idx
 
 
-def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
+def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
     """Reorder a file containing a function  on a shuffled meshgrid."""
 
-    eps, delta, ev1r, ev1i, ev2r, ev2i = np.loadtxt(infile, unpack=True)
+    eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile, unpack=True)
 
+    ev0 = ev0r+1j*ev0i
     ev1 = ev1r+1j*ev1i
-    ev2 = ev2r+1j*ev2i
 
     len_eps = len(np.unique(eps))
     len_delta = len(np.unique(delta))
     print len_eps
     print len_delta
 
-    ind = np.lexsort((delta, eps))
-    eps, delta, ev1, ev2 = [ x[ind] for x in eps, delta, ev1, ev2 ]
-    v = zip(eps, delta, ev1.real, ev1.imag, ev2.real, ev2.imag)
-    v = np.array(v)
-    # v = unique_array(v)
+    _, idx = unique_array(np.array(zip(eps, delta)))
+    eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
+
+    idx = np.lexsort((delta, eps))
+    eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
+
+    v = np.array(zip(eps, delta, ev0.real, ev0.imag, ev1.real, ev1.imag))
 
     len_eps = len(np.unique(eps))
     len_delta = len(np.unique(delta))
     print "len(eps)", len(np.unique(eps))
     print "len(delta)", len(np.unique(delta))
 
-    np.savetxt(outfile, v)
+    np.savetxt(outfile, v, fmt='%.18f')
 
 
 @argh.arg("-p", "--png", type=str)
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
-                     reorder=False, jump=100., mayavi=False, lim_mask=False, 
+                     reorder=False, jump=100., mayavi=False, lim_mask=False,
                      girtsch=False, sort=False, png=None):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
@@ -75,7 +83,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
     """
     if reorder:
         print "reordering..."
-        reorder(infile, outfile)
+        reorder_file(infile, outfile)
         sys.exit()
 
     if girtsch:
