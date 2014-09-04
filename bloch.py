@@ -10,8 +10,10 @@ from xmlparser import XML
 
 
 def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
+                    evecsfile='Evecs.sine_boundary.dat',
                     modes=None, L=None, dx=None, r_nx=None, sort=True,
-                    fold_back=True, return_velocities=False, verbose=True):
+                    fold_back=True, return_velocities=False, return_all=False,
+                    verbose=True):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -20,6 +22,8 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Input xml file.
             evalsfile: str
                 Eigenvalues input file.
+            evecsfile: str
+                Eigenvectors input file.
             modes: float
                 Number of open modes.
             L: float
@@ -32,6 +36,8 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Whether to fold back the Bloch modes into the 1. BZ.
             return_velocities: bool
                 Whether to return group velocities.
+            return_all: bool
+                Whether to return eigenvalues and eigenvectors.
             verbose: bool
                 Print additional output.
 
@@ -57,6 +63,13 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     # reciprocal lattice vector
     G = 2.*np.pi/L
 
+    # get eigenvectors
+    chi = np.loadtxt(evecsfile, dtype=str)
+    chi = [ map(convert_to_complex, x) for x in chi ]
+    chi = np.asarray(chi)
+    chi_left = chi[:len(chi)//2]
+    chi_right = chi[:len(chi)//2]
+
     # get beta = exp(ik_x*dx) and group velocities
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
                                      usecols=(0, 1), dtype=complex,
@@ -74,10 +87,12 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         sort_left = np.argsort(abs(k_left.imag))
         k_left = k_left[sort_left]
         v_left = v_left[sort_left]
+        chi_left = chi_left[sort_left]
 
         sort_right = np.argsort(abs(k_right.imag))
         k_right = k_right[sort_right]
         v_right = v_right[sort_right]
+        chi_right = chi_right[sort_right]
 
     if fold_back:
         k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in 
@@ -101,6 +116,8 @@ def get_eigenvalues(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     if return_velocities:
         return k_left, k_right, v_left, v_right
+    elif return_all:
+        return k_left, k_right, chi_left, chi_right
     else:
         return k_left, k_right
 
