@@ -46,10 +46,10 @@ def reorder(infile="bloch.tmp", outfile="bloch_sorted.tmp"):
     np.savetxt(outfile, v)
 
 
-@argh.arg("-p", "--png", type=str, default="out.png")
+@argh.arg("-p", "--png", type=str)
 def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                      reorder=False, jump=100., mayavi=False, lim_mask=False, 
-                     girtsch=False, sort=False, png="out.png"):
+                     girtsch=False, sort=False, png=None):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -113,11 +113,15 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
     ev0 = np.ma.masked_where(np.isnan(ev0), ev0)
     ev1 = np.ma.masked_where(np.isnan(ev1), ev1)
 
-    # print maximum of eigenvalue
-    i, j = np.unravel_index(ev0.imag.argmax(), ev0.shape)
-    print "ev0.imag data:"
-    print "eps_max =", eps[i,j]
-    print "delta_max =", delta[i,j]
+    # print minimum of eigenvalue difference
+    i, j = np.unravel_index(abs(ev0.real-ev1.real).argmin(), ev0.shape)
+    print "Real part:"
+    print "eps_min =", eps[i,j]
+    print "delta_min =", delta[i,j]
+    i, j = np.unravel_index(abs(ev0.imag-ev1.imag).argmin(), ev0.shape)
+    print "Imaginary part:"
+    print "eps_min =", eps[i,j]
+    print "delta_min =", delta[i,j]
 
     if mayavi:
         # real part
@@ -148,19 +152,29 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
                   zlabel="Im(K)")
         mlab.show()
     else:
-        f, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey=True)
-        (ax1, ax2), (ax3, ax4) = axes
+        f, axes = plt.subplots(nrows=3, ncols=2, sharex=True, sharey=True)
+        (ax1, ax2), (ax3, ax4), (ax5, ax6) = axes
+
         plt.xticks(rotation=70)
         plt.suptitle(infile)
+
         ax1.set_title("ev0.real")
-        im1 = ax1.pcolormesh(eps, delta, ev0.real)
+        im1 = ax1.pcolormesh(eps, delta, ev0.real, cmap=plt.get_cmap('coolwarm'))
         ax2.set_title("ev0.imag")
-        im2 = ax2.pcolormesh(eps, delta, ev0.imag)
+        im2 = ax2.pcolormesh(eps, delta, ev0.imag, cmap=plt.get_cmap('coolwarm'))
         ax3.set_title("ev1.real")
-        im3 = ax3.pcolormesh(eps, delta, ev1.real)
+        im3 = ax3.pcolormesh(eps, delta, ev1.real, cmap=plt.get_cmap('coolwarm'))
         ax4.set_title("ev1.imag")
-        im4 = ax4.pcolormesh(eps, delta, ev1.imag)
-        for im, ax in zip((im1, im2, im3, im4), (ax1, ax2, ax3, ax4)):
+        im4 = ax4.pcolormesh(eps, delta, ev1.imag, cmap=plt.get_cmap('coolwarm'))
+        
+        ax5.set_title(r"$|$ev1.real - ev0.real$|$")
+        Z = abs(ev1.real - ev0.real)
+        im5 = ax5.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+        ax6.set_title(r"$|$ev1.imag - ev0.imag$|$")
+        Z = abs(ev1.imag - ev0.imag)
+        im6 = ax6.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+        for im, ax in zip((im1, im2, im3, im4, im5, im6), 
+                          (ax1, ax2, ax3, ax4, ax5, ax6)):
             # ax.colorbar()
             ax.set_xlabel("epsilon")
             ax.set_ylabel("delta")
@@ -168,7 +182,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
             ax.set_ylim(delta.min(), delta.max())
             f.colorbar(im, ax=ax)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
-        # plt.tight_layout()
+        plt.tight_layout()
         if png:
             plt.savefig(png)
         else:
