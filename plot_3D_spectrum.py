@@ -190,9 +190,12 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         ax7.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
         im7 = ax7.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
 
-        for im, ax in zip((im1, im2, im3, im4, im5, im6, im7),
-                          (ax1, ax2, ax3, ax4, ax5, ax6, ax7)):
-            print im, ax
+        Z = (Z_imag**2 + Z_real**2)**0.25
+        ax8.set_title(r"$\sqrt[4]{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
+        im8 = ax8.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+
+        for im, ax in zip((im1, im2, im3, im4, im5, im6, im7, im8),
+                          (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8)):
             ax.set_xlabel("epsilon")
             ax.set_ylabel("delta")
             ax.set_xlim(eps.min(), eps.max())
@@ -223,9 +226,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         ax.set_xlim(eps.min(), eps.max())
         ax.set_ylim(delta.min(), delta.max())
         f.colorbar(im, ax=ax)
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
-        plt.tight_layout()
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        plt.subplots_adjust(top=0.875)
+
         if png:
             plt.savefig(png)
         else:
