@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+import shutil
 import subprocess
 import sys
 
@@ -84,10 +85,7 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
 
         replace_in_file(xml_template, xml, **replacements)
 
-    ev0 = []
-    ev1 = []
-    eps = []
-    delta = []
+    eps, delta, ev0, ev1 = [ [] for n in range(4) ]
     tmp = "bloch.tmp"
     for e in eps_range:
         for d in delta_range:
@@ -105,6 +103,14 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
                                                      bloch_modes[0].imag,
                                                      bloch_modes[1].real,
                                                      bloch_modes[1].imag))
+            # backup output files
+            evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+            shutil.copy("Evals.sine_boundary.dat", evals_file)
+            evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+            shutil.copy("Evecs.sine_boundary.dat", evecs_file)
+            if not local:
+                tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
+                shutil.copy("tmp.out", tmp_file)
 
     eps, delta, ev0, ev1 = [ np.array(x) for x in eps, delta, ev0, ev1 ]
 
