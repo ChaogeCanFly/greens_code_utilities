@@ -43,9 +43,11 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
         Returns:
         --------
-            k_left, k_right: ndarrays
+            k_left, k_right: (N,) ndarrays
                 Bloch modes of left and right movers.
-            v_left, v_right: ndarrays (optional)
+            chi_left, chi_right: (N,N) ndarrays (optional)
+                Eigenvectors of left and right movers.
+            v_left, v_right: (N,) ndarrays (optional)
                 Velocities of left and right movers.
     """
 
@@ -115,10 +117,12 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         print "r_nx:", r_nx
         print "dx*r_nx:", dx*r_nx
 
-    if return_velocities:
+    if return_velocities and not return_eigenvectors:
         return k_left, k_right, v_left, v_right
-    elif return_eigenvectors:
+    elif return_eigenvectors and not return_velocities:
         return k_left, k_right, chi_left, chi_right
+    elif return_eigenvectors and return_velocities:
+        return k_left, k_right, chi_left, chi_right, v_left, v_right
     else:
         return k_left, k_right
 
