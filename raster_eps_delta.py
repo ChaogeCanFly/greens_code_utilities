@@ -112,6 +112,7 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
             subprocess.call(['gzip', evecs_file])
             xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
             shutil.copy("input.xml", xml_file)
+            subprocess.call(['gzip', xml_file])
             if not local:
                 tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
                 shutil.copy("tmp.out", tmp_file)
