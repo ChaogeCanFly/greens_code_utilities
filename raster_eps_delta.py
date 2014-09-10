@@ -106,13 +106,16 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
             # backup output files
             evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
             shutil.copy("Evals.sine_boundary.dat", evals_file)
+            subprocess.call(['gzip', evals_file])
             evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
             shutil.copy("Evecs.sine_boundary.dat", evecs_file)
+            subprocess.call(['gzip', evecs_file])
             xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
             shutil.copy("input.xml", xml_file)
             if not local:
                 tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
                 shutil.copy("tmp.out", tmp_file)
+                subprocess.call(['gzip', tmp_file])
 
     eps, delta, ev0, ev1 = [ np.array(x) for x in eps, delta, ev0, ev1 ]
 
