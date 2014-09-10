@@ -52,6 +52,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     """
 
     if modes is None or dx is None or r_nx is None:
+        print "Parameters 'modes', 'dx' and 'r_nx' not found. Reading xml file."
         params = XML(xml).params
         modes = params.get("modes")
         L = params.get("L")
@@ -116,6 +117,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         print "dx:", dx
         print "r_nx:", r_nx
         print "dx*r_nx:", dx*r_nx
+        print "|L - dx*r_nx|:", abs(L - dx*r_nx)
 
     if return_velocities and not return_eigenvectors:
         return k_left, k_right, v_left, v_right
