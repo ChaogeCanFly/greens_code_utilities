@@ -19,9 +19,6 @@ def unique_array(a):
     unique_a, idx = np.unique(a.view([('', a.dtype)] * ncols), return_index=True)
     unique_a = unique_a.view(a.dtype).reshape(-1, a.shape[1])
 
-    # unique returns as int64, so cast back
-    # idx = np.cast['uint32'](idx)
-
     return unique_a, idx
 
 
@@ -38,8 +35,10 @@ def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
     print len_eps
     print len_delta
 
+    print len(eps)
     _, idx = unique_array(np.array(zip(eps, delta)))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
+    print len(eps)
 
     idx = np.lexsort((delta, eps))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
@@ -56,7 +55,7 @@ def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
 
 @argh.arg("-p", "--png", type=str)
 @argh.arg("-l", "--limits", type=float, nargs="+")
-def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
+def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
                      reorder=False, jump=100., mayavi=False, limits=None,
                      girtsch=False, sort=False, png=None, full=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
@@ -66,8 +65,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
         -----------
             infile: str
                 Input file.
-            outfile: str
-                Output file for reordered arrays.
+            outfile: bool
+                Whether to reordere the arrays.
             reorder: bool
                 Whether to properly sort the input array.
             jump: float
@@ -88,7 +87,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile="bloch_reordered.tmp",
     """
     if reorder:
         print "reordering..."
-        reorder_file(infile, outfile)
+        reorder_file(infile, infile.replace(".dat", "_reordered.dat"))
         sys.exit()
 
     if girtsch:
