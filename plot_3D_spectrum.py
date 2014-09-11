@@ -223,13 +223,37 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         Z = np.sqrt(Z_imag**2 + Z_real**2)
 
         ax.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
-        im = ax.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('Blues_r'), vmin=0,
-                           shading='gouraud')
 
+        # OLD
+        # im = ax.pcolormesh(eps, delta, np.log(Z), cmap=plt.get_cmap('Blues_r'))
+
+        # add one column and row to meshgrids such that meshgrid doesn't cut 
+        # away any important data
+        eps_u = np.unique(eps)
+        delta_u = np.unique(delta)
+        eps0, delta0 = np.meshgrid(np.concatenate((eps_u, [2*eps.max()])),
+                                   np.concatenate((delta_u, [2*delta.max()])))
+        Z0 = np.c_[Z, Z[:,-1]]
+        Z0 = np.vstack((Z0, Z0[-1]))
+        im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0), cmap=plt.get_cmap('Blues_r'))
+                          # vmin=0., vmax=1., shading='gouraud')
+
+        # correct ticks
+        xoffset = np.diff(eps_u).mean()/2
+        yoffset = np.diff(delta_u).mean()/2
+        ax.set_xticks(eps_u + xoffset)
+        ax.set_yticks(delta_u + yoffset)
+
+        # ticklabels
+        ax.set_xticklabels(np.around(eps_u, decimals=4))
+        ax.set_yticklabels(np.around(delta_u, decimals=4))
+
+        # axis labels
         ax.set_xlabel("epsilon")
         ax.set_ylabel("delta")
-        ax.set_xlim(eps.min(), eps.max())
-        ax.set_ylim(delta.min(), delta.max())
+        ax.set_xlim(eps.min(), eps.max() + 2*xoffset)
+        ax.set_ylim(delta.min(), delta.max() + 2*yoffset)
+
         f.colorbar(im, ax=ax)
 
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
