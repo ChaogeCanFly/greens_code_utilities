@@ -51,7 +51,8 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     """
 
     if modes is None or dx is None or r_nx is None:
-        print "Parameters 'modes', 'dx' and 'r_nx' not found. Reading xml file."
+        print "# Parameters 'modes', 'dx' and 'r_nx' not found." 
+        print "# Reading xml file {}.".format(xml)
         params = XML(xml).params
         modes = params.get("modes")
         L = params.get("L")
@@ -81,20 +82,36 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                                                  1: convert_to_complex})
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
     k /= dx*r_nx
+
+    # --- experimental: sort the array according to velocities first, then
+    # fill v_left and v_right with left and rightmovers
+    # initial_sort = np.argsort(velocities.real)
+    # k = k[initial_sort]
+    # velocities = velocities[initial_sort]
+    # take care that other subroutines now use the correct order of k_l, k_r
+    # ---
+
     k_left = k[:len(k)/2]
     k_right = k[len(k)/2:]
 
     v_left = velocities[:len(k)/2]
     v_right = velocities[len(k)/2:]
 
-    if sort:
-        sort_left = np.argsort(abs(k_left.imag))
-        k_left = k_left[sort_left]
-        v_left = v_left[sort_left]
+    # --- experimental: len(v_left) != len(v_right)
+    # v_left = velocities[velocities.real < 0]
+    # v_right = velocities[velocities.real > 0]
+    # k_left = k[velocities.real < 0]
+    # k_right = k[velocities.real > 0]
+    # ---
 
+    if sort:
         sort_right = np.argsort(abs(k_right.imag))
         k_right = k_right[sort_right]
         v_right = v_right[sort_right]
+
+        sort_left = np.argsort(abs(k_left.imag))
+        k_left = k_left[sort_left]
+        v_left = v_left[sort_left]
 
         if return_eigenvectors:
             chi_left = chi_left[sort_left]
