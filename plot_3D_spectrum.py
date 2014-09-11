@@ -112,8 +112,13 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         ev0, ev1 = 1.*tmp0, 1.*tmp1
 
     # get eps/delta meshgrid
-    eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
-                              x in eps, delta, ev0, ev1 ]
+    try:
+        eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
+                                                    x in eps, delta, ev0, ev1 ]
+    except ValueError as e:
+        print e
+        print "shape(eps)", eps.shape
+        print "shape(delta)", delta.shape
 
     # set x/y limits
     if limits:

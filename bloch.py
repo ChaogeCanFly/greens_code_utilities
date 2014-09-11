@@ -10,10 +10,9 @@ from xmlparser import XML
 
 
 def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
-                    evecsfile='Evecs.sine_boundary.dat',
-                    modes=None, L=None, dx=None, r_nx=None, sort=True,
-                    fold_back=True, return_velocities=False, return_eigenvectors=False,
-                    verbose=True):
+                    evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
+                    dx=None, r_nx=None, sort=True, fold_back=True, return_velocities=False,
+                    return_eigenvectors=False, verbose=True):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -52,6 +51,8 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     """
 
     if modes is None or dx is None or r_nx is None:
+        print "# Parameters 'modes', 'dx' and 'r_nx' not found." 
+        print "# Reading xml file {}.".format(xml)
         params = XML(xml).params
         modes = params.get("modes")
         L = params.get("L")
@@ -66,12 +67,13 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     G = 2.*np.pi/L
 
     # get eigenvectors chi_n
-    chi = np.loadtxt(evecsfile, dtype=str)
-    chi = [ map(convert_to_complex, x) for x in chi ]
-    chi = np.asarray(chi)
+    if return_eigenvectors:
+        chi = np.loadtxt(evecsfile, dtype=str)
+        chi = [ map(convert_to_complex, x) for x in chi ]
+        chi = np.asarray(chi)
 
-    chi_left = chi[:len(chi)//2]
-    chi_right = chi[len(chi)//2:]
+        chi_left = chi[:len(chi)//2]
+        chi_right = chi[len(chi)//2:]
 
     # get beta = exp(i*K_n*dx) and group velocities v_n
     beta, velocities = np.genfromtxt(evalsfile, unpack=True,
@@ -80,25 +82,43 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                                                  1: convert_to_complex})
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
     k /= dx*r_nx
+
+    # --- experimental: sort the array according to velocities first, then
+    # fill v_left and v_right with left and rightmovers
+    # initial_sort = np.argsort(velocities.real)
+    # k = k[initial_sort]
+    # velocities = velocities[initial_sort]
+    # take care that other subroutines now use the correct order of k_l, k_r
+    # ---
+
     k_left = k[:len(k)/2]
     k_right = k[len(k)/2:]
 
     v_left = velocities[:len(k)/2]
     v_right = velocities[len(k)/2:]
 
-    if sort:
-        sort_left = np.argsort(abs(k_left.imag))
-        k_left = k_left[sort_left]
-        v_left = v_left[sort_left]
-        chi_left = chi_left[sort_left]
+    # --- experimental: len(v_left) != len(v_right)
+    # v_left = velocities[velocities.real < 0]
+    # v_right = velocities[velocities.real > 0]
+    # k_left = k[velocities.real < 0]
+    # k_right = k[velocities.real > 0]
+    # ---
 
+    if sort:
         sort_right = np.argsort(abs(k_right.imag))
         k_right = k_right[sort_right]
         v_right = v_right[sort_right]
-        chi_right = chi_right[sort_right]
+
+        sort_left = np.argsort(abs(k_left.imag))
+        k_left = k_left[sort_left]
+        v_left = v_left[sort_left]
+
+        if return_eigenvectors:
+            chi_left = chi_left[sort_left]
+            chi_right = chi_right[sort_right]
 
     if fold_back:
-        k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in 
+        k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in
                                                              k_left, k_right ]
         # map into 1.BZ
         for k in k_left, k_right:
@@ -116,6 +136,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         print "dx:", dx
         print "r_nx:", r_nx
         print "dx*r_nx:", dx*r_nx
+        print "|L - dx*r_nx|:", abs(L - dx*r_nx)
 
     if return_velocities and not return_eigenvectors:
         return k_left, k_right, v_left, v_right
