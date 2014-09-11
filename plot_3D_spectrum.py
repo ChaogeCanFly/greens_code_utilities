@@ -223,7 +223,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         Z = np.sqrt(Z_imag**2 + Z_real**2)
 
         ax.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
-        im = ax.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+        im = ax.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('Blues_r'), vmin=0,
+                           shading='gouraud')
 
         ax.set_xlabel("epsilon")
         ax.set_ylabel("delta")
