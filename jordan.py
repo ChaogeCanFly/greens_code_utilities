@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import subprocess
 import sys
 
@@ -96,8 +95,10 @@ class Jordan(object):
                 abs(dy) = {1}
                 self.dx = {2}
             """.format(abs(dx), abs(dy), self.dx)
-            dx = 1.1 * self.dx
-            dy = 1.1 * self.dx
+            self._print_and_save()
+            sys.exit()
+            # dx = 1.1 * self.dx
+            # dy = 1.1 * self.dx
 
         print "x0, x1", x0, x1
         print "y0, y1", y0, y1
@@ -110,49 +111,45 @@ class Jordan(object):
         #        (x1, y0)
         #        (x1, y1)
         for n, (x, y) in enumerate(parameters):
-            print "n,m", x, y
-            self._check_numerical_resolution(x)
-            self._update_boundary(x, y)
-
             # we dont need the values lambda_n(x0, y0)
             if n > 0:
+                print "n,m", x, y
+                self._check_numerical_resolution(x)
+                self._update_boundary(x, y)
                 self._run_code()
                 bloch_modes = bloch.get_eigensystem()
                 # take the first two right-movers & k1 -> k1 mod kr
-                #TODO: why column 0 and not 1 to access the right moving modes?
+                # TODO: why column 0 and not 1 to access the right moving modes?
                 bloch_modes = np.array(bloch_modes)[0,:2]
-                print "bloch_modes", bloch_modes
-                eigenvalues.append(bloch_modes)
+                F = np.abs(bloch_modes[0] - bloch_modes[1])
+                eigenvalues.append(F)
 
         self.evals.append([bloch_modes[0], bloch_modes[1]])
+        delta = F  # from last step
 
-        e1, e2 = bloch_modes.imag # x1, y1 (last step in parameters)
-        evals = np.asarray(eigenvalues).T.flatten().imag
+        F = np.asarray(eigenvalues).T
+        print "F", F
 
-        gradient = np.array([[1, -1, 0, 0, -1, 1],
-                             [0,  0, 1, -1, -1, 1]])
+        gradient = np.array([[-1,  0, 1],
+                             [ 0, -1, 1]])
 
-        gradient_x, gradient_y = gradient.dot(evals)
+        gradient_x, gradient_y = gradient.dot(F)
 
         gradient_x /= dx
         gradient_y /= dy
 
-        delta = e2-e1
-
         normsq = (np.abs(gradient_x)**2 +
                   np.abs(gradient_y)**2)
-        print "normsq: ", normsq
 
-        res_x = gradient_x/normsq * delta
-        res_y = gradient_y/normsq * delta
-
-        self.residual = np.sqrt(np.abs(res_x)**2 + np.abs(res_y)**2)
+        res_x, res_y  = [ g/normsq*delta for g in gradient_x, gradient_y ]
 
         print "res_x", res_x
         print "res_y", res_y
 
         x2 = x1 - res_x
         y2 = y1 - res_y
+
+        self.residual = np.sqrt(np.abs(res_x)**2 + np.abs(res_y)**2)
 
         return x2, y2
 
@@ -166,11 +163,10 @@ class Jordan(object):
         """.format(x, self.dx, int(x/self.dx))
 
     def _update_boundary(self, x, y):
-        # x, y = [ np.real(n) for n in x, y ]
 
         N = self.waveguide_params.get("N")
-        print "N:", N
         eta = self.waveguide_params.get("eta")
+        print "N:", N
         print "eta: ", eta
 
         k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
@@ -199,17 +195,19 @@ class Jordan(object):
 
     def _print_and_save(self):
         v1, v2 = np.array(self.values).T
-        e1, e2 = np.array(self.evals).T.imag
+        e1, e2 = np.array(self.evals).T
         for a, b, c, d in zip(v1, v2, e1, e2):
-            print a, b, c, d, abs(c-d)
-        np.savetxt(self.outfile, zip(v1, v2, e1, e2), fmt="%.6f")
+            print a, b, c.real, c.imag, d.real, d.imag, np.abs(c-d)
+        np.savetxt(self.outfile, zip(v1, v2, e1.real, e1.imag, e2.real, 
+                                     e2.imag, np.abs(e1-e2)), fmt="%.6f",
+                   header='eps delta Re(K0) Im(K0) Re(K1) Im(K1) abs(K0-K1)')
 
     def solve(self):
         #while self.residual > self.rtol:
-        for n in range(25):
+        for n in range(5):
             xi, yi = self._iterate()
             self.values.append([xi, yi])
-            #self._update_boundary(xi, yi)
+
             print "residual", self.residual
             print "rtol", self.rtol
             print "x, y:", self.values[-1]
@@ -229,7 +227,6 @@ class Jordan(object):
                 x, y = np.array(self.values).reshape(-1,2).T
                 plt.plot(x, y, "ro-")
                 for n, (x, y) in enumerate(self.values):
-                    # plt.plot(x, y, "ro")
                     plt.text(x, y, str(n), fontsize=12)
                 plt.show()
             else:
