@@ -198,12 +198,12 @@ class Jordan(object):
         e1, e2 = np.array(self.evals).T
         for a, b, c, d in zip(v1, v2, e1, e2):
             print a, b, c.real, c.imag, d.real, d.imag, np.abs(c-d)
-        np.savetxt(self.outfile, zip(v1, v2, e1.real, e1.imag, e2.real, 
+        np.savetxt(self.outfile, zip(v1, v2, e1.real, e1.imag, e2.real,
                                      e2.imag, np.abs(e1-e2)), fmt="%.6f",
                    header='eps delta Re(K0) Im(K0) Re(K1) Im(K1) abs(K0-K1)')
 
     def solve(self):
-        #while self.residual > self.rtol:
+        # while self.residual > self.rtol:
         for n in range(5):
             xi, yi = self._iterate()
             self.values.append([xi, yi])
@@ -244,7 +244,7 @@ def find_EP(x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6, executable='solve_xml_mumps',
             xml='input.xml', template='input.xml_template', interactive=False,
             **waveguide_params):
     J = Jordan(x0, y0, dx=dx, dy=dy, rtol=rtol, executable=executable,
-               outfile=outfile, evalsfile=evalsfile, xml=xml, template=template, 
+               outfile=outfile, evalsfile=evalsfile, xml=xml, template=template,
                interactive=interactive, **waveguide_params)
     J.solve()
 
