@@ -1,11 +1,14 @@
 #!/usr/bin/env python2.7
 
 import argh
-import xml.etree.ElementTree as ET
+try:
+    from lxml import etree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 
 class XML(object):
-    """Simple wrapper class for xml.etree.ElementTree.
+    """Simple wrapper class for xml.etree.ElementTree/lxml.etree.
 
         Parameters:
         -----------
@@ -72,7 +75,7 @@ def parse_xml(infile='input.xml'):
     xml = XML(infile)
 
     print """
-        XML-Settings from {xml}
+        XML-Settings from {0}
 
             modes:  {modes}
             pphw:   {points_per_halfwave:n}
@@ -83,7 +86,7 @@ def parse_xml(infile='input.xml'):
             dy:     {dy:.6f}
             r_nx:   {r_nx}
             r_ny:   {r_ny}
-        """.format(**xml.params)
+        """.format(infile, **xml.params)
 
 
 if __name__ == '__main__':
