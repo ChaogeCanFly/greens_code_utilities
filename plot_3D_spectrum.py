@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 try:
     import mayavi.mlab as mlab
-except:
+except ImportError:
     print "Warning: mayavi.mlab not found!"
 import sys
 
@@ -53,6 +53,26 @@ def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
     np.savetxt(outfile, v, fmt='%.18f')
 
 
+def find_outliers(eps):
+    """Find rows with missing values and return their index."""
+    error_values = []
+
+    for e in np.unique(eps):
+        e_count = np.count_nonzero(e == eps)
+        error_values.append(e_count)
+
+    e_max = max(error_values)
+
+    mask = np.ones_like(eps, dtype=bool)
+    for e in np.unique(eps):
+        e_count = np.count_nonzero(e == eps)
+        if e_count < e_max:
+            print "{:.6f}".format(e), e_count
+            mask[np.where(e == eps)] = False
+
+    return mask
+
+
 @argh.arg("-p", "--png", type=str)
 @argh.arg("-l", "--limits", type=float, nargs="+")
 def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
@@ -98,6 +118,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
         ev0 = ev0r + 1j*ev0i
         ev1 = ev1r + 1j*ev1i
+        # workound if precision changes for multiple runs
+        delta = np.around(delta, decimals=8)
         len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
 
     if reorder:
@@ -116,9 +138,11 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
                                                     x in eps, delta, ev0, ev1 ]
     except ValueError as e:
-        print e
-        print "shape(eps)", eps.shape
-        print "shape(delta)", delta.shape
+        print "Data matrix has missing values. Removing outliers:"
+        mask = find_outliers(eps)
+        len_masked_eps = len(np.unique(eps[mask]))
+        eps, delta, ev0, ev1 = [ x[mask].reshape(len_masked_eps, len_delta) for
+                                                    x in eps, delta, ev0, ev1 ]
 
     # set x/y limits
     if limits:
