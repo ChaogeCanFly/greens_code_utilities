@@ -141,7 +141,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         print "Data matrix has missing values. Removing outliers:"
         mask = find_outliers(eps)
         len_masked_eps = len(np.unique(eps[mask]))
-        eps, delta, ev0, ev1 = [ x[mask].reshape(len_masked_eps, len_delta) for
+        eps, delta, ev0, ev1 = [ x[mask].reshape(len_masked_eps, -1) for
                                                     x in eps, delta, ev0, ev1 ]
 
     # set x/y limits
