@@ -107,7 +107,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
     """
     if reorder:
         print "reordering..."
-        reorder_file(infile, infile.replace(".dat", "_reordered.dat"))
+        reorder_file(infile, infile + "_reordered"))
         sys.exit()
 
     if girtsch:
