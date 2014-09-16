@@ -59,14 +59,6 @@ class XML(object):
 
         params.update(values)
 
-        # self.__dict__.update(params)
-        # self.nyout = self.modes*self.points_per_halfwave
-        # self.dx = self.W/(self.nyout + 1.)
-        # self.dy = self.dx
-        # self.r_nx = int(self.L/self.dx)
-        # self.r_ny = int(self.W/self.dy)
-        # params.update(self.__dict__)
-
         return params
 
 
