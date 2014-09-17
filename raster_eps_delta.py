@@ -114,9 +114,13 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
             shutil.copy("input.xml", xml_file)
             subprocess.call(['gzip', xml_file])
             if not local:
-                tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
-                shutil.copy("tmp.out", tmp_file)
-                subprocess.call(['gzip', tmp_file])
+                # tmp.out is not written if job is part of a job-array
+                try:
+                    tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
+                    shutil.copy("tmp.out", tmp_file)
+                    subprocess.call(['gzip', tmp_file])
+                except:
+                    pass
             try:
                 jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
                 shutil.copy("pic.geometry.sine_boundary.1.jpg", jpg_file)
