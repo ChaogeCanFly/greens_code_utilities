@@ -117,6 +117,12 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
                 tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
                 shutil.copy("tmp.out", tmp_file)
                 subprocess.call(['gzip', tmp_file])
+            try:
+                jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
+                shutil.copy("pic.geometry.sine_boundary.1.jpg", jpg_file)
+                subprocess.call(['gzip', jpg_file])
+            except:
+                pass
 
     eps, delta, ev0, ev1 = [ np.array(x) for x in eps, delta, ev0, ev1 ]
 
