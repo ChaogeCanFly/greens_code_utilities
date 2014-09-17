@@ -104,15 +104,18 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
                                                      bloch_modes[1].real,
                                                      bloch_modes[1].imag))
             # backup output files
-            evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-            shutil.copy("Evals.sine_boundary.dat", evals_file)
-            subprocess.call(['gzip', evals_file])
-            evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-            shutil.copy("Evecs.sine_boundary.dat", evecs_file)
-            subprocess.call(['gzip', evecs_file])
-            xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-            shutil.copy("input.xml", xml_file)
-            subprocess.call(['gzip', xml_file])
+            try:
+                evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                shutil.copy("Evals.sine_boundary.dat", evals_file)
+                subprocess.call(['gzip', evals_file])
+                evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                shutil.copy("Evecs.sine_boundary.dat", evecs_file)
+                subprocess.call(['gzip', evecs_file])
+                xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                shutil.copy("input.xml", xml_file)
+                subprocess.call(['gzip', xml_file])
+            except:
+                pass
             if not local:
                 # tmp.out is not written if job is part of a job-array
                 try:
