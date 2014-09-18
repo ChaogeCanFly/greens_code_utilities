@@ -13,20 +13,22 @@ from ep.waveguide import Waveguide
 from helpers import replace_in_file
 
 
-def run_code(local=False):
-    print "running code..."
-    if local:
-        cmd = "solve_xml_mumps"
-    else:
+def run_code():
+    if os.environ.get('TMPDIR') and os.environ.get('NSLOTS'):
+        print "running code on cluster..."
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
         cmd = "mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} solve_xml_mumps".format(**os.environ)
+    else:
+        print "running code locally..."
+        cmd = "solve_xml_mumps"
+
     subprocess.call(cmd.split())
 
 
 @argh.arg("--eps", type=float, nargs="+")
 @argh.arg("--delta", type=float, nargs="+")
-def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
+def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
                      xml_template="input.xml_template", eps=[0.01, 0.1, 30],
                      delta=[0.3, 0.7, 50], dryrun=False):
 
@@ -39,14 +41,13 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
     delta_range = np.linspace(*delta)
     print "eps_range", eps_range
     print "delta_range", delta_range
-    print "len(eps)*len(delta)", len(eps_range)*len(delta_range)
 
     # check if eps/delta values can be resolved
     r_ny_eps = (eps_range*(N*pphw+1)).astype(int)
     r_nx_L = (abs(2*np.pi/(kr + delta_range))*(N*pphw+1)).astype(int)
-
     print "grid-points per full amplitude eps", r_ny_eps
     print "grid-points per length L", r_nx_L
+    print r_nx_L.max()
 
     if np.any(np.diff(r_ny_eps) < 1):
         print """
@@ -65,17 +66,20 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
     if dryrun:
         sys.exit()
 
-    def update_boundary(x, y):
-        L = abs(2*np.pi/(k0 - k1 + y))
+    def update_boundary(eps, delta):
+        L = abs(2*np.pi/(k0 - k1 + delta))
 
+        # choose discretization such that r_nx < len(x_range)
+        x_range = np.linspace(0, L, r_nx_L.max()+1)
         WG = Waveguide(L=L, loop_type='Constant', N=N, eta=eta)
-        WG.x_EP = x
-        WG.y_EP = y
+        # WG.x_EP = x
+        # WG.y_EP = y
 
-        xi_lower, xi_upper = WG.get_boundary(eps=x, delta=y)
+        xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
+        print "xi_lower.shape", xi_lower.shape
 
-        np.savetxt("lower.profile", zip(WG.t, xi_lower))
-        np.savetxt("upper.profile", zip(WG.t, xi_upper))
+        np.savetxt("lower.profile", zip(x_range, xi_lower))
+        np.savetxt("upper.profile", zip(x_range, xi_upper))
 
         N_file = len(WG.t)
         replacements = {'L"> L':             'L"> {}'.format(L),
@@ -90,40 +94,41 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
     for e in eps_range:
         for d in delta_range:
             update_boundary(e, d)
-            run_code(local=local)
-            bloch_modes = bloch.get_eigensystem()
-            # TODO: why column 0 and not 1 to access the right moving modes?
-            bloch_modes = np.array(bloch_modes)[0, :2]
-            ev0.append(bloch_modes[0])
-            ev1.append(bloch_modes[1])
-            eps.append(e)
-            delta.append(d)
-            with open(tmp, "a") as f:
-                f.write("{} {} {} {} {} {}\n".format(e, d, bloch_modes[0].real,
-                                                     bloch_modes[0].imag,
-                                                     bloch_modes[1].real,
-                                                     bloch_modes[1].imag))
-            # backup output files
+            run_code()
             try:
-                evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-                shutil.copy("Evals.sine_boundary.dat", evals_file)
-                subprocess.call(['gzip', evals_file])
-                evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-                shutil.copy("Evecs.sine_boundary.dat", evecs_file)
-                subprocess.call(['gzip', evecs_file])
-                xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-                shutil.copy("input.xml", xml_file)
-                subprocess.call(['gzip', xml_file])
+                bloch_modes = bloch.get_eigensystem()
+                # TODO: why column 0 and not 1 to access the right moving modes?
+                bloch_modes = np.array(bloch_modes)[0, :2]
+                ev0.append(bloch_modes[0])
+                ev1.append(bloch_modes[1])
+                eps.append(e)
+                delta.append(d)
+                with open(tmp, "a") as f:
+                    f.write("{} {} {} {} {} {}\n".format(e, d,
+                                                         bloch_modes[0].real,
+                                                         bloch_modes[0].imag,
+                                                         bloch_modes[1].real,
+                                                         bloch_modes[1].imag))
+                    # backup output files
+                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    shutil.copy("Evals.sine_boundary.dat", evals_file)
+                    subprocess.call(['gzip', evals_file])
+                    evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    shutil.copy("Evecs.sine_boundary.dat", evecs_file)
+                    subprocess.call(['gzip', evecs_file])
+                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    shutil.copy("input.xml", xml_file)
+                    subprocess.call(['gzip', xml_file])
             except:
                 pass
-            if not local:
-                # tmp.out is not written if job is part of a job-array
-                try:
-                    tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
-                    shutil.copy("tmp.out", tmp_file)
-                    subprocess.call(['gzip', tmp_file])
-                except:
-                    pass
+            # tmp.out is not written if job is part of a job-array
+            try:
+                tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
+                shutil.copy("tmp.out", tmp_file)
+                subprocess.call(['gzip', tmp_file])
+            except:
+                pass
+            # be backwards compatible in case no jpg is written
             try:
                 jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
                 shutil.copy("pic.geometry.sine_boundary.1.jpg", jpg_file)
@@ -132,7 +137,6 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml", local=False,
                 pass
 
     eps, delta, ev0, ev1 = [ np.array(x) for x in eps, delta, ev0, ev1 ]
-
     np.savetxt("bloch_modes.dat", zip(eps, delta,
                                       ev0.real, ev0.imag,
                                       ev1.real, ev1.imag))
