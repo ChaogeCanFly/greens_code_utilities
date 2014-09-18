@@ -47,7 +47,6 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
     r_nx_L = (abs(2*np.pi/(kr + delta_range))*(N*pphw+1)).astype(int)
     print "grid-points per full amplitude eps", r_ny_eps
     print "grid-points per length L", r_nx_L
-    print r_nx_L.max()
 
     if np.any(np.diff(r_ny_eps) < 1):
         print """
