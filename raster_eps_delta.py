@@ -81,7 +81,8 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
         np.savetxt("lower.profile", zip(x_range, xi_lower))
         np.savetxt("upper.profile", zip(x_range, xi_upper))
 
-        N_file = len(WG.t)
+        # N_file = len(WG.t)
+        N_file = len(x_range)
         replacements = {'L"> L':             'L"> {}'.format(L),
                         'wave"> pphw':       'wave"> {}'.format(pphw),
                         'N_file"> N_file':   'N_file"> {}'.format(N_file),
