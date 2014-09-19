@@ -69,7 +69,8 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
         L = abs(2*np.pi/(k0 - k1 + delta))
 
         # choose discretization such that r_nx < len(x_range)
-        x_range = np.linspace(0, L, r_nx_L.max()+1)
+        r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
+        x_range = np.linspace(0, L, r_nx_L)
         WG = Waveguide(L=L, loop_type='Constant', N=N, eta=eta)
         # WG.x_EP = x
         # WG.y_EP = y
