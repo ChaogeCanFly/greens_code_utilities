@@ -22,7 +22,7 @@ def unique_array(a):
     return unique_a, idx
 
 
-def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
+def reorder_file(infile="bloch.tmp", outfile=None):
     """Reorder a file containing a function on a shuffled meshgrid."""
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile, unpack=True)
@@ -50,7 +50,10 @@ def reorder_file(infile="bloch.tmp", outfile="bloch_reordered.tmp"):
     print "len(eps)", len(np.unique(eps))
     print "len(delta)", len(np.unique(delta))
 
-    np.savetxt(outfile, v, fmt='%.18f')
+    if outfile:
+        np.savetxt(outfile, v, fmt='%.18f')
+    else:
+        return eps, delta, ev0, ev1
 
 
 def find_outliers(eps):
@@ -105,10 +108,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
             full: bool
                 Add additional heatmap plots.
     """
-    if reorder:
-        print "reordering..."
-        reorder_file(infile, infile + "_reordered")
-        sys.exit()
+    # if reorder:
+    #     print "reordering..."
+    #     reorder_file(infile, infile + "_reordered")
+    #     sys.exit()
 
     if girtsch:
         eps, delta, ev0, ev1 = np.loadtxt(infile, dtype=complex).T
@@ -123,8 +126,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
 
     if reorder:
-        ind = np.lexsort((delta, eps))
-        eps, delta, ev0, ev1 = [ x[ind] for x in eps, delta, ev0, ev1 ]
+        print "reordering..."
+        eps, delta, ev0, ev1 = reorder_file(infile)
 
     if sort:
         tmp0, tmp1 = 1.*ev0, 1.*ev1
