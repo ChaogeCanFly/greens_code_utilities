@@ -22,7 +22,7 @@ def unique_array(a):
     return unique_a, idx
 
 
-def reorder_file(infile="bloch.tmp", outfile=None):
+def reorder_file(infile="bloch.tmp"):
     """Reorder a file containing a function on a shuffled meshgrid."""
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile, unpack=True)
@@ -32,28 +32,18 @@ def reorder_file(infile="bloch.tmp", outfile=None):
 
     len_eps = len(np.unique(eps))
     len_delta = len(np.unique(delta))
-    print len_eps
-    print len_delta
 
-    print len(eps)
     _, idx = unique_array(np.array(zip(eps, delta)))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
-    print len(eps)
 
     idx = np.lexsort((delta, eps))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
 
-    v = np.array(zip(eps, delta, ev0.real, ev0.imag, ev1.real, ev1.imag))
 
     len_eps = len(np.unique(eps))
     len_delta = len(np.unique(delta))
-    print "len(eps)", len(np.unique(eps))
-    print "len(delta)", len(np.unique(delta))
 
-    if outfile:
-        np.savetxt(outfile, v, fmt='%.18f')
-    else:
-        return eps, delta, ev0, ev1
+    return eps, delta, ev0, ev1
 
 
 def find_outliers(eps):
@@ -78,7 +68,8 @@ def find_outliers(eps):
 
 @argh.arg("-p", "--png", type=str)
 @argh.arg("-l", "--limits", type=float, nargs="+")
-def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
+@argh.arg("-o", "--outfile", type=str)
+def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
                      girtsch=False, sort=False, png=None, full=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
@@ -88,8 +79,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         -----------
             infile: str
                 Input file.
-            outfile: bool
-                Whether to reordere the arrays.
+            outfile: str
+                Whether to save the reordered and sorted array before plotting.
             reorder: bool
                 Whether to properly sort the input array.
             jump: float
@@ -108,10 +99,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
             full: bool
                 Add additional heatmap plots.
     """
-    # if reorder:
-    #     print "reordering..."
-    #     reorder_file(infile, infile + "_reordered")
-    #     sys.exit()
 
     if girtsch:
         eps, delta, ev0, ev1 = np.loadtxt(infile, dtype=complex).T
@@ -156,6 +143,12 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
         for X in eps, delta, ev0, ev1:
             X[~mask] = np.nan
 
+    if outfile:
+        v = (eps, delta, ev0.real, ev0.imag, ev1.real, ev1.imag)
+        v = np.array([ x.flatten() for x in v ])
+        np.savetxt(outfile, v.T, fmt='%.18f')
+        sys.exit()
+
     # remove Nan values
     ev0 = np.ma.masked_where(np.isnan(ev0), ev0)
     ev1 = np.ma.masked_where(np.isnan(ev1), ev1)
@@ -166,6 +159,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=False,
     print "Approximate EP location:"
     print "eps_EP =", eps[i,j]
     print "delta_EP =", delta[i,j]
+
 
     if mayavi:
         # real part
