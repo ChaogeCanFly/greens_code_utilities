@@ -140,7 +140,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
         delta_min, delta_max = limits[2:]
         mask = ((eps > eps_min) & (eps < eps_max) &
                 (delta > delta_min) & (delta < delta_max))
-        for X in eps, delta, ev0, ev1:
+        for X in ev0, ev1:
             X[~mask] = np.nan
 
     if outfile:
@@ -236,7 +236,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
     else:
         f, ax = plt.subplots(nrows=1, ncols=1, sharex=True, sharey=True)
 
-        plt.xticks(rotation=70)
+        plt.xticks(rotation=90)
         plt.suptitle(infile)
 
         Z_real = abs(ev1.real - ev0.real)
@@ -244,9 +244,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
         Z = np.sqrt(Z_imag**2 + Z_real**2)
 
         ax.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
-
-        # OLD
-        # im = ax.pcolormesh(eps, delta, np.log(Z), cmap=plt.get_cmap('Blues_r'))
 
         # add one column and row to meshgrids such that meshgrid doesn't cut 
         # away any important data
@@ -257,7 +254,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
         Z0 = np.c_[Z, Z[:,-1]]
         Z0 = np.vstack((Z0, Z0[-1]))
         im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0), cmap=plt.get_cmap('Blues_r'))
-                          # vmin=0., vmax=1., shading='gouraud')
 
         # correct ticks
         xoffset = np.diff(eps_u).mean()/2
@@ -266,14 +262,19 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
         ax.set_yticks(delta_u + yoffset)
 
         # ticklabels
-        ax.set_xticklabels(np.around(eps_u, decimals=4))
-        ax.set_yticklabels(np.around(delta_u, decimals=4))
+        # ax.set_xticklabels(np.around(eps_u, decimals=4))
+        # ax.set_yticklabels(np.around(delta_u, decimals=4))
 
         # axis labels
         ax.set_xlabel("epsilon")
         ax.set_ylabel("delta")
-        ax.set_xlim(eps.min(), eps.max() + 2*xoffset)
-        ax.set_ylim(delta.min(), delta.max() + 2*yoffset)
+        if limits:
+            print limits
+            ax.set_xlim(limits[0], limits[1])
+            ax.set_ylim(limits[2], limits[3])
+        else:
+            ax.set_xlim(eps.min(), eps.max() + 2*xoffset)
+            ax.set_ylim(delta.min(), delta.max() + 2*yoffset)
 
         f.colorbar(im, ax=ax)
 
