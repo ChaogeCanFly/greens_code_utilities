@@ -38,6 +38,8 @@ class Jordan(object):
                 Parameters of the ep.waveguide.Waveguide class.
             interactive: bool
                 Whether to run the program interactively.
+            pphw: int
+                Number of grid-points per half wavelength.
 
         Attributes:
         -----------
@@ -54,7 +56,7 @@ class Jordan(object):
     def __init__(self, x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6,
                  executable='solve_xml_mumps', outfile='jordan.out',
                  evalsfile='Evals.sine_boundary.dat',
-                 template='input.xml_template',
+                 template='input.xml_template', pphw=100,
                  xml='input.xml', interactive=False, **waveguide_params):
 
         self.values = [[x0, y0], [x0+dx, y0+dy]]
@@ -66,6 +68,7 @@ class Jordan(object):
         self.outfile = outfile
         self.evalsfile = evalsfile
         self.template = template
+        self.pphw = pphw
         self.xml = xml
         self.waveguide_params = waveguide_params
 
@@ -125,7 +128,7 @@ class Jordan(object):
                 eigenvalues.append(F)
 
         self.evals.append([bloch_modes[0], bloch_modes[1]])
-        delta = F  # from last step
+        delta = F/2  # from last step
 
         F = np.asarray(eigenvalues).T
         print "F", F
@@ -188,6 +191,7 @@ class Jordan(object):
 
         N_file = len(WG.t)
         replacements = {'L"> L':           'L"> {}'.format(L),
+                        'wave"> pphw':     'wave"> {}'.format(self.pphw),
                         'N_file"> N_file': 'N_file"> {}'.format(N_file),
                         'Gamma0"> Gamma0': 'Gamma0"> {}'.format(eta)}
 
@@ -196,15 +200,15 @@ class Jordan(object):
     def _print_and_save(self):
         v1, v2 = np.array(self.values).T
         e1, e2 = np.array(self.evals).T
-        for a, b, c, d in zip(v1, v2, e1, e2):
-            print a, b, c.real, c.imag, d.real, d.imag, np.abs(c-d)
-        np.savetxt(self.outfile, zip(v1, v2, e1.real, e1.imag, e2.real,
-                                     e2.imag, np.abs(e1-e2)), fmt="%.6f",
-                   header='eps delta Re(K0) Im(K0) Re(K1) Im(K1) abs(K0-K1)')
+        for n, a, b, c, d in zip(range(len(v1)), v1, v2, e1, e2):
+            print n, a, b, c.real, c.imag, d.real, d.imag, np.abs(c-d)
+        np.savetxt(self.outfile, zip(range(len(v1)), v1, v2, e1.real, e1.imag, 
+                                 e2.real, e2.imag, np.abs(e1-e2)), fmt="%.6f",
+                   header='n eps delta Re(K0) Im(K0) Re(K1) Im(K1) abs(K0-K1)')
 
     def solve(self):
         # while self.residual > self.rtol:
-        for n in range(5):
+        for n in range(10):
             xi, yi = self._iterate()
             self.values.append([xi, yi])
 
@@ -240,12 +244,13 @@ class Jordan(object):
 @argh.arg('-N', '--N', type=float)
 @argh.arg('--eta', type=float)
 def find_EP(x0, y0, dx=1e-2, dy=1e-2, rtol=1e-6, executable='solve_xml_mumps',
-            outfile='jordan.out', evalsfile='Evals.sine_boundary.dat',
+            outfile='jordan.out', evalsfile='Evals.sine_boundary.dat', pphw=100,
             xml='input.xml', template='input.xml_template', interactive=False,
             **waveguide_params):
     J = Jordan(x0, y0, dx=dx, dy=dy, rtol=rtol, executable=executable,
-               outfile=outfile, evalsfile=evalsfile, xml=xml, template=template,
-               interactive=interactive, **waveguide_params)
+               outfile=outfile, evalsfile=evalsfile, pphw=pphw,
+               xml=xml, template=template, interactive=interactive, 
+               **waveguide_params)
     J.solve()
 
 
