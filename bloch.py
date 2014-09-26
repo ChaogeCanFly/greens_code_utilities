@@ -51,8 +51,9 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     """
 
     if modes is None or dx is None or r_nx is None:
-        print "# Parameters 'modes', 'dx' and 'r_nx' not found." 
-        print "# Reading xml file {}.".format(xml)
+        if verbose:
+            print "# Parameters 'modes', 'dx' and 'r_nx' not found."
+            print "# Reading xml file {}.".format(xml)
         params = XML(xml).params
         modes = params.get("modes")
         L = params.get("L")
