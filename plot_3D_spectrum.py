@@ -123,6 +123,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
 
         ev0, ev1 = 1.*tmp0, 1.*tmp1
 
+
     # get eps/delta meshgrid
     try:
         eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
@@ -171,19 +172,19 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
             mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
 
             # e[mask] = np.nan
-            fig = mlab.figure(0, bgcolor=(0.5,0.5,0.5))
-            m = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
-            m.actor.actor.scale = (5,1,1)
+            mlab.figure(0, bgcolor=(0.5,0.5,0.5))
+            m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
+            m1.actor.actor.scale = (5,1,1)
 
         mlab.title("Real part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
                   zlabel="Re(K)")
 
         # imag part
-        fig = mlab.figure(1, bgcolor=(0.5,0.5,0.5))
+        mlab.figure(1, bgcolor=(0.5,0.5,0.5))
         for e in ev0, ev1:
-            mlab.mesh(eps.real, delta.real, e.imag)
-            m.actor.actor.scale = (5,1,1)
+            m2 = mlab.mesh(eps.real, delta.real, e.imag)
+            m2.actor.actor.scale = (5,1,1)
         mlab.title("Imaginary part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
                   zlabel="Im(K)")
