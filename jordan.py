@@ -89,6 +89,8 @@ class Jordan(object):
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
         dx, dy = x1-x0, y1-y0
+        dx = 1.1 * self.dx
+        dy = 1.1 * self.dx
 
         if abs(dx) < self.dx or abs(dy) < self.dx:
             print """
@@ -109,32 +111,35 @@ class Jordan(object):
 
         eigenvalues = []
         parameters = [ (n,m) for n in x0, x1 for m in y0, y1 ]
-        # order: (x0, y0)
-        #        (x0, y1)
-        #        (x1, y0)
-        #        (x1, y1)
-        for n, (x, y) in enumerate(parameters):
-            # we dont need the values lambda_n(x0, y0)
-            if n > 0:
-                print "n,m", x, y
-                self._check_numerical_resolution(x)
-                self._update_boundary(x, y)
-                self._run_code()
-                bloch_modes = bloch.get_eigensystem()
-                # take the first two right-movers & k1 -> k1 mod kr
-                # TODO: why column 0 and not 1 to access the right moving modes?
-                bloch_modes = np.array(bloch_modes)[0,:2]
-                F = np.abs(bloch_modes[0] - bloch_modes[1])
-                eigenvalues.append(F)
+        # order: (x0, y0) -> (x_i,   y_i)
+        #        (x0, y1) -> (x_i,   y_i+1)
+        #        (x1, y0) -> (x_i+1, y_i)
+        #        (x1, y1) -> (x_i+1, y_i+1)
+        if 1:
+            for n, (x, y) in enumerate(parameters):
+                # we dont need the values lambda_n(x_i+1, y_i+1)
+                if n < 3:
+                    print "n,m", x, y
+                    self._check_numerical_resolution(x)
+                    self._update_boundary(x, y)
+                    self._run_code()
+                    # take the first two right-movers & k1 -> k1 mod kr
+                    # TODO: why column 0 and not 1 to access the right moving modes?
+                    bloch_modes = np.array(bloch.get_eigensystem())[0,:2]
+                    F = np.abs(bloch_modes[0] - bloch_modes[1])
+                    print F == np.abs(np.array([1,-1]).dot(bloch_modes))
+                    eigenvalues.append(F)
+        else:
+            # alternative
+            pass
 
-        self.evals.append([bloch_modes[0], bloch_modes[1]])
-        delta = F/2  # from last step
-
+        self.evals.append([bloch_modes[0],
+                           bloch_modes[1]])
+        delta = F/2.
         F = np.asarray(eigenvalues).T
-        print "F", F
 
-        gradient = np.array([[-1,  0, 1],
-                             [ 0, -1, 1]])
+        gradient = np.array([[-1, 0, 1],
+                             [-1, 1, 0]])
 
         gradient_x, gradient_y = gradient.dot(F)
 
