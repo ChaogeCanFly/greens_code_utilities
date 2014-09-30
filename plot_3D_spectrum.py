@@ -30,18 +30,11 @@ def reorder_file(infile="bloch.tmp"):
     ev0 = ev0r+1j*ev0i
     ev1 = ev1r+1j*ev1i
 
-    len_eps = len(np.unique(eps))
-    len_delta = len(np.unique(delta))
-
     _, idx = unique_array(np.array(zip(eps, delta)))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
 
     idx = np.lexsort((delta, eps))
     eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
-
-
-    len_eps = len(np.unique(eps))
-    len_delta = len(np.unique(delta))
 
     return eps, delta, ev0, ev1
 
@@ -123,7 +116,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
 
         ev0, ev1 = 1.*tmp0, 1.*tmp1
 
-
     # get eps/delta meshgrid
     try:
         eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
@@ -161,7 +153,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
     print "eps_EP =", eps[i,j]
     print "delta_EP =", delta[i,j]
 
-
     if mayavi:
         # real part
         for e in ev0, ev1:
@@ -195,30 +186,31 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
 
         plt.xticks(rotation=70)
         plt.suptitle(infile)
+        cmap = plt.get_cmap('Blues_r')
 
         ax1.set_title(r"$\Re K_0$")
-        im1 = ax1.pcolormesh(eps, delta, ev0.real, cmap=plt.get_cmap('coolwarm'))
+        im1 = ax1.pcolormesh(eps, delta, ev0.real, cmap=cmap)
         ax2.set_title(r"$\Im K_0$")
-        im2 = ax2.pcolormesh(eps, delta, ev0.imag, cmap=plt.get_cmap('coolwarm'))
+        im2 = ax2.pcolormesh(eps, delta, ev0.imag, cmap=cmap)
         ax3.set_title(r"$\Re K_1$")
-        im3 = ax3.pcolormesh(eps, delta, ev1.real, cmap=plt.get_cmap('coolwarm'))
+        im3 = ax3.pcolormesh(eps, delta, ev1.real, cmap=cmap)
         ax4.set_title(r"$\Im K_1$")
-        im4 = ax4.pcolormesh(eps, delta, ev1.imag, cmap=plt.get_cmap('coolwarm'))
+        im4 = ax4.pcolormesh(eps, delta, ev1.imag, cmap=cmap)
 
         ax5.set_title(r"$|\Re K_0 - \Re K_1|^2$")
         Z_real = abs(ev1.real - ev0.real)
-        im5 = ax5.pcolormesh(eps, delta, Z_real, cmap=plt.get_cmap('gray'), vmin=0)
+        im5 = ax5.pcolormesh(eps, delta, Z_real, cmap=cmap, vmin=0)
         ax6.set_title(r"$|\Im K_0 - \Im K_1|^2$")
         Z_imag = abs(ev1.imag - ev0.imag)
-        im6 = ax6.pcolormesh(eps, delta, Z_imag, cmap=plt.get_cmap('gray'), vmin=0)
+        im6 = ax6.pcolormesh(eps, delta, Z_imag, cmap=cmap, vmin=0)
 
         Z = np.sqrt(Z_imag**2 + Z_real**2)
         ax7.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
-        im7 = ax7.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+        im7 = ax7.pcolormesh(eps, delta, Z, cmap=cmap, vmin=0)
 
         Z = (Z_imag**2 + Z_real**2)**0.25
         ax8.set_title(r"$\sqrt[4]{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
-        im8 = ax8.pcolormesh(eps, delta, Z, cmap=plt.get_cmap('gray'), vmin=0)
+        im8 = ax8.pcolormesh(eps, delta, Z, cmap=cmap, vmin=0)
 
         for im, ax in zip((im1, im2, im3, im4, im5, im6, im7, im8),
                           (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8)):
@@ -254,7 +246,9 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
                                    np.concatenate((delta_u, [2*delta.max()])))
         Z0 = np.c_[Z, Z[:,-1]]
         Z0 = np.vstack((Z0, Z0[-1]))
-        im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0), cmap=plt.get_cmap('Blues_r'))
+        # im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
+        im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
+                           cmap=plt.get_cmap('Blues_r'))
 
         # correct ticks
         xoffset = np.diff(eps_u).mean()/2
