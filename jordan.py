@@ -135,7 +135,7 @@ class Jordan(object):
 
         self.evals.append([bloch_modes[0],
                            bloch_modes[1]])
-        delta = 0.02 #F/2.
+        delta = 0.01
         F = np.asarray(eigenvalues).T
 
         gradient = np.array([[-1, 0, 1],
@@ -146,10 +146,9 @@ class Jordan(object):
         gradient_x /= dx
         gradient_y /= dy
 
-        normsq = (np.abs(gradient_x)**2 +
-                  np.abs(gradient_y)**2)
+        norm = np.sqrt(np.abs(gradient_x)**2 + np.abs(gradient_y)**2)
 
-        res_x, res_y  = [ g/normsq*delta for g in gradient_x, gradient_y ]
+        res_x, res_y  = [ g/norm*delta for g in gradient_x, gradient_y ]
 
         print "res_x", res_x
         print "res_y", res_y
@@ -214,7 +213,10 @@ class Jordan(object):
     def solve(self):
         # while self.residual > self.rtol:
         for n in range(10):
-            xi, yi = self._iterate()
+            try:
+                xi, yi = self._iterate()
+            except:
+                self._print_and_save()
             self.values.append([xi, yi])
 
             print "residual", self.residual
