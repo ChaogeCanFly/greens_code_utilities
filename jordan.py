@@ -135,7 +135,7 @@ class Jordan(object):
 
         self.evals.append([bloch_modes[0],
                            bloch_modes[1]])
-        delta = F/2.
+        delta = 0.02 #F/2.
         F = np.asarray(eigenvalues).T
 
         gradient = np.array([[-1, 0, 1],

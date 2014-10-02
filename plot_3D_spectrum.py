@@ -62,7 +62,8 @@ def find_outliers(eps):
 @argh.arg("-p", "--png", type=str)
 @argh.arg("-l", "--limits", type=float, nargs="+")
 @argh.arg("-o", "--outfile", type=str)
-def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
+@argh.arg("-t", "--trajectory", type=str)
+def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
                      girtsch=False, sort=False, png=None, full=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
@@ -91,6 +92,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
                 Save the heatmap plots in a .png file.
             full: bool
                 Add additional heatmap plots.
+            trajectory: str
+                Plot a gradient-descent trajectory on top of the heatmap.
     """
 
     if girtsch:
@@ -275,6 +278,13 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None,
 
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
         plt.subplots_adjust(top=0.875)
+
+        if trajectory:
+            n, eps, delta = np.loadtxt(trajectory, unpack=True)[:3]
+            plt.plot(eps, delta, "ro-")
+            for n, (eps, delta) in enumerate(zip(eps, delta)):
+                plt.text(eps, delta, str(n), fontsize=12)
+
 
         if png:
             plt.savefig(png)
