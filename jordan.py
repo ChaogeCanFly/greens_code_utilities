@@ -89,8 +89,8 @@ class Jordan(object):
     def _iterate(self):
         (x0, y0), (x1, y1) = self.values[-2:]
         dx, dy = x1-x0, y1-y0
-        dx = 1.1 * self.dx
-        dy = 1.1 * self.dx
+        # dx = 1.1 * self.dx
+        # dy = 1.1 * self.dx
 
         if abs(dx) < self.dx or abs(dy) < self.dx:
             print """
@@ -217,6 +217,7 @@ class Jordan(object):
                 xi, yi = self._iterate()
             except:
                 self._print_and_save()
+                sys.exit()
             self.values.append([xi, yi])
 
             print "residual", self.residual
