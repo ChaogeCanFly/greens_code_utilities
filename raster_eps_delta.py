@@ -18,7 +18,8 @@ def run_code():
         print "running code on cluster..."
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
-        cmd = "mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} solve_xml_mumps".format(**os.environ)
+        cmd = ("mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} "
+               "solve_xml_mumps").format(**os.environ)
     else:
         print "running code locally..."
         cmd = "solve_xml_mumps"
@@ -90,57 +91,67 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
 
         replace_in_file(xml_template, xml, **replacements)
 
-    eps, delta, ev0, ev1 = [ [] for n in range(4) ]
+    # parameters, eigenvalues and eigenvectors
+    eps, delta, ev0, ev1, overlap = [ [] for n in range(5) ]
     tmp = "bloch.tmp"
     for e in eps_range:
         for d in delta_range:
             update_boundary(e, d)
             run_code()
             try:
-                bloch_modes = bloch.get_eigensystem()
+                ##bloch_evals = bloch.get_eigensystem()
                 # TODO: why column 0 and not 1 to access the right moving modes?
-                bloch_modes = np.array(bloch_modes)[0, :2]
-                ev0.append(bloch_modes[0])
-                ev1.append(bloch_modes[1])
+                ##bloch_evals = np.array(bloch_evals)[0, :2]
+                # if bloch.get_eigensystem is not called with modes, dx, etc.,
+                # these values are read from the xml file
+                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True)
+                bloch_evals, bloch_evecs = [ np.array(x)[:2] for x in bloch_evals, bloch_evecs ]
+                bloch_evecs_overlap = (np.abs(bloch_evecs[0]-bloch_evecs[1])**2).sum()
+                print "overlap", bloch_evecs_overlap
+
+                ev0.append(bloch_evals[0])
+                ev1.append(bloch_evals[1])
+                overlap.append(bloch_evecs_overlap)
                 eps.append(e)
                 delta.append(d)
                 with open(tmp, "a") as f:
                     f.write("{} {} {} {} {} {}\n".format(e, d,
-                                                         bloch_modes[0].real,
-                                                         bloch_modes[0].imag,
-                                                         bloch_modes[1].real,
-                                                         bloch_modes[1].imag))
+                                                            bloch_evals[0].real,
+                                                            bloch_evals[0].imag,
+                                                            bloch_evals[1].real,
+                                                            bloch_evals[1].imag))
                     # backup output files
-                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
                     shutil.copy("Evals.sine_boundary.dat", evals_file)
                     subprocess.call(['gzip', evals_file])
-                    evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
                     shutil.copy("Evecs.sine_boundary.dat", evecs_file)
                     subprocess.call(['gzip', evecs_file])
-                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
                     shutil.copy("input.xml", xml_file)
                     subprocess.call(['gzip', xml_file])
             except:
-                pass
+                print "Evals, evecs or xml file not found!"
             # tmp.out is not written if job is part of a job-array
             try:
                 tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
                 shutil.copy("tmp.out", tmp_file)
                 subprocess.call(['gzip', tmp_file])
             except:
-                pass
+                print "Temp file not found!".format(tmp_file)
             # be backwards compatible in case no jpg is written
             try:
                 jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
                 shutil.copy("pic.geometry.sine_boundary.1.jpg", jpg_file)
                 subprocess.call(['gzip', jpg_file])
             except:
-                pass
+                print "JPG file not found!".format(jpg_file)
 
-    eps, delta, ev0, ev1 = [ np.array(x) for x in eps, delta, ev0, ev1 ]
+    eps, delta, ev0, ev1, overlap = [ np.array(x) for x in
+                                       eps, delta, ev0, ev1, overlap ]
     np.savetxt("bloch_modes.dat", zip(eps, delta,
                                       ev0.real, ev0.imag,
-                                      ev1.real, ev1.imag))
+                                      ev1.real, ev1.imag, overlap))
 
 if __name__ == '__main__':
     argh.dispatch_command(raster_eps_delta)
