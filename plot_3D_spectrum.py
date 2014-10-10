@@ -65,7 +65,7 @@ def find_outliers(eps):
 @argh.arg("-t", "--trajectory", type=str)
 def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
-                     girtsch=False, sort=False, png=None, full=False):
+                     sort=False, png=None, full=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -84,8 +84,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 Whether to produce 3D plots. If false, heatmaps are plotted.
             limits: list
                 Set the x- and ylim: [xmin, xmax, ymin, ymax]
-            girtsch: bool
-                Whether to account for a wrong eps <-> delta labeling.
             sort: bool
                 Sorts the eigenvalues such that one is larger than the other.
             png: str
@@ -96,17 +94,12 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 Plot a gradient-descent trajectory on top of the heatmap.
     """
 
-    if girtsch:
-        eps, delta, ev0, ev1 = np.loadtxt(infile, dtype=complex).T
-        # wrong labeling!
-        len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
-    else:
-        eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
-        ev0 = ev0r + 1j*ev0i
-        ev1 = ev1r + 1j*ev1i
-        # workound if precision changes for multiple runs
-        delta = np.around(delta, decimals=8)
-        len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
+    eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
+    ev0 = ev0r + 1j*ev0i
+    ev1 = ev1r + 1j*ev1i
+    # workound if precision changes for multiple runs
+    delta = np.around(delta, decimals=8)
+    len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
 
     if reorder:
         print "reordering..."
@@ -162,10 +155,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             mask = np.zeros_like(eps).astype(bool)
             mask[np.abs(np.diff(e.real, axis=0)) > jump] = True
             mask[np.abs(np.diff(e.real, axis=1)) > jump] = True
-            mask[np.abs(np.diff(e.imag, axis=0)) > jump] = True
-            mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
 
-            # e[mask] = np.nan
             mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
             m1.actor.actor.scale = (5,1,1)
@@ -175,14 +165,21 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                   zlabel="Re(K)")
 
         # imag part
-        mlab.figure(1, bgcolor=(0.5,0.5,0.5))
         for e in ev0, ev1:
-            m2 = mlab.mesh(eps.real, delta.real, e.imag)
+            mask = np.zeros_like(eps).astype(bool)
+            mask[np.abs(np.diff(e.imag, axis=0)) > jump] = True
+            mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
+
+            mlab.figure(1, bgcolor=(0.5,0.5,0.5))
+            m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask)
             m2.actor.actor.scale = (5,1,1)
+
         mlab.title("Imaginary part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
                   zlabel="Im(K)")
+
         mlab.show()
+
     elif full:
         f, axes = plt.subplots(nrows=4, ncols=2, sharex=True, sharey=True)
         (ax1, ax2), (ax3, ax4), (ax5, ax6), (ax7, ax8) = axes
@@ -284,7 +281,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             plt.plot(eps, delta, "ro-")
             for n, (eps, delta) in enumerate(zip(eps, delta)):
                 plt.text(eps, delta, str(n), fontsize=12)
-
 
         if png:
             plt.savefig(png)
