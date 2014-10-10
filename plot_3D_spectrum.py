@@ -127,10 +127,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     if limits:
         eps_min, eps_max = limits[:2]
         delta_min, delta_max = limits[2:]
-        mask = ((eps > eps_min) & (eps < eps_max) &
-                (delta > delta_min) & (delta < delta_max))
+        limit_mask = ((eps > eps_min) & (eps < eps_max) &
+                      (delta > delta_min) & (delta < delta_max))
         for X in ev0, ev1:
-            X[~mask] = np.nan
+            X[~limit_mask] = np.nan
 
     if outfile:
         v = (eps, delta, ev0.real, ev0.imag, ev1.real, ev1.imag)
@@ -156,6 +156,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             mask[np.abs(np.diff(e.real, axis=0)) > jump] = True
             mask[np.abs(np.diff(e.real, axis=1)) > jump] = True
 
+            try:
+                mask = np.logical_or(mask, ~limit_mask)
+            except:
+                pass
             mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
             m1.actor.actor.scale = (5,1,1)
@@ -171,6 +175,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
 
             mlab.figure(1, bgcolor=(0.5,0.5,0.5))
+            try:
+                mask = np.logical_or(mask, ~limit_mask)
+            except:
+                pass
             m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask)
             m2.actor.actor.scale = (5,1,1)
 
