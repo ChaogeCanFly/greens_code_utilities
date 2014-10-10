@@ -58,6 +58,17 @@ def find_outliers(eps):
 
     return mask
 
+def interpolate_on_grid(X, Y, Z, nx=100, ny=100):
+    from scipy.interpolate import interp2d
+
+    xi = np.linspace(X.min(), X.max(), nx)
+    yi = np.linspace(Y.min(), Y.max(), ny)
+
+    XI, YI = np.meshgrid(xi, yi)
+    S = interp2d(X, Y, Z)(xi, yi)
+
+    return XI, YI, S
+
 
 @argh.arg("-p", "--png", type=str)
 @argh.arg("-l", "--limits", type=float, nargs="+")
@@ -160,9 +171,13 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 mask = np.logical_or(mask, ~limit_mask)
             except:
                 pass
+
+            # eps, delta, e = interpolate_on_grid(eps.real, delta.real, e.real)
+            
             mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
             m1.actor.actor.scale = (5,1,1)
+            # mlab.show()
 
         mlab.title("Real part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
