@@ -65,7 +65,7 @@ def find_outliers(eps):
 @argh.arg("-t", "--trajectory", type=str)
 def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
-                     sort=False, png=None, full=False):
+                     sort=False, png=None, full=False, dryrun=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -92,6 +92,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 Add additional heatmap plots.
             trajectory: str
                 Plot a gradient-descent trajectory on top of the heatmap.
+            dryrun: bool
+                Whether to only return the approximate EP position.
     """
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
@@ -148,6 +150,9 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     print "Approximate EP location:"
     print "eps_EP =", eps[i,j]
     print "delta_EP =", delta[i,j]
+
+    if dryrun:
+        sys.exit()
 
     if mayavi:
         # real part
