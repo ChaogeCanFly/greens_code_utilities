@@ -48,6 +48,12 @@ class XML(object):
         dx = params.get("W")/(nyout + 1.)
         dy = dx
         r_nx = int(params.get("L")/dx)
+        try:
+            r_nx_fixed = params.get("r_nx")
+            print r_nx_fixed
+        except:
+            pass
+
         r_ny = int(params.get("W")/dy)
 
         values = {
@@ -55,6 +61,7 @@ class XML(object):
                 'dx': dx,
                 'dy': dy,
                 'r_nx': r_nx,
+                'r_nx_fixed': r_nx_fixed,
                 'r_ny': r_ny}
 
         params.update(values)

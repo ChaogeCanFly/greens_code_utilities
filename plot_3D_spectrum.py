@@ -63,9 +63,12 @@ def find_outliers(eps):
 @argh.arg("-l", "--limits", type=float, nargs="+")
 @argh.arg("-o", "--outfile", type=str)
 @argh.arg("-t", "--trajectory", type=str)
+@argh.arg("-i", "--infile")
+@argh.arg("-I", "--interpolate")
 def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
-                     sort=False, png=None, full=False, dryrun=False):
+                     sort=False, png=None, full=False, dryrun=False, 
+                     interpolate=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
 
@@ -94,6 +97,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 Plot a trajectory on top of the heatmap.
             dryrun: bool
                 Whether to only return the approximate EP position.
+            interpolate: bool
+                Whether to interpolate |ev0-ev1| before determining the EP position.
     """
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
@@ -259,6 +264,18 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                                    np.concatenate((delta_u, [2*delta.max()])))
         Z0 = np.c_[Z, Z[:,-1]]
         Z0 = np.vstack((Z0, Z0[-1]))
+
+        if interpolate:
+            from scipy.interpolate import griddata
+            x = np.linspace(eps.min(), eps.max(), 500)
+            y = np.linspace(delta.min(), delta.max(), 1000)
+            X, Y = np.meshgrid(x,y)
+            Z0 = griddata((eps.ravel(), delta.ravel()), Z.ravel(), (X, Y), method='cubic')
+            i, j = np.unravel_index(Z0.argmin(), Z0.shape)
+            print "eps_EP_interpolated =", X[i,j]
+            print "delta_EP_interpolated =", Y[i,j]
+            eps0, delta0 = X.T, Y.T
+
         # im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
         im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
                            cmap=plt.get_cmap('Blues_r'))

@@ -73,8 +73,6 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
         r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
         WG = Waveguide(L=L, loop_type='Constant', N=N, eta=eta)
-        # WG.x_EP = x
-        # WG.y_EP = y
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
         print "xi_lower.shape", xi_lower.shape
