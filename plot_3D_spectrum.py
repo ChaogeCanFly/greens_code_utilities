@@ -94,7 +94,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             full: bool
                 Add additional heatmap plots.
             trajectory: str
-                Plot a gradient-descent trajectory on top of the heatmap.
+                Plot a trajectory on top of the heatmap.
             dryrun: bool
                 Whether to only return the approximate EP position.
             interpolate: bool
@@ -310,10 +310,11 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
         plt.subplots_adjust(top=0.875)
 
         if trajectory:
-            n, eps, delta = np.loadtxt(trajectory, unpack=True)[:3]
-            plt.plot(eps, delta, "ro-")
-            for n, (eps, delta) in enumerate(zip(eps, delta)):
-                plt.text(eps, delta, str(n), fontsize=12)
+            # n, eps, delta = np.loadtxt(trajectory, unpack=True)[:3]
+            eps, delta = np.loadtxt(trajectory, unpack=True)[:2]
+            plt.plot(eps, delta, "r-")
+            # for n, (eps, delta) in enumerate(zip(eps, delta)):
+            #     plt.text(eps, delta, str(n), fontsize=12)
 
         if png:
             plt.savefig(png)
