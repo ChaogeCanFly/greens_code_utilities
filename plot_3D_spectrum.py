@@ -156,7 +156,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     print "eps_EP =", eps[i,j]
     print "delta_EP =", delta[i,j]
 
-    if dryrun:
+    if dryrun and not interpolate:
         sys.exit()
 
     if mayavi:
@@ -275,6 +275,9 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             print "eps_EP_interpolated =", X[i,j]
             print "delta_EP_interpolated =", Y[i,j]
             eps0, delta0 = X.T, Y.T
+
+            if dryrun:
+                sys.exit()
 
         # im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
         im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
