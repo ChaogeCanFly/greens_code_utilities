@@ -29,7 +29,6 @@ class S_Matrix:
         else:
             self.infile = os.path.join(indir, infile)
 
-        print "infile:", self.infile
         self.probabilities = probabilities
         self._get_amplitudes()
 
@@ -94,7 +93,6 @@ class Write_S_Matrix:
     def __init__(self, outfile="S_matrix.dat", glob_args=[], delimiter="_",
                  **kwargs):
 
-        print glob_args
         self.outfile = outfile
         self.glob_args = glob_args
         self.nargs = len(glob_args) if glob_args else 0
