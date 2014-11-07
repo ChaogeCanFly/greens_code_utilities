@@ -31,13 +31,18 @@ class XML(object):
         """Read all variables from the input.xml file."""
 
         params = {}
+        expr = {}
         for elem in self.root.iter(tag='param'):
             name = elem.attrib.get('name')
             value = elem.text
             try:
                 params[name] = float(value)
             except ValueError:
-                pass
+                if '$' in value:
+                    expr[name] = value.replace('$', 'params.')
+
+        print params
+        print expr
 
         # avoid confusion between parameter 'N' from the input-vector object
         # and the variable 'N' used for modes in the Waveguide class
