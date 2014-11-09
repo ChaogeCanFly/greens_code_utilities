@@ -25,7 +25,10 @@ class S_Matrix:
 
         self.indir = indir
         if not infile:
-            self.infile = glob.glob("{}/Smat.*.dat".format(indir))[0]
+            try:
+                self.infile = glob.glob("{}/Smat.*.dat".format(indir))[0]
+            except:
+                pass
         else:
             self.infile = os.path.join(indir, infile)
 
