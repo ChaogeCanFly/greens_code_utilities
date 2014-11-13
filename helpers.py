@@ -50,7 +50,7 @@ def natural_sorting(text, args="delta", sep="_"):
 
 def replace_in_file(infile, outfile, **replacements):
     """Replace some lines in an input file and write to output file. The
-    replacements are supplied via an dictionary."""
+    replacements are supplied via a dictionary."""
 
     with open(infile) as src_xml:
         src_xml = src_xml.read()
