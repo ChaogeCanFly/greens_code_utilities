@@ -28,7 +28,7 @@ def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
                 $EDITOR variable before rendering.
     """
 
-    if ppm is None and jpeg is None:
+    if ppm is None or jpeg is None:
         raise Exception("Error: .ppm and .jpeg files are both required!")
 
     scene = """
@@ -114,7 +114,7 @@ def povray(ppm=None, jpeg=None, scriptfile="scene.pov",
                'O': outfile
                }
     cmd = "povray -W{W} -H{H} -I{I} -D -O{O}".format(**params)
-    subprocess.check_call(cmd, shell=True)
+    subprocess.check_call(cmd.split())
 
 
 if __name__ == '__main__':
