@@ -12,7 +12,10 @@
 
     replace_in_file(infile, outfile, **replacements):
         Replace some lines in an input file and write to output file.
-        The replacements are supplied via an dictionary.
+        The replacements are supplied via a dictionary.
+
+    get_git_log(lines=5):
+        Return the 'git log' output of the calling file.
 """
 import numpy as np
 import os
@@ -61,3 +64,14 @@ def replace_in_file(infile, outfile, **replacements):
     out_xml = os.path.abspath(outfile)
     with open(out_xml, "w") as out_xml:
         out_xml.write(src_xml)
+
+
+def get_git_log(lines=5):
+    """Return the 'git log' output of the calling file."""
+
+    path = os.path.dirname(os.path.realpath(sys.argv[0]))
+    gitpath = os.path.join(path, "..", ".git")
+    cmd = "git --git-dir {} log".format(gitpath)
+    gitlog = subprocess.check_output(cmd.split())
+
+    return " ".join(gitlog.splitlines()[:lines])
