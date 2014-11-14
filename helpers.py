@@ -19,6 +19,8 @@
 """
 import numpy as np
 import os
+import subprocess
+import sys
 import re
 
 
@@ -66,12 +68,17 @@ def replace_in_file(infile, outfile, **replacements):
         out_xml.write(src_xml)
 
 
-def get_git_log(lines=5):
+def get_git_log(lines=5, relative_git_path="", outfile=None):
     """Return the 'git log' output of the calling file."""
 
     path = os.path.dirname(os.path.realpath(sys.argv[0]))
-    gitpath = os.path.join(path, "..", ".git")
+    gitpath = os.path.join(path, relative_git_path, ".git")
     cmd = "git --git-dir {} log".format(gitpath)
     gitlog = subprocess.check_output(cmd.split())
+    gitlog_abbrev = gitlog.splitlines()[:lines+1]
 
-    return " ".join(gitlog.splitlines()[:lines])
+    if outfile:
+        with open(outfile, "w") as f:
+            f.write("\n".join(gitlog_abbrev))
+    else:
+        return " ".join(gitlog_abbrev)
