@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 """Download and compile the following packages required to run greens_code:
-
-    - EXPAT
+    - cjpeg
+    - expat
     - LARPACK *
     - PARPACK *
     - BOOST **
@@ -16,14 +16,11 @@
         https://bitbucket.org/petsc/petsc.git
 
 The following packages can only be obtained after (manual) registration:
-
     - Intel Math Kernel Library (MKL):
         https://software.intel.com/en-us/intel-education-offering
 
 Additional requirements:
     - git
-    - cmake
-    - cjpeg
 """
 import glob
 import os
@@ -34,13 +31,15 @@ import tarfile
 import urllib
 
 
-INSTALL_DIR = os.path.join(os.getcwd(), "libraries")
 
-PACKAGES = {'EXPAT':   'http://sourceforge.net/projects/expat/files/expat/2.0.1/expat-2.0.1.tar.gz/download',
+PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
+            # 'EXPAT':   'http://sourceforge.net/projects/expat/files/expat/2.0.1/expat-2.0.1.tar.gz/download',
+            'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
-            'PETSC': 'https://bitbucket.org/petsc/petsc.git'}
-# 'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
+            'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
+SCC = 'g++'
+SFC = 'gfortran'
 CONFIGURE_PETSC = ['--download-mumps',
                    '--download-mpich',
                    '--download-boost',
@@ -48,13 +47,12 @@ CONFIGURE_PETSC = ['--download-mumps',
                    '--download-fftw',
                    '--download-superlu',
                    '--download-scalapack',
-                   '--download-metis',
-                   '--download-parmetis',
+                   # '--download-cmake',
                    '--with-c++-support=1',
                    '--with-shared-libraries=1',
                    '--with-fortran-kernels=1']
-CONFIGURE_PETSC.append('PATSC-ARCH=gfortran')
 
+INSTALL_DIR = os.path.join(os.getcwd(), 'dependencies')
 os.mkdir(INSTALL_DIR)
 os.chdir(INSTALL_DIR)
 
@@ -63,17 +61,18 @@ for name, url in PACKAGES.iteritems():
     print 'Obtaining {name}'.format(name=name)
     print
     for item in url.split("/"):
-        if '.tar.gz' in item:
-            urllib.urlretrieve(url, item)
-            tar = tarfile.open(item)
-            tar.extractall()
-            tar.close()
-
-            if 'expat' in item:
-                EXPAT_DIR = item.replace(".tar.gz", "")
-                os.chdir(os.path.join(os.getcwd(), EXPAT_DIR))
-                cmd = "./configure && make"
-                subprocess.call(cmd, shell=True)
+        # if '.tar.gz' in item:
+        #     urllib.urlretrieve(url, item)
+        #     tar = tarfile.open(item)
+        #     tar.extractall()
+        #     tar.close()
+        #
+        #     if 'expat' in item:
+        #         DIR = item.replace(".tar.gz", ""))
+        #         EXPAT_DIR = os.path.join(os.getcwd(), DIR)
+        #         os.chdir(EXPAT_DIR)
+        #         cmd = "./configure && make"
+        #         subprocess.call(cmd, shell=True)
 
         if '.git' in item:
             cmd = "git clone {url}".format(url=url)
@@ -81,26 +80,34 @@ for name, url in PACKAGES.iteritems():
 
             if 'arpack-ng' in item:
                 DIR = item.replace(".git", "")
-                os.chdir(os.path.join(os.getcwd(), DIR))
+                ARPACK_DIR = os.path.join(os.getcwd(), DIR)
+                os.chdir(ARPACK_DIR)
                 cmd = "./configure && make"
                 subprocess.call(cmd, shell=True)
-                ARPACK_DIR = os.path.join(os.getcwd(), DIR)
 
-            # elif 'expat' in item:
-            #     DIR = item.replace("-git-mirror.git", "")
-            #     cmd = "./configure && make"
-            #     subprocess.call(cmd, shell=True)
-            #     EXPAT_DIR = os.path.join(os.getcwd(), item.replace(".git", ""))
+            elif 'libjpeg' in item:
+                DIR = item.replace(".git", "")
+                CJPEG_DIR = os.path.join(os.getcwd(), DIR)
+                os.chdir(CJPEG_DIR)
+                cmd = "./configure && make"
+                subprocess.call(cmd, shell=True)
+
+            elif 'expat' in item:
+                DIR = item.replace("-git-mirror.git", "")
+                EXPAT_DIR = os.path.join(os.getcwd(), DIR)
+                os.chdir(EXPAT_DIR)
+                cmd = "autoreconf --force --install && ./configure && make"
+                subprocess.call(cmd, shell=True)
 
             elif 'petsc' in item:
                 DIR = item.replace(".git", "")
                 os.chdir(os.path.join(os.getcwd(), DIR))
                 cmd = "./configure " + " ".join(CONFIGURE_PETSC)
                 subprocess.call(cmd.split())
-                shutil.rmtree(os.path.join(os.getcwd(), DIR, 'src'))
+                shutil.rmtree(os.path.join(os.getcwd(), 'src'))
 
-                PESC_DIR = glob.glob("arch-*-debug")
-                PESC_DIR = os.path.join(os.getcwd(), DIR, PESC_DIR)
+                PESC_DIR = glob.glob("arch-*-debug")[0]
+                PESC_DIR = os.path.join(os.getcwd(), PESC_DIR)
                 shutil.rmtree(os.path.join(PESC_DIR, 'externalpackages'))
 
         os.chdir(INSTALL_DIR)
@@ -108,14 +115,17 @@ for name, url in PACKAGES.iteritems():
 
 
 # write entry for machines.inc
-makeparams = {'hostname': socket.gethostname(),
-              'SCC': 'g++',
-              'SFC': 'gfortran',
+makeparams = {'HOSTNAME': socket.gethostname(),
+              'SCC': SCC,
+              'SFC': SFC,
+              'CJPEG_DIR': CJPEG_DIR,
+              'EXPAT_DIR': EXPAT_DIR,
               'PESC_DIR': PESC_DIR,
               'ARPACK_DIR': ARPACK_DIR,
               'MKL_DIR': None}
 
 MAKE = """
+  ifeq ($(MACHINE),{HOSTNAME})
     EXPAT = {EXPAT_DIR}/libs/libexpat.la
 
     # C/C++
@@ -136,19 +146,31 @@ MAKE = """
     C_SUPER_LU = -I{PESC_DIR}/include
     L_SUPER_LU = -L{PESC_DIR}/lib
 
-    C_MUMPS = -I{PESC_DIR)/include
+    C_MUMPS = -I{PESC_DIR}/include
     C_MUMPS += -DUSE_MUMPS
-    P_MUMPS = -L{PESC_DIR)/lib
+    P_MUMPS = -L{PESC_DIR}/lib
     P_MUMPS += -lzmumps -lmumps_common
 
     PARPACK = -lparpack
     LARPACK = -L{ARPACK_DIR}/lib -larpack
 
+    # MKL
     LFLAGS += -L{MKL_DIR}/lib/intel64
     P_MKL_FLAGS += -lmkl_blacs_intelmpi_lp64
     MKL_FLAGS += -lmpi_f90 -l{SFC} -lmkl_gf_lp64
     MKL_FLAGS += -lmkl_sequential -lmklcore -lpthread
+  endif
 """.format(**makeparams)
 
-print "Append the following to your machine.inc:"
+BASHRC = """
+    export PATH=$PATH:{CJPEG_DIR}
+    export LD_LIBRARY_PATH={MKL_DIR}/lib/intel64
+""".format(**makeparams)
+
+print
+print "Append the following to your machines.inc:"
 print MAKE
+print
+print "Add the following to your .bashrc:"
+print BASHRC
+print
