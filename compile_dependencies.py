@@ -93,7 +93,7 @@ for name, url in PACKAGES.iteritems():
                 subprocess.call(cmd, shell=True)
 
             elif 'expat' in item:
-                DIR = item.replace("-git-mirror.git", "")
+                DIR = item.replace(".git", "")
                 EXPAT_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(EXPAT_DIR)
                 cmd = "autoreconf --force --install && ./configure && make"
