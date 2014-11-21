@@ -46,7 +46,7 @@ CONFIGURE_PETSC = ['--download-boost',
                    '--download-mpich',
                    '--download-mumps',
                    '--download-parmetis',
-                   # '--download-scalapack',
+                   '--download-scalapack',
                    '--download-sowing',
                    '--download-superlu',
                    '--with-fortran-kernels=1',
@@ -57,6 +57,7 @@ os.mkdir(INSTALL_DIR)
 os.chdir(INSTALL_DIR)
 
 for name, url in PACKAGES.iteritems():
+    print
     print 100*'#'
     print 'Obtaining {name}'.format(name=name)
     print
@@ -100,7 +101,6 @@ for name, url in PACKAGES.iteritems():
                 shutil.rmtree(os.path.join(PESC_DIR, 'externalpackages'))
 
         os.chdir(INSTALL_DIR)
-    print
 
 # write entry for machines.inc
 makeparams = {'HOSTNAME': socket.gethostname(),
@@ -156,6 +156,7 @@ print
 
 # write entry for .bashrc
 BASHRC = """
+    # cjpeg executable
     export PATH=$PATH:{CJPEG_DIR}
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{MKL_DIR}/lib/intel64
 """.format(**makeparams)
