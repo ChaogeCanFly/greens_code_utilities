@@ -21,36 +21,36 @@ The following packages can only be obtained after (manual) registration:
 
 Additional requirements:
     - git
+
+# TODO:
+    - command-line interface
+    - interactive selection of compilers
 """
 import glob
 import os
 import socket
 import shutil
 import subprocess
-import tarfile
-import urllib
-
 
 
 PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
-            # 'EXPAT':   'http://sourceforge.net/projects/expat/files/expat/2.0.1/expat-2.0.1.tar.gz/download',
             'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
             'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
 SCC = 'g++'
 SFC = 'gfortran'
-CONFIGURE_PETSC = ['--download-mumps',
-                   '--download-mpich',
-                   '--download-boost',
-                   '--download-sowing',
+CONFIGURE_PETSC = ['--download-boost',
                    '--download-fftw',
+                   '--download-metis',
+                   '--download-mpich',
+                   '--download-mumps',
+                   '--download-parmetis',
+                   # '--download-scalapack',
+                   '--download-sowing',
                    '--download-superlu',
-                   '--download-scalapack',
-                   # '--download-cmake',
-                   '--with-c++-support=1',
-                   '--with-shared-libraries=1',
-                   '--with-fortran-kernels=1']
+                   '--with-fortran-kernels=1',
+                   '--with-clean=1']
 
 INSTALL_DIR = os.path.join(os.getcwd(), 'dependencies')
 os.mkdir(INSTALL_DIR)
@@ -60,19 +60,8 @@ for name, url in PACKAGES.iteritems():
     print 100*'#'
     print 'Obtaining {name}'.format(name=name)
     print
+
     for item in url.split("/"):
-        # if '.tar.gz' in item:
-        #     urllib.urlretrieve(url, item)
-        #     tar = tarfile.open(item)
-        #     tar.extractall()
-        #     tar.close()
-        #
-        #     if 'expat' in item:
-        #         DIR = item.replace(".tar.gz", ""))
-        #         EXPAT_DIR = os.path.join(os.getcwd(), DIR)
-        #         os.chdir(EXPAT_DIR)
-        #         cmd = "./configure && make"
-        #         subprocess.call(cmd, shell=True)
 
         if '.git' in item:
             cmd = "git clone {url}".format(url=url)
@@ -96,7 +85,7 @@ for name, url in PACKAGES.iteritems():
                 DIR = item.replace(".git", "")
                 EXPAT_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(EXPAT_DIR)
-                cmd = "autoreconf --force --install && ./configure && make"
+                cmd = "autoreconf --force --install && ./configure --enable-shared && make"
                 subprocess.call(cmd, shell=True)
 
             elif 'petsc' in item:
@@ -113,7 +102,6 @@ for name, url in PACKAGES.iteritems():
         os.chdir(INSTALL_DIR)
     print
 
-
 # write entry for machines.inc
 makeparams = {'HOSTNAME': socket.gethostname(),
               'SCC': SCC,
@@ -126,10 +114,10 @@ makeparams = {'HOSTNAME': socket.gethostname(),
 
 MAKE = """
   ifeq ($(MACHINE),{HOSTNAME})
-    EXPAT = {EXPAT_DIR}/libs/libexpat.la
+    EXPAT = {EXPAT_DIR}/.libs/libexpat.a
 
     # C/C++
-    SCC = g++
+    SCC = {SCC}
     PCC = {PESC_DIR}/bin/mpic++
     CFLAGS += -g -Wall -std=c++0x
     CFLAGS += -DPARALLEL -DFROMGFORTRAN -DMKL_ILP64
@@ -161,15 +149,16 @@ MAKE = """
     MKL_FLAGS += -lmkl_sequential -lmklcore -lpthread
   endif
 """.format(**makeparams)
-
-BASHRC = """
-    export PATH=$PATH:{CJPEG_DIR}
-    export LD_LIBRARY_PATH={MKL_DIR}/lib/intel64
-""".format(**makeparams)
-
 print
 print "Append the following to your machines.inc:"
 print MAKE
+print
+
+# write entry for .bashrc
+BASHRC = """
+    export PATH=$PATH:{CJPEG_DIR}
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{MKL_DIR}/lib/intel64
+""".format(**makeparams)
 print
 print "Add the following to your .bashrc:"
 print BASHRC
