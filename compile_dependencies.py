@@ -33,13 +33,14 @@ import shutil
 import subprocess
 
 
+SCC = 'g++'
+SFC = 'gfortran'
+
 PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
             'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
-SCC = 'g++'
-SFC = 'gfortran'
 CONFIGURE_PETSC = ['--download-boost',
                    '--download-fftw',
                    '--download-metis',
@@ -49,7 +50,6 @@ CONFIGURE_PETSC = ['--download-boost',
                    '--download-scalapack',
                    '--download-sowing',
                    '--download-superlu',
-                   '--with-fortran-kernels=1',
                    '--with-clean=1']
 
 INSTALL_DIR = os.path.join(os.getcwd(), 'dependencies')
@@ -86,7 +86,7 @@ for name, url in PACKAGES.iteritems():
                 DIR = item.replace(".git", "")
                 EXPAT_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(EXPAT_DIR)
-                cmd = "autoreconf --force --install && ./configure --enable-shared && make"
+                cmd = "autoreconf -f -i && ./configure --enable-shared && make"
                 subprocess.call(cmd, shell=True)
 
             elif 'petsc' in item:
@@ -144,9 +144,9 @@ MAKE = """
 
     # MKL
     LFLAGS += -L{MKL_DIR}/lib/intel64
-    P_MKL_FLAGS += -lmkl_blacs_intelmpi_lp64
     MKL_FLAGS += -lmpi_f90 -l{SFC} -lmkl_gf_lp64
-    MKL_FLAGS += -lmkl_sequential -lmklcore -lpthread
+    MKL_FLAGS += -lmkl_sequential -lmkl_core -lpthread
+    P_MKL_FLAGS += -lmkl_blacs_intelmpi_lp64
   endif
 """.format(**makeparams)
 print
