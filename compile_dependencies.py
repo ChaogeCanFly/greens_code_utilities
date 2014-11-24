@@ -64,12 +64,24 @@ for name, url in PACKAGES.iteritems():
             cmd = "git clone {url}".format(url=url)
             subprocess.call(cmd.split())
 
-            if 'arpack-ng' in item:
+            if 'petsc' in item:
+                DIR = item.replace(".git", "")
+                os.chdir(os.path.join(os.getcwd(), DIR))
+                cmd = "./configure " + " ".join(CONFIGURE_PETSC)
+                subprocess.call(cmd.split())
+                shutil.rmtree(os.path.join(os.getcwd(), 'src'))
+
+                PESC_DIR = glob.glob("arch-*-debug")[0]
+                PESC_DIR = os.path.join(os.getcwd(), PESC_DIR)
+                shutil.rmtree(os.path.join(PESC_DIR, 'externalpackages'))
+
+            elif 'arpack-ng' in item:
                 DIR = item.replace(".git", "")
                 ARPACK_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(ARPACK_DIR)
-                cmd = "./configure && make"
-                subprocess.call(cmd, shell=True)
+                os.environ('LDFLAGS') = "-L" + os.path.join(PETSC_DIR, "lib")
+                cmd = "./configure --enable-mpi && make"
+                subprocess.call(cmd, shell=True, env=os.environ)
 
             elif 'libjpeg' in item:
                 DIR = item.replace(".git", "")
@@ -84,17 +96,6 @@ for name, url in PACKAGES.iteritems():
                 os.chdir(EXPAT_DIR)
                 cmd = "autoreconf -f -i && ./configure --enable-shared && make"
                 subprocess.call(cmd, shell=True)
-
-            elif 'petsc' in item:
-                DIR = item.replace(".git", "")
-                os.chdir(os.path.join(os.getcwd(), DIR))
-                cmd = "./configure " + " ".join(CONFIGURE_PETSC)
-                subprocess.call(cmd.split())
-                shutil.rmtree(os.path.join(os.getcwd(), 'src'))
-
-                PESC_DIR = glob.glob("arch-*-debug")[0]
-                PESC_DIR = os.path.join(os.getcwd(), PESC_DIR)
-                shutil.rmtree(os.path.join(PESC_DIR, 'externalpackages'))
 
         os.chdir(INSTALL_DIR)
 
