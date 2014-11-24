@@ -31,6 +31,8 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Grid spacing.
             r_nx: int
                 Grid dimension in x-direction.
+            sort: bool
+                Whether to sort the eigenvalues and eigenvectors.
             fold_back: bool
                 Whether to fold back the Bloch modes into the 1. BZ.
             return_velocities: bool
@@ -117,6 +119,9 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         if return_eigenvectors:
             chi_left = chi_left[sort_left]
             chi_right = chi_right[sort_right]
+
+        # TODO: handle conservative case
+
 
     if fold_back:
         k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in
