@@ -4,8 +4,6 @@
     - expat
     - LARPACK *
     - PARPACK *
-    - BOOST **
-    - FFTW3 **
     - MPICH **
     - MUMPS **
     - SUPER_LU **
@@ -41,9 +39,7 @@ PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
             'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
-CONFIGURE_PETSC = ['--download-boost',
-                   '--download-fftw',
-                   '--download-metis',
+CONFIGURE_PETSC = ['--download-metis',
                    '--download-mpich',
                    '--download-mumps',
                    '--download-parmetis',
