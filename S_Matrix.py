@@ -87,18 +87,19 @@ class Write_S_Matrix:
         -----------
             outfile: str
                 S-matrix output file.
+            directories: list of str
+                Directories to parse.
             glob_args: list of str
                 Directory parsing parameters.
             delimiter: str
                 Directory parsing delimiter.
-
-        # TODO: supply list of directories to be parsed
     """
 
-    def __init__(self, outfile="S_matrix.dat", glob_args=[], delimiter="_",
-                 **kwargs):
+    def __init__(self, outfile="S_matrix.dat", directories=[], glob_args=[],
+                 delimiter="_", **kwargs):
 
         self.outfile = outfile
+        self.directories = directories
         self.glob_args = glob_args
         self.nargs = len(glob_args) if glob_args else 0
         self.delimiter = delimiter
@@ -163,14 +164,18 @@ class Write_S_Matrix:
         return data
 
     def _process_directories(self):
-        """Loop through all directories satisfying the globbing pattern."""
+        """Loop through all directories satisfying the globbing pattern or the
+        supplied list of directories."""
 
-        dirs = ["."]
-
-        if self.glob_args:
+        if self.directories:
+            dirs = self.directories
+        elif self.glob_args:
             dirs = sorted(glob.glob("*" + self.glob_args[0] + "*"))
-            dirs = natural_sorting(dirs, args=self.glob_args,
-                                   delimiter=self.delimiter)
+        else:
+            dirs = [os.getcwd()]
+
+        dirs = natural_sorting(dirs, args=self.glob_args,
+                               delimiter=self.delimiter)
 
         with open(self.outfile, "w") as f:
             for n, dir in enumerate(dirs):
@@ -213,10 +218,12 @@ def parse_arguments():
     parser.add_argument("-p", "--probabilities", action="store_true",
                         help="Wheter to calculate abs(S)^2.")
 
+    parser.add_argument("-d", "--directories", default=[], nargs="*",
+                        help="Directories to parse.")
     parser.add_argument("-g", "--glob-args", default=[], nargs="*",
-                        help="Directory parsing variables")
-    parser.add_argument("-d", "--delimiter", default="_",
-                        type=str, help="Directory parsing delimiter")
+                        help="Directory parsing variables.")
+    parser.add_argument("-l", "--delimiter", default="_",
+                        type=str, help="Directory parsing delimiters.")
     parser.add_argument("-o", "--outfile", default="S_matrix.dat",
                         type=str, help="S-matrix output file.")
 
