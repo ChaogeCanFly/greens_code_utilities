@@ -2,8 +2,7 @@
 """Download and compile the following packages required to run greens_code:
     - cjpeg
     - expat
-    - LARPACK *
-    - PARPACK *
+    - ARPACK/PARPACK *
     - MPICH **
     - MUMPS **
     - SUPER_LU **
@@ -32,7 +31,9 @@ import subprocess
 
 
 SCC = 'g++'
+PCC = 'mpic++'
 SFC = 'gfortran'
+PFC = 'mpif90'
 # important: without trailing '/'!
 MKL_DIR = "/home/doppler/intel/mkl"
 
@@ -50,6 +51,7 @@ CONFIGURE_PETSC = ['--CXX=' + SCC,
                    '--download-scalapack',
                    '--download-sowing',
                    '--download-superlu',
+                   '--with-make-np=4',
                    '--with-clean=1']
 
 INSTALL_DIR = os.path.join(os.getcwd(), 'dependencies')
