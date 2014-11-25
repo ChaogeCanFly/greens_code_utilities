@@ -56,11 +56,11 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         if verbose:
             print "# Parameters 'modes', 'dx' and 'r_nx' not found."
             print "# Reading xml file {}.".format(xml)
-        params = XML(xml).params
-        modes = params.get("modes")
-        L = params.get("L")
-        dx = params.get("dx")
-        r_nx = params.get("r_nx")
+        xml_params = XML(xml).params
+        modes = xml_params.get("modes")
+        L = xml_params.get("L")
+        dx = xml_params.get("dx")
+        r_nx = xml_params.get("r_nx")
 
     # get k_x values for both modes
     k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
