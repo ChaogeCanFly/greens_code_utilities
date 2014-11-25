@@ -33,13 +33,16 @@ import subprocess
 
 SCC = 'g++'
 SFC = 'gfortran'
+MKL_DIR = "/home/doppler/intel/composerxe/"
 
 PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
             'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
-CONFIGURE_PETSC = ['--download-metis',
+CONFIGURE_PETSC = ['--CXX=' + SCC,
+                   '--FC=' + SFC,
+                   '--download-metis',
                    '--download-mpich',
                    '--download-mumps',
                    '--download-parmetis',
@@ -79,7 +82,7 @@ for name, url in PACKAGES.iteritems():
                 DIR = item.replace(".git", "")
                 ARPACK_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(ARPACK_DIR)
-                os.environ('LDFLAGS') = "-L" + os.path.join(PETSC_DIR, "lib")
+                os.environ['LDFLAGS'] = "-L" + os.path.join(PETSC_DIR, "lib")
                 cmd = "./configure --enable-mpi && make"
                 subprocess.call(cmd, shell=True, env=os.environ)
 
@@ -106,8 +109,8 @@ makeparams = {'HOSTNAME': socket.gethostname(),
               'CJPEG_DIR': CJPEG_DIR,
               'EXPAT_DIR': EXPAT_DIR,
               'PESC_DIR': PESC_DIR,
-              'ARPACK_DIR': ARPACK_DIR,
-              'MKL_DIR': None}
+              'ARPACK_DIR': ARPACK_DIR}
+makeparams.update({'MKL_DIR': MKL_DIR})
 
 MAKE = """
   ifeq ($(MACHINE),{HOSTNAME})
@@ -116,11 +119,11 @@ MAKE = """
     # C/C++
     SCC = {SCC}
     PCC = {PESC_DIR}/bin/mpic++
-    CFLAGS += -g -Wall -std=c++0x
+    CFLAGS += -g -Wall -std=c++0x -O3
     CFLAGS += -DPARALLEL -DFROMGFORTRAN -DMKL_ILP64
     CFLAGS += -I{PESC_DIR}/include -DUSE_BOOST
     CFLAGS += -I{MKL_DIR}/include
-    CFLAGS += -I{EXPAT_DIR}/lib -03
+    CFLAGS += -I{EXPAT_DIR}/lib
 
     # FORTRAN
     SFC = {SFC}
@@ -133,11 +136,12 @@ MAKE = """
 
     C_MUMPS = -I{PESC_DIR}/include
     C_MUMPS += -DUSE_MUMPS
-    P_MUMPS = -L{PESC_DIR}/lib
-    P_MUMPS += -lzmumps -lmumps_common
+    L_MUMPS = -L{PESC_DIR}/lib
+    L_MUMPS += -lzmumps -lmumps_common
+    L_MUMPS +=-lpord -lmetis -lparmetis -lscalapack -lmpifort
 
-    PARPACK = -lparpack
-    LARPACK = -L{ARPACK_DIR}/lib -larpack
+    PARPACK = -L{ARPACK_DIR}/PARPACK/.libs -lparpack
+    LARPACK = -L{ARPACK_DIR}/.libs -larpack
 
     # MKL
     LFLAGS += -L{MKL_DIR}/lib/intel64
