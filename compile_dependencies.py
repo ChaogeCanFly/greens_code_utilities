@@ -74,9 +74,9 @@ for name, url in PACKAGES.iteritems():
                 subprocess.call(cmd.split())
                 shutil.rmtree(os.path.join(os.getcwd(), 'src'))
 
-                PESC_DIR = glob.glob("arch-*-debug")[0]
-                PESC_DIR = os.path.join(os.getcwd(), PESC_DIR)
-                shutil.rmtree(os.path.join(PESC_DIR, 'externalpackages'))
+                PETSC_DIR = glob.glob("arch-*-debug")[0]
+                PETSC_DIR = os.path.join(os.getcwd(), PETSC_DIR)
+                shutil.rmtree(os.path.join(PETSC_DIR, 'externalpackages'))
 
             elif 'arpack-ng' in item:
                 DIR = item.replace(".git", "")
@@ -108,7 +108,7 @@ makeparams = {'HOSTNAME': socket.gethostname(),
               'SFC': SFC,
               'CJPEG_DIR': CJPEG_DIR,
               'EXPAT_DIR': EXPAT_DIR,
-              'PESC_DIR': PESC_DIR,
+              'PETSC_DIR': PETSC_DIR,
               'ARPACK_DIR': ARPACK_DIR}
 makeparams.update({'MKL_DIR': MKL_DIR})
 
@@ -118,27 +118,27 @@ MAKE = """
 
     # C/C++
     SCC = {SCC}
-    PCC = {PESC_DIR}/bin/mpic++
+    PCC = {PETSC_DIR}/bin/mpic++
     CFLAGS += -g -Wall -std=c++0x -O3
     CFLAGS += -DPARALLEL -DFROMGFORTRAN -DMKL_ILP64
-    CFLAGS += -I{PESC_DIR}/include -DUSE_BOOST
+    CFLAGS += -I{PETSC_DIR}/include -DUSE_BOOST
     CFLAGS += -I{MKL_DIR}/include
     CFLAGS += -I{EXPAT_DIR}/lib
 
     # FORTRAN
     SFC = {SFC}
-    PFC = {PESC_DIR}/bin/mpif90
+    PFC = {PETSC_DIR}/bin/mpif90
     FFLAGS += -g -ffixed-line-length-none
     MODULESWITCH = GFORTRAN
 
-    C_SUPER_LU = -I{PESC_DIR}/include
-    L_SUPER_LU = -L{PESC_DIR}/lib
+    C_SUPER_LU = -I{PETSC_DIR}/include
+    L_SUPER_LU = -L{PETSC_DIR}/lib
 
-    C_MUMPS = -I{PESC_DIR}/include
+    C_MUMPS = -I{PETSC_DIR}/include
     C_MUMPS += -DUSE_MUMPS
-    L_MUMPS = -L{PESC_DIR}/lib
+    L_MUMPS = -L{PETSC_DIR}/lib
     L_MUMPS += -lzmumps -lmumps_common
-    L_MUMPS +=-lpord -lmetis -lparmetis -lscalapack -lmpifort
+    L_MUMPS += -lpord -lmetis -lparmetis -lscalapack -lmpifort
 
     PARPACK = -L{ARPACK_DIR}/PARPACK/.libs -lparpack
     LARPACK = -L{ARPACK_DIR}/.libs -larpack
