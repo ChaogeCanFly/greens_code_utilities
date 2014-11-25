@@ -33,7 +33,8 @@ import subprocess
 
 SCC = 'g++'
 SFC = 'gfortran'
-MKL_DIR = "/home/doppler/intel/composerxe/"
+# important: without trailing '/'!
+MKL_DIR = "/home/doppler/intel/mkl"
 
 PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
@@ -114,44 +115,51 @@ makeparams.update({'MKL_DIR': MKL_DIR})
 
 MAKE = """
   ifeq ($(MACHINE),{HOSTNAME})
-    EXPAT = {EXPAT_DIR}/.libs/libexpat.a
+    PETSC_DIR = {PETSC_DIR}
+    MKL_DIR = {MKL_DIR}
+    EXPAT_DIR = {EXPAT_DIR}
 
     # C/C++
-    SCC = {SCC}
-    PCC = {PETSC_DIR}/bin/mpic++
+    SCC = $(SCC)
+    PCC = $(PETSC_DIR)/bin/mpic++
     CFLAGS += -g -Wall -std=c++0x -O3
     CFLAGS += -DPARALLEL -DFROMGFORTRAN -DMKL_ILP64
-    CFLAGS += -I{PETSC_DIR}/include -DUSE_BOOST
-    CFLAGS += -I{MKL_DIR}/include
-    CFLAGS += -I{EXPAT_DIR}/lib
+    CFLAGS += -I$(PETSC_DIR)/include
+    CFLAGS += -I$(MKL_DIR)/include
 
     # FORTRAN
-    SFC = {SFC}
-    PFC = {PETSC_DIR}/bin/mpif90
+    SFC = $(SFC)
+    PFC = $(PETSC_DIR)/bin/mpif90
     FFLAGS += -g -ffixed-line-length-none
     MODULESWITCH = GFORTRAN
 
-    C_SUPER_LU = -I{PETSC_DIR}/include
-    L_SUPER_LU = -L{PETSC_DIR}/lib
+    # OTHER
+    EXPAT += -L$(EXPAT_DIR)/.libs -lexpat
 
-    C_MUMPS = -I{PETSC_DIR}/include
+    C_SUPER_LU = -I$(PETSC_DIR)/include
+    L_SUPER_LU = -L$(PETSC_DIR)/lib
+
+    C_MUMPS = -I$(PETSC_DIR)/include
     C_MUMPS += -DUSE_MUMPS
-    L_MUMPS = -L{PETSC_DIR}/lib
+    L_MUMPS = -L$(PETSC_DIR)/lib
     L_MUMPS += -lzmumps -lmumps_common
     L_MUMPS += -lpord -lmetis -lparmetis -lscalapack -lmpifort
 
-    PARPACK = -L{ARPACK_DIR}/PARPACK/.libs -lparpack
-    LARPACK = -L{ARPACK_DIR}/.libs -larpack
+    PARPACK = -L$(ARPACK_DIR)/PARPACK/.libs -lparpack
+    LARPACK = -L$(ARPACK_DIR)/.libs -larpack
 
     # MKL
-    LFLAGS += -L{MKL_DIR}/lib/intel64
-    MKL_FLAGS += -lmpi_f90 -l{SFC} -lmkl_gf_lp64
+    LFLAGS += -L$(MKL_DIR)/lib/intel64
+    MKL_FLAGS += -lmpi_f90 -l$(SFC) -lmkl_gf_lp64
     MKL_FLAGS += -lmkl_sequential -lmkl_core -lpthread
     P_MKL_FLAGS += -lmkl_blacs_intelmpi_lp64
   endif
 """.format(**makeparams)
-print
-print "Append the following to your machines.inc:"
+print """
+
+        Append the following to your machines.inc:
+
+"""
 print MAKE
 print
 
