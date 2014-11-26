@@ -86,7 +86,9 @@ for name, url in PACKAGES.iteritems():
                 ARPACK_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(ARPACK_DIR)
                 os.environ['LDFLAGS'] = "-L" + os.path.join(PETSC_DIR, "lib")
-                cmd = "./configure --enable-mpi && make"
+                params = {'F77': SFC,
+                          'MPIF77': os.path.join(PETSC_DIR, "bin", "mpif90")}
+                cmd = "./configure --enable-mpi F77={F77} MPIF77={MPIF77} && make".format(**params)
                 subprocess.call(cmd, shell=True, env=os.environ)
 
             elif 'libjpeg' in item:
@@ -122,15 +124,16 @@ MAKE = """
     EXPAT_DIR = {EXPAT_DIR}
 
     # C/C++
-    SCC = $(SCC)
+    SCC = {SCC}
     PCC = $(PETSC_DIR)/bin/mpic++
     CFLAGS += -g -Wall -std=c++0x -O3
     CFLAGS += -DPARALLEL -DFROMGFORTRAN -DMKL_ILP64
     CFLAGS += -I$(PETSC_DIR)/include
     CFLAGS += -I$(MKL_DIR)/include
+    CFLAGS += -I$(MKL_DIR)/include/fftw
 
     # FORTRAN
-    SFC = $(SFC)
+    SFC = {SFC}
     PFC = $(PETSC_DIR)/bin/mpif90
     FFLAGS += -g -ffixed-line-length-none
     MODULESWITCH = GFORTRAN
@@ -152,18 +155,17 @@ MAKE = """
 
     # MKL
     LFLAGS += -L$(MKL_DIR)/lib/intel64
-    MKL_FLAGS += -lmpi_f90 -l$(SFC) -lmkl_gf_lp64
+    MKL_FLAGS += -lmpi_f90 -lgfortran -lmkl_gf_lp64
     MKL_FLAGS += -lmkl_sequential -lmkl_core -lpthread
     P_MKL_FLAGS += -lmkl_blacs_intelmpi_lp64
   endif
 """.format(**makeparams)
-print """
-
-        Append the following to your machines.inc:
-
-"""
+print
+print "Append the following to your machines.inc:"
 print MAKE
 print
+with open("machines.inc_add", "w") as f:
+    f.write(MAKE)
 
 # write entry for .bashrc
 BASHRC = """
@@ -174,4 +176,5 @@ BASHRC = """
 print
 print "Add the following to your .bashrc:"
 print BASHRC
-print
+with open("bashrc_add", "w") as f:
+    f.write(BASHRC)
