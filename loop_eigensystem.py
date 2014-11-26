@@ -16,7 +16,8 @@ import bloch
 import helpers
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.025,
+                           nx=100,
                            loop_direction="+", loop_type='Bell', pphw=100):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop."""
@@ -25,7 +26,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     greens_path = os.environ.get('GREENS_CODE_XML')
     XML = os.path.join(greens_path, "input_periodic_cell.xml")
 
-    x = np.linspace(0, L, 100)
+    x = np.linspace(0, L, nx)
     y = np.linspace(0, 1., (pphw*N+1))
 
     wg_kwargs = {'N': N,
@@ -95,12 +96,15 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         diff_1 = np.abs(np.diff(ev1)).sum()
         print 'diff before', diff_0
         print 'diff before', diff_1
+        # if K0 > K1 and xn < L/2.:
+        #     K0, K1 = K1, K0
         if diff_0 > diff_1 and xn < L/2.:
             ev0, ev1 = ev1, ev0
-            K0, K1 = K1, K0
-        elif diff_0 < diff_1 and xn > L/2.:
+
+        # if K0 < K1 and xn > L/2.:
+        #     K0, K1 = K1, K0
+        if diff_0 < diff_1 and xn > L/2.:
             ev0, ev1 = ev1, ev0
-            K0, K1 = K1, K0
 
         diff_0 = np.abs(np.diff(ev0)).sum()
         diff_1 = np.abs(np.diff(ev1)).sum()
@@ -129,18 +133,16 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
     # full system
-    # Chi_0, Chi_1, K_0, K_1 = [ np.array(z).T for z in Chi_0, Chi_1, K_0, K_1]
-    Chi_0 = np.array(Chi_0).T
-    Chi_1 = np.array(Chi_1).T
+    Chi_0, Chi_1, K_0, K_1 = [ np.array(z).T for z in Chi_0, Chi_1, K_0, K_1]
+    # Chi_0 = np.array(Chi_0).T
+    # Chi_1 = np.array(Chi_1).T
 
     X, Y = np.meshgrid(x, y)
     plt.clf()
-    # plt.pcolormesh(np.abs(Chi_0))
-    plt.pcolormesh(X, Y, np.real(Chi_0 * np.exp(1j*K_0*xn)))
+    plt.pcolormesh(X, Y, np.real(Chi_0)) # * np.exp(1j*K_0*x)))
     plt.savefig("Chi_0.png")
     plt.clf()
-    # plt.pcolormesh(np.abs(Chi_1))
-    plt.pcolormesh(X, Y, np.real(Chi_1 * np.exp(1j*K_1*xn)))
+    plt.pcolormesh(X, Y, np.real(Chi_1)) # * np.exp(1j*K_1*x)))
     plt.savefig("Chi_1.png")
 
     # effective model predictons
@@ -159,10 +161,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
     plt.clf()
-    plt.pcolormesh(X_eff, Y_eff, np.real(Chi_0_eff.T * np.exp(1j*K_0_eff*xn)))
+    plt.pcolormesh(X_eff, Y_eff, np.real(Chi_0_eff.T)) # * np.exp(1j*(K_0_eff*WG.t))))
+    # plt.pcolormesh(X_eff, Y_eff, np.real(Chi_0_eff.T * np.exp(1j*(K_0_eff*X_eff))))
     plt.savefig("Chi_0_eff.png")
     plt.clf()
-    plt.pcolormesh(X_eff, Y_eff, np.real(Chi_1_eff.T * np.exp(1j*K_1_eff*xn)))
+    plt.pcolormesh(X_eff, Y_eff, np.real(Chi_1_eff.T)) # * np.exp(1j*K_1_eff*WG.t)))
+    # plt.pcolormesh(X_eff, Y_eff, np.real(Chi_1_eff.T * np.exp(1j*K_1_eff*X_eff)))
     plt.savefig("Chi_1_eff.png")
 
 
