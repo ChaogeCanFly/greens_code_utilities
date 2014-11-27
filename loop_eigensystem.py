@@ -16,6 +16,83 @@ import bloch
 import helpers
 
 
+def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True,
+                       verbose=True):
+    """Find discontinuities in the eigenvalues and reorder the eigensystem such
+    that a smooth spectrum is obtained.
+        
+        Parameters:
+        -----------
+            K_0, K_1: list or (N,) ndarray
+                eigenvalue list
+            Chi_0, Chi_1: list or (N,...) ndarray
+                eigenvector list
+            eps: float
+                maximum jump to be tolerated in the eigenvalues
+            plot: bool
+                whether to plot the spectrum before and after the smoothing
+            verbose: bool
+                whether to print additional output
+
+        Returns:
+        --------
+            K_0, K_1: (N,) ndarray
+            Chi_0, Chi_1: (N,...) ndarray
+    """
+    
+    K_0, K_1 = [ np.array(z) for z in K_0, K_1]
+
+    if plot:
+        f, (ax1, ax2) = plt.subplots(nrows=2)
+        ax1.plot(K_0.real, "r-")
+        ax1.plot(K_0.imag, "g-")
+        ax1.plot(K_1.real, "r--")
+        ax1.plot(K_1.imag, "g--")
+
+    # 1a) get differences between array components
+    K_0_diff, K_1_diff = [ abs(np.diff(k)) for k in K_0, K_1 ]
+
+    # 1b) get maximal difference (= discontinous jump of back-folding in BZ)
+
+    if K_0_diff.max() > K_1_diff.max():
+        diff_max = K_0_diff.max()
+        diff = K_0_diff
+    else:
+        diff_max = K_1_diff.max()
+        diff = K_1_diff
+
+    # a) if difference exceeds epsilon, switch (don't switch where diff is 
+    #    maximal)
+    epsilon = 2e-2
+    jump = np.logical_and(diff > epsilon, diff != diff_max)
+    # jump = diff > epsilon
+
+    if verbose:
+        print "diff(K_n), jump-mask"
+        for d, j in zip(diff, jump):
+            print d, j
+
+    # 3) assemble the arrays in a piecewise fashion at points where eigenvalue
+    #    jumps occur (here we use eta = 0, we thus don't have to take care of
+    #    the phase)
+    for n in np.where(jump)[0]:
+        K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
+                    np.concatenate((K_1[:n+1], K_0[n+1:])))
+        Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1], Chi_1[n+1:])),
+                        np.concatenate((Chi_1[:n+1], Chi_0[n+1:])))
+
+    Chi_0, Chi_1 = [ np.array(z) for z in Chi_0, Chi_1]
+
+    if plot:
+        ax2.plot(K_0.real, "r-")
+        ax2.plot(K_0.imag, "g-")
+        ax2.plot(K_1.real, "r--")
+        ax2.plot(K_1.imag, "g--")
+        plt.show()
+
+    return K_0, K_1, Chi_0, Chi_1
+
+
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
                            nx=100, loop_direction="+", loop_type='Bell',
                            mpi=False, pphw=100):
@@ -94,18 +171,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         K0, K1 = K[0], K[1]
         ev0, ev1 = ev[0, :], ev[1, :]
 
-        # diff_0 = np.abs(np.diff(ev0)).sum()
-        # diff_1 = np.abs(np.diff(ev1)).sum()
-        # if K0 > K1 and xn < L/2.:
-        #     K0, K1 = K1, K0
-        # if diff_0 > diff_1: # and xn < L/2.:
-        #     ev0, ev1 = ev1, ev0
-        #
-        # if K0 < K1 and xn > L/2.:
-        #     K0, K1 = K1, K0
-        # if diff_0 < diff_1: # and xn > L/2.:
-        #     ev0, ev1 = ev1, ev0
-
         Bloch_data.append([xn, epsn, deltan,
                            K0, K1, ev0, ev1])
         K_0.append(K0)
@@ -127,85 +192,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
-    # full system
-    # Chi_0, Chi_1, K_0, K_1 = [ np.array(z).T for z in Chi_0, Chi_1, K_0, K_1]
-    K_0, K_1 = [ np.array(z).T for z in K_0, K_1]
-
-    f, (ax1, ax2) = plt.subplots(nrows=2)
-    ax1.plot(K_0.real, "r-")
-    ax1.plot(K_0.imag, "g-")
-    ax1.plot(K_1.real, "r--")
-    ax1.plot(K_1.imag, "g--")
-
-    # check for discontinuities of first eigenvalue
-    # and switch eigenvalues/eigenvectors accordingly:
-
-    # 1a) get differences between array components
-    diff_0 = np.diff(K_0)
-    diff_1 = np.diff(K_1)
-
-    # 1b) get maximal difference (= discontinous jump of back-folding in BZ)
-    diff_0_max = abs(diff_0).max()
-    diff_1_max = abs(diff_1).max()
-    print "diff_0_max", diff_0_max
-    print "diff_1_max", diff_1_max
-
-    if diff_0_max > diff_1_max:
-        diff_max = diff_0_max
-        diff = diff_0
-    else:
-        diff_max = diff_1_max
-        diff = diff_1
-    print "diff_max", diff_max
-
-    # a) if difference exceeds epsilon, switch (don't switch where diff is 
-    # maximal)
-    epsilon = 1e-2
-    # mask = np.logical_and(abs(diff) > epsilon, abs(diff) != diff_max)
-    mask = abs(diff) > epsilon
-
-    for d, m in zip(abs(diff), mask):
-        print d, m
-    print mask.nonzero()
-
-    # 3) assemble the arrays in a piecewise fashion at points
-    #    where eigenvalue-jumps occur
-    for k in mask.nonzero()[0]:
-        print "k", k
-        # correct phase to obtain continuous wavefunction
-        # phase_0_R = np.angle(Chi_0[k,:,0]) - np.angle(Chi_0[k+1,:,1])
-        # phase_0_L = np.angle(Chi_1[k,:,0]) - np.angle(Chi_1[k+1,:,1])
-        # phase_1_R = np.angle(Chi_0[k+1,:,0]) - np.angle(Chi_0[k,:,1])
-        # phase_1_L = np.angle(Chi_1[k+1,:,0]) - np.angle(Chi_1[k,:,1])
-        #
-        # # account for phase-jump v0(k) -> v1(k+1)
-        # Chi_0[k+1:,:,1] *= np.exp(+1j*phase_0_R)
-        # Chi_1[k+1:,:,1] *= np.exp(+1j*phase_0_L)
-        # # account for phase-jump v1(k) -> v0(k+1)
-        # Chi_0[:k+1,:,1] *= np.exp(+1j*phase_1_R)
-        # Chi_1[:k+1,:,1] *= np.exp(+1j*phase_1_L)
-        #
-        # Chi_0 = np.concatenate((Chi_0[:k+1,0],Chi_1[k+1:,1]))
-        # Chi_1 = np.concatenate((Chi_1[:k+1,0],Chi_0[k+1:,1]))
-        #
-        # Chi_0 = np.concatenate((Chi_0[:k+1,1],Chi_1[k+1:,0]))
-        # Chi_1 = np.concatenate((Chi_1[:k+1,1],Chi_0[k+1:,0]))
-
-        # K_0, K_1 = (np.concatenate((K_0[:k+1], K_1[k+1:])),
-        #             np.concatenate((K_1[:k+1], K_0[k+1:])))
-        K_0, K_1 = (np.concatenate((K_0[:k+1], K_1[k+1:])),
-                    np.concatenate((K_1[:k+1], K_0[k+1:])))
-        Chi_0, Chi_1 = (np.concatenate((Chi_0[:k+1], Chi_1[k+1:])),
-                        np.concatenate((Chi_1[:k+1], Chi_0[k+1:])))
-
+    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
+                                                eps=2e-2)
     Chi_0, Chi_1 = [ np.array(z).T for z in Chi_0, Chi_1]
-
-    ax2.plot(K_0.real, "r-")
-    ax2.plot(K_0.imag, "g-")
-    ax2.plot(K_1.real, "r--")
-    ax2.plot(K_1.imag, "g--")
-    plt.show()
-
 
     X, Y = np.meshgrid(x, y)
     plt.clf()
@@ -217,9 +206,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     plt.colorbar(p)
     plt.savefig("Chi_1.png")
     plt.clf()
-    p = plt.pcolormesh(X, Y, np.abs(Chi_0*np.exp(1j*K_0*x) + Chi_1*np.exp(1j*K_1*x))) # * np.exp(1j*K_1*x)))
-    plt.colorbar(p)
-    plt.savefig("Chi_2.png")
 
     # effective model predictons
     # Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,0,:], WG.eVecs_r[:,1,:]
