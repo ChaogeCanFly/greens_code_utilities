@@ -35,7 +35,7 @@ PCC = 'mpic++'
 SFC = 'gfortran'
 PFC = 'mpif90'
 # important: without trailing '/'!
-MKL_DIR = "/home/doppler/intel/mkl"
+MKL_DIR = os.path.expanduser("~/intel/mkl")
 
 PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'EXPAT':     'https://github.com/cgwalters/expat-git-mirror.git',
@@ -45,7 +45,8 @@ PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
 CONFIGURE_PETSC = ['--CXX=' + SCC,
                    '--FC=' + SFC,
                    '--download-metis',
-                   '--download-mpich',
+                   # '--download-mpich',
+                   '--download-openmpi',
                    '--download-mumps',
                    '--download-parmetis',
                    '--download-scalapack',
