@@ -214,13 +214,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
     # ------------------------------------------------------------------------
-    # plt.clf()
-    # incr=100
-    # plt.plot(WG.t[::incr], abs(Chi_0_eff[:,0][::incr]), "ro")
-    # plt.plot(WG.t[::incr], abs(Chi_0_eff[:,1][::incr]), "g-")
-    # plt.plot(WG.t[::incr], abs(Chi_1_eff[:,0][::incr]), "yo")
-    # plt.plot(WG.t[::incr], abs(Chi_1_eff[:,1][::incr]), "k-")
-    # plt.show()
+    # if 0:
+    #     plt.clf()
+    #     incr = 100
+    #     plt.plot(WG.t[::incr], abs(Chi_0_eff[:,0][::incr]), "r--")
+    #     plt.plot(WG.t[::incr], abs(Chi_0_eff[:,1][::incr]), "g-")
+    #     plt.plot(WG.t[::incr], abs(Chi_1_eff[:,0][::incr]), "y--")
+    #     plt.plot(WG.t[::incr], abs(Chi_1_eff[:,1][::incr]), "k-")
+    #     plt.show()
     # ------------------------------------------------------------------------
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
