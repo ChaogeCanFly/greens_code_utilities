@@ -20,7 +20,16 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True,
                        verbose=True):
     """Find discontinuities in the eigenvalues and reorder the eigensystem such
     that a smooth spectrum is obtained.
-        
+
+    Based on the (absolute) differences between the array components of K_0 and
+    K_1, the maximum jumping value is determined (corresponding to a
+    discontinuity from the modulo operation that is to be ignored in the
+    following procedure). The arrays are then reassembled at points where
+    jumps larger than eps have been found. We note that in a conservative
+    system, one does not have to worry about continuous phases of the
+    eigenfunctions, and, if gain/loss is introduced, the eigensystem is already
+    sorted.
+
         Parameters:
         -----------
             K_0, K_1: list or (N,) ndarray
@@ -39,7 +48,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True,
             K_0, K_1: (N,) ndarray
             Chi_0, Chi_1: (N,...) ndarray
     """
-    
+
     K_0, K_1 = [ np.array(z) for z in K_0, K_1]
 
     if plot:
@@ -49,11 +58,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True,
         ax1.plot(K_1.real, "r--")
         ax1.plot(K_1.imag, "g--")
 
-    # 1a) get differences between array components
     K_0_diff, K_1_diff = [ abs(np.diff(k)) for k in K_0, K_1 ]
-
-    # 1b) get maximal difference (= discontinous jump of back-folding in BZ)
-
     if K_0_diff.max() > K_1_diff.max():
         diff_max = K_0_diff.max()
         diff = K_0_diff
@@ -61,20 +66,14 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True,
         diff_max = K_1_diff.max()
         diff = K_1_diff
 
-    # a) if difference exceeds epsilon, switch (don't switch where diff is 
-    #    maximal)
-    epsilon = 2e-2
+    epsilon = 2.e-2
     jump = np.logical_and(diff > epsilon, diff != diff_max)
-    # jump = diff > epsilon
 
     if verbose:
         print "diff(K_n), jump-mask"
         for d, j in zip(diff, jump):
             print d, j
 
-    # 3) assemble the arrays in a piecewise fashion at points where eigenvalue
-    #    jumps occur (here we use eta = 0, we thus don't have to take care of
-    #    the phase)
     for n in np.where(jump)[0]:
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
@@ -103,8 +102,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     greens_path = os.environ.get('GREENS_CODE_XML')
     XML = os.path.join(greens_path, "input_periodic_cell.xml")
 
-    x = np.linspace(0, L, nx)
-    y = np.linspace(0, 1., (pphw*N+1))
 
     wg_kwargs = {'N': N,
                  'eta': eta,
@@ -116,10 +113,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     WG.x_EP = eps
     WG.solve_ODE()
 
+    x = np.linspace(0, L, nx)
+    y = np.linspace(0, 1., (pphw*N+1))
     eps, delta = WG.get_cycle_parameters(x)
 
-    Bloch_data = []
-    K_0, K_1, Chi_0, Chi_1 = [ [] for n in range(4) ]
+    K_0, K_1, Chi_0, Chi_1 = [ list() for n in range(4) ]
+
     for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
 
         ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
@@ -171,8 +170,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         K0, K1 = K[0], K[1]
         ev0, ev1 = ev[0, :], ev[1, :]
 
-        Bloch_data.append([xn, epsn, deltan,
-                           K0, K1, ev0, ev1])
         K_0.append(K0)
         K_1.append(K1)
         Chi_0.append(ev0)
@@ -193,25 +190,30 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=2e-2)
+                                                eps=2e-2, plot=False)
     Chi_0, Chi_1 = [ np.array(z).T for z in Chi_0, Chi_1]
 
+    part = np.real
+
     X, Y = np.meshgrid(x, y)
+
     plt.clf()
-    p = plt.pcolormesh(X, Y, np.abs(Chi_0)) # * np.exp(1j*K_0*x)))
+    Z = part(Chi_0 * np.exp(1j*K_0*x))
+    p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
     plt.savefig("Chi_0.png")
+
     plt.clf()
-    p = plt.pcolormesh(X, Y, np.abs(Chi_1)) # * np.exp(1j*K_1*x)))
+    Z = part(Chi_1 * np.exp(1j*K_1*x))
+    p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
     plt.savefig("Chi_1.png")
-    plt.clf()
 
     # effective model predictons
-    # Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,0,:], WG.eVecs_r[:,1,:]
     Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
+    # ------------------------------------------------------------------------
     # plt.clf()
     # incr=100
     # plt.plot(WG.t[::incr], abs(Chi_0_eff[:,0][::incr]), "ro")
@@ -219,26 +221,29 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     # plt.plot(WG.t[::incr], abs(Chi_1_eff[:,0][::incr]), "yo")
     # plt.plot(WG.t[::incr], abs(Chi_1_eff[:,1][::incr]), "k-")
     # plt.show()
-    # raw_input()
+    # ------------------------------------------------------------------------
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
 
     Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
-    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
+    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WG.kr*WG.t),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
 
     Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1*np.ones_like(y))
-    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
+    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*WG.t),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
 
     plt.clf()
-    p = plt.pcolormesh(X_eff, Y_eff, np.abs(Chi_0_eff.T)) # * np.exp(1j*(K_0_eff*WG.t))))
+    Z_eff = part(Chi_0_eff.T * np.exp(1j*(K_0_eff*WG.t)))
+    p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     plt.colorbar(p)
     plt.savefig("Chi_0_eff.png")
+
     plt.clf()
-    p = plt.pcolormesh(X_eff, Y_eff, np.abs(Chi_1_eff.T)) # * np.exp(1j*K_1_eff*WG.t)))
+    Z_eff = part(Chi_1_eff.T * np.exp(1j*(K_1_eff*WG.t)))
+    p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     plt.colorbar(p)
     plt.savefig("Chi_1_eff.png")
 
