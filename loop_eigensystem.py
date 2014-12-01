@@ -18,16 +18,16 @@ import helpers
 
 def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=3e-3, plot=True,
                        verbose=True):
-    """Find discontinuities in the eigenvalues and reorder the eigensystem such
-    that a smooth spectrum is obtained.
+    """Find discontinuities in the eigenvalues and reorder the eigensystem to
+    obtain a smooth spectrum.
 
     Based on the (absolute) differences between the array components of K_0 and
     K_1, the maximum jumping value is determined (corresponding to a
-    discontinuity from the modulo operation that is to be ignored in the
+    discontinuity from the modulo operation that has to be ignored in the
     following procedure). The arrays are then reassembled at points where
     jumps larger than eps have been found. We note that in a conservative
     system, one does not have to worry about continuous phases of the
-    eigenfunctions, and, if gain/loss is introduced, the eigensystem is already
+    eigenfunctions, and, if gain/loss are introduced, the eigensystem is already
     sorted.
 
         Parameters:
