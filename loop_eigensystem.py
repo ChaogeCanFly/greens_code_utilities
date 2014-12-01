@@ -16,8 +16,7 @@ import bloch
 import helpers
 
 
-def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=3e-3, plot=True,
-                       verbose=True):
+def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     """Find discontinuities in the eigenvalues and reorder the eigensystem to
     obtain a smooth spectrum.
 
@@ -40,8 +39,6 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=3e-3, plot=True,
                 maximum jump to be tolerated in the eigenvalues
             plot: bool
                 whether to plot the spectrum before and after the smoothing
-            verbose: bool
-                whether to print additional output
 
         Returns:
         --------
@@ -69,18 +66,11 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=3e-3, plot=True,
     # jump = np.logical_and(diff > eps, diff != diff_max)
     jump = diff > eps
 
-    if verbose:
-        print "diff(K_n), jump-mask"
-        for d, j in zip(diff, jump):
-            print d, j
-
     for n in np.where(jump)[0]:
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
         Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1], Chi_1[n+1:])),
                         np.concatenate((Chi_1[:n+1], Chi_0[n+1:])))
-
-    Chi_0, Chi_1 = [ np.array(z) for z in Chi_0, Chi_1]
 
     if plot:
         ax2.plot(K_0.real, "r-")
@@ -191,8 +181,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=2e-2, plot=True,
-                                                verbose=False)
+                                                eps=2e-2, plot=True)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
 
     part = np.real
