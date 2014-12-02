@@ -82,7 +82,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
                            nx=100, loop_direction="+", loop_type='Bell',
                            mpi=False, pphw=100):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
@@ -192,27 +192,43 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     Z = part(Chi_0 * np.exp(1j*K_0*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
+    # p.set_clim(-1.,1.)
     plt.savefig("Chi_0.png")
 
     plt.clf()
     Z = part(Chi_1 * np.exp(1j*K_1*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
+    # p.set_clim(-1.,1.)
     plt.savefig("Chi_1.png")
 
     # effective model predictons
-    # Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,0,:], WG.eVecs_r[:,1,:]
     Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
     # ------------------------------------------------------------------------
+    # eigenvalues
     if 1:
         plt.clf()
+        # f, (ax1, ax2) = plt.subplots(nrows=2)
+        f, (ax1, ax2, ax3) = plt.subplots(nrows=3)
+        ax1.plot(x, part(K_0), "r-")
+        ax1.plot(x, part(K_1), "g--")
+        ax2.plot(WG.t, part(K_0_eff), "r-")
+        # ax2.plot(WG.t, part(K_0_eff) - WG.kr, "r-")
+        ax2.plot(WG.t, part(K_1_eff), "g--")
+        ax3.plot(x, abs(K_1 - K_0), "k-")
+        ax3.plot(WG.t, abs(K_1_eff.real - K_0_eff.real), "k--")
+        plt.savefig("eigenvalues.png")
+        # plt.show()
+    # eigenvectors
+    if 0:
+        plt.clf()
         incr = 100
-        plt.plot(WG.t[::incr], abs(Chi_0_eff[:,0][::incr]), "r--")
-        plt.plot(WG.t[::incr], abs(Chi_0_eff[:,1][::incr]), "g-")
-        plt.plot(WG.t[::incr], abs(Chi_1_eff[:,0][::incr]), "y--")
-        plt.plot(WG.t[::incr], abs(Chi_1_eff[:,1][::incr]), "k-")
+        plt.plot(WG.t[::incr], part(Chi_0_eff[:,0][::incr]), "r-")
+        plt.plot(WG.t[::incr], part(Chi_0_eff[:,1][::incr]), "g-")
+        plt.plot(WG.t[::incr], part(Chi_1_eff[:,0][::incr]), "r--")
+        plt.plot(WG.t[::incr], part(Chi_1_eff[:,1][::incr]), "g--")
         plt.show()
     # ------------------------------------------------------------------------
 
@@ -239,12 +255,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=-0.05, eps=0.05,
     Z_eff = part(Chi_0_eff.T)
     p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     plt.colorbar(p)
+    # p.set_clim(-7.,7.)
     plt.savefig("Chi_0_eff.png")
 
     plt.clf()
     Z_eff = part(Chi_1_eff.T)
     p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     plt.colorbar(p)
+    # p.set_clim(-7.,7.)
     plt.savefig("Chi_1_eff.png")
 
 
