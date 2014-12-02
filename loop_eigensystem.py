@@ -181,8 +181,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
-    K_0, K_1, Chi_0, Chi_1, nmax = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                      eps=2e-2, plot=False)
+    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
+                                                eps=2e-2, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
 
     # test: unfolding ---------------------------------------------------------
