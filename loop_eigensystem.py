@@ -187,10 +187,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
     # test: unfolding ---------------------------------------------------------
     L_range = 2*np.pi/(WG.kr + delta)  # make small error since L != r_nx*dx
-    # K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    # K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
-    K_0 = np.unwrap(K_0.real*L_range) + 1j*K_0.imag
-    K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
+    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
+    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
+    # K_0 = np.unwrap(K_0.real*L_range) + 1j*K_0.imag
+    # K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
     # K_0 *= -1
     # K_1 *= -1
     
