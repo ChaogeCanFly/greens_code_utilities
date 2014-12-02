@@ -69,7 +69,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     # get reciprocal lattice vector G
     G = 2.*np.pi/L
 
-    # get eigenvectors chi_n
+    # get eigenvectors chi_n (performance critical!)
     if return_eigenvectors:
         chi = np.loadtxt(evecsfile, dtype=str)
         chi = [ map(convert_to_complex, x) for x in chi ]
@@ -84,7 +84,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                                      converters={0: convert_to_complex,
                                                  1: convert_to_complex})
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
-    k /= dx*r_nx
+    k /= dx*r_nx  # = period L for chi(x+L) = chi(x)
 
     # --- experimental: sort the array according to velocities first, then
     # fill v_left and v_right with left and rightmovers
@@ -124,8 +124,9 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
 
     if fold_back:
-        k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag for x in
-                                                             k_left, k_right ]
+        # k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag
+        k_left, k_right = [ np.mod(x.real, G) + 1j*x.imag
+                             for x in k_left, k_right ]
         # map into 1.BZ
         for k in k_left, k_right:
             k[k > G/2] -= G
@@ -143,6 +144,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         print "r_nx:", r_nx
         print "dx*r_nx:", dx*r_nx
         print "|L - dx*r_nx|:", abs(L - dx*r_nx)
+        print "|G - kr|:", abs(G - kr)
 
     if return_velocities and not return_eigenvectors:
         return k_left, k_right, v_left, v_right
