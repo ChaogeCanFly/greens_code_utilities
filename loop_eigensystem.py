@@ -83,13 +83,16 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-def run_single_job(n, xn, epsn, deltan, **job_kwargs):
+# def run_single_job(n, xn, epsn, deltan, eta=0.0, pphw=100, XML='input.xml',
+# def run_single_job(args, eta=0.0, pphw=100, XML='input.xml',
+                   # N=1.05, WG=Waveguide(), loop_direction='-'):
+def run_single_job(args):
     """."""
+    n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction = args
+    # n, xn, epsn, deltan = args
     ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
     print
     print ID
-
-    locals().update(job_kwargs)
 
     # prepare waveguide and profile
     profile_kwargs = {'eps': epsn,
@@ -101,7 +104,7 @@ def run_single_job(n, xn, epsn, deltan, **job_kwargs):
     wg_kwargs_n = {'N': N,
                    'eta': eta,
                    'L': 2*np.pi/(WG.kr + deltan),
-                   'init_phase': 0.0*init_phase,
+                   'init_phase': 0.0,
                    'loop_direction': loop_direction,
                    'loop_type': 'Constant'}
 
@@ -109,23 +112,20 @@ def run_single_job(n, xn, epsn, deltan, **job_kwargs):
     ep.profile.Generate_Profiles(**profile_kwargs)
 
     # run code
-    if mpi:
-        cmd = "mpirun -np 4 solve_xml_mumps dev"
-    else:
-        cmd = "solve_xml_mumps dev"
+    cmd = "solve_xml_mumps dev"
     greens_code = subprocess.Popen(cmd.split(),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
     greens_code.communicate()
 
-    for file in glob.glob("N_*profile"):
-        if "lower" in file:
-            shutil.move(file, ID + ".lower_profile")
-        if "upper" in file:
-            shutil.move(file, ID + ".upper_profile")
-
-    shutil.move("upper.dat", ID + ".upper_dat")
-    shutil.move("lower.dat", ID + ".lower_dat")
+    # for file in glob.glob("N_*profile"):
+    #     if "lower" in file:
+    #         shutil.move(file, ID + ".lower_profile")
+    #     if "upper" in file:
+    #         shutil.move(file, ID + ".upper_profile")
+    #
+    # shutil.move("upper.dat", ID + ".upper_dat")
+    # shutil.move("lower.dat", ID + ".lower_dat")
 
     # get Bloch eigensystem
     K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
@@ -138,13 +138,8 @@ def run_single_job(n, xn, epsn, deltan, **job_kwargs):
     K0, K1 = K[0], K[1]
     ev0, ev1 = ev[0,:], ev[1,:]
 
-    K_0.append(K0)
-    K_1.append(K1)
-    Chi_0.append(ev0)
-    Chi_1.append(ev1)
-
     z = ev0.view(dtype=float)
-    np.savetxt(ID + ".dat", zip(y, ev0.real, ev0.imag,
+    np.savetxt(ID + ".dat", zip(ev0.real, ev0.imag,
                                 np.ones_like(z)*K0.real,
                                 np.ones_like(z)*K0.imag,
                                 ev1.real, ev1.imag,
@@ -156,6 +151,7 @@ def run_single_job(n, xn, epsn, deltan, **job_kwargs):
     shutil.copyfile("pic.geometry.sine_boundary.1.jpg", ID + ".jpg")
 
     print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+    return K0, K1, ev0, ev1
 
 
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
@@ -184,122 +180,60 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
     K_0, K_1, Chi_0, Chi_1 = [ list() for n in range(4) ]
 
-    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
     pool = multiprocessing.Pool(processes=4)
-    job_args = enumerate(zip(x, eps, delta))
-    job_kwargs = {'K_0': K_0}
-    job_kwargs = wg_kwargs.update(job_kwargs)
-    pool.map(run_single_job, jobs_args)
+    # job_args = enumerate(zip(x, eps, delta))
+    job_kwargs = {'eta': eta,
+                  'pphw': pphw,
+                  'XML': XML,
+                  'N': N,
+                  'WG': WG,
+                  'loop_direction': loop_direction}
+    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
+    #     print n
+        # K0, K1, ev0, ev1 = pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
+        #                               kwds=job_kwargs).get()
+        # K_0.append(K0)
+        # K_1.append(K1)
+        # Chi_0.append(ev0)
+        # Chi_1.append(ev1)
 
-    K_0, K_1, Chi_0, Chi_1, nmax = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                      eps=2e-2, plot=False)
+    job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction) for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+    print job_list
+
+    pool.map(run_single_job, job_list)
+    K_0, K_1, Chi_0, Chi_1 = results
+    # K_0.append(K0)
+    # K_1.append(K1)
+    # Chi_0.append(ev0)
+    # Chi_1.append(ev1)
+
+    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
+                                                eps=2e-2, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
 
-    # test: unfolding ---------------------------------------------------------
+    # test: unwrapping --------------------------------------------------------
     L_range = 2*np.pi/(WG.kr + delta)  # make small error since L != r_nx*dx
-    # K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    # K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
-    K_0 = np.unwrap(K_0.real*L_range) + 1j*K_0.imag
-    K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
-    # K_0 *= -1
-    # K_1 *= -1
-
-    # -------------------------
-    # comment:
-    # --------
-    #
-    #  we have for the solutions of the empty waveguide:
-    #
-    #   chi_0 = a0*exp(i*k_0*x)
-    #   chi_1 = a1*exp(i*k_1*x)*cos(pi*y)
-    #
-    #   K_0 = k_0 = k_1 + kr
-    #   K_1 = k_1
-    #
-    # -------------------------
-
+    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
+    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
     # -------------------------------------------------------------------------
 
-    part = np.real
-
-    X, Y = np.meshgrid(x, y)
-
-    plt.clf()
-    Z = part(Chi_0 * np.exp(1j*K_0*x))
-    p = plt.pcolormesh(X, Y, Z)
-    plt.colorbar(p)
-    # p.set_clim(-1.,1.)
-    plt.savefig("Chi_0.png")
-
-    plt.clf()
-    Z = part(Chi_1 * np.exp(1j*K_1*x))
-    p = plt.pcolormesh(X, Y, Z)
-    plt.colorbar(p)
-    # p.set_clim(-1.,1.)
-    plt.savefig("Chi_1.png")
-
     # effective model predictons
-    Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
     # ------------------------------------------------------------------------
     # eigenvalues
+    part = np.real
     if 1:
         plt.clf()
-        # f, (ax1, ax2) = plt.subplots(nrows=2)
         f, (ax1, ax2, ax3) = plt.subplots(nrows=3)
         ax1.plot(x, part(K_0), "r-")
         ax1.plot(x, part(K_1), "g--")
         ax2.plot(WG.t, part(K_0_eff), "r-")
-        # ax2.plot(WG.t, part(K_0_eff) - WG.kr, "r-")
         ax2.plot(WG.t, part(K_1_eff), "g--")
         ax3.plot(x, abs(K_1 - K_0), "k-")
         ax3.plot(WG.t, abs(K_1_eff.real - K_0_eff.real), "k--")
         plt.savefig("eigenvalues.png")
-        # plt.show()
-    # eigenvectors
-    if 0:
-        plt.clf()
-        incr = 100
-        plt.plot(WG.t[::incr], part(Chi_0_eff[:,0][::incr]), "r-")
-        plt.plot(WG.t[::incr], part(Chi_0_eff[:,1][::incr]), "g-")
-        plt.plot(WG.t[::incr], part(Chi_1_eff[:,0][::incr]), "r--")
-        plt.plot(WG.t[::incr], part(Chi_1_eff[:,1][::incr]), "g--")
-        plt.show()
     # ------------------------------------------------------------------------
-
-    X_eff, Y_eff = np.meshgrid(WG.t, y)
-
-    print "WG.kr", WG.kr, 2*np.pi/WG.kr
-    print "WG.k0", WG.k0, 2*np.pi/WG.k0
-    print "WG.k1", WG.k1, 2*np.pi/WG.k1
-
-    Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
-    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
-                           np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
-    Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
-    Chi_0_eff = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
-
-    Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1*np.ones_like(y))
-    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
-                           np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
-    Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
-    Chi_1_eff = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
-                         np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
-
-    plt.clf()
-    Z_eff = part(Chi_0_eff.T)
-    p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
-    plt.colorbar(p)
-    # p.set_clim(-7.,7.)
-    plt.savefig("Chi_0_eff.png")
-
-    plt.clf()
-    Z_eff = part(Chi_1_eff.T)
-    p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
-    plt.colorbar(p)
-    # p.set_clim(-7.,7.)
-    plt.savefig("Chi_1_eff.png")
 
 
 if __name__ == '__main__':
