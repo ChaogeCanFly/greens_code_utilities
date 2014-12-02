@@ -2,6 +2,7 @@
 
 import glob
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import os
 import shutil
@@ -26,8 +27,8 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     following procedure). The arrays are then reassembled at points where
     jumps larger than eps have been found. We note that in a conservative
     system, one does not have to worry about continuous phases of the
-    eigenfunctions, and, if gain/loss are introduced, the eigensystem is already
-    sorted.
+    eigenfunctions, and, if gain/loss are introduced, the eigensystem is
+    already sorted.
 
         Parameters:
         -----------
@@ -82,6 +83,81 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
+def run_single_job(n, xn, epsn, deltan, **job_kwargs):
+    """."""
+    ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
+    print
+    print ID
+
+    locals().update(job_kwargs)
+
+    # prepare waveguide and profile
+    profile_kwargs = {'eps': epsn,
+                      'delta': deltan,
+                      'pphw': pphw,
+                      'input_xml': XML,
+                      'custom_directory': os.getcwd(),
+                      'neumann': 1}
+    wg_kwargs_n = {'N': N,
+                   'eta': eta,
+                   'L': 2*np.pi/(WG.kr + deltan),
+                   'init_phase': 0.0*init_phase,
+                   'loop_direction': loop_direction,
+                   'loop_type': 'Constant'}
+
+    profile_kwargs.update(wg_kwargs_n)
+    ep.profile.Generate_Profiles(**profile_kwargs)
+
+    # run code
+    if mpi:
+        cmd = "mpirun -np 4 solve_xml_mumps dev"
+    else:
+        cmd = "solve_xml_mumps dev"
+    greens_code = subprocess.Popen(cmd.split(),
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+    greens_code.communicate()
+
+    for file in glob.glob("N_*profile"):
+        if "lower" in file:
+            shutil.move(file, ID + ".lower_profile")
+        if "upper" in file:
+            shutil.move(file, ID + ".upper_profile")
+
+    shutil.move("upper.dat", ID + ".upper_dat")
+    shutil.move("lower.dat", ID + ".lower_dat")
+
+    # get Bloch eigensystem
+    K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
+                                              return_velocities=True,
+                                              verbose=True,
+                                              fold_back=True)
+    if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
+        sys.exit("Error: group velocities are negative!")
+
+    K0, K1 = K[0], K[1]
+    ev0, ev1 = ev[0,:], ev[1,:]
+
+    K_0.append(K0)
+    K_1.append(K1)
+    Chi_0.append(ev0)
+    Chi_1.append(ev1)
+
+    z = ev0.view(dtype=float)
+    np.savetxt(ID + ".dat", zip(y, ev0.real, ev0.imag,
+                                np.ones_like(z)*K0.real,
+                                np.ones_like(z)*K0.imag,
+                                ev1.real, ev1.imag,
+                                np.ones_like(z)*K1.real,
+                                np.ones_like(z)*K1.imag),
+               header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
+                       'Im(ev1) Re(K1) Im(K1)'))
+
+    shutil.copyfile("pic.geometry.sine_boundary.1.jpg", ID + ".jpg")
+
+    print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+
+
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
                            nx=100, loop_direction="+", loop_type='Bell',
                            mpi=False, pphw=100):
@@ -108,78 +184,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
     K_0, K_1, Chi_0, Chi_1 = [ list() for n in range(4) ]
 
-    for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-
-        ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
-        print
-        print ID
-
-        # prepare waveguide and profile
-        profile_kwargs = {'eps': epsn,
-                          'delta': deltan,
-                          'pphw': pphw,
-                          'input_xml': XML,
-                          'custom_directory': os.getcwd(),
-                          'neumann': 1}
-        wg_kwargs_n = {'N': N,
-                       'eta': eta,
-                       'L': 2*np.pi/(WG.kr + deltan),
-                       'init_phase': 0.0*init_phase,
-                       'loop_direction': loop_direction,
-                       'loop_type': 'Constant'}
-
-        profile_kwargs.update(wg_kwargs_n)
-        ep.profile.Generate_Profiles(**profile_kwargs)
-
-        # run code
-        if mpi:
-            cmd = "mpirun -np 4 solve_xml_mumps dev"
-        else:
-            cmd = "solve_xml_mumps dev"
-        greens_code = subprocess.Popen(cmd.split(),
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-        greens_code.communicate()
-
-        for file in glob.glob("N_*profile"):
-            if "lower" in file:
-                shutil.move(file, ID + ".lower_profile")
-            if "upper" in file:
-                shutil.move(file, ID + ".upper_profile")
-
-        shutil.move("upper.dat", ID + ".upper_dat")
-        shutil.move("lower.dat", ID + ".lower_dat")
-
-        # get Bloch eigensystem
-        K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
-                                                  return_velocities=True,
-                                                  verbose=True,
-                                                  fold_back=True)
-
-        if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
-            sys.exit("Error: group velocities are negative!")
-
-        K0, K1 = K[0], K[1]
-        ev0, ev1 = ev[0,:], ev[1,:]
-
-        K_0.append(K0)
-        K_1.append(K1)
-        Chi_0.append(ev0)
-        Chi_1.append(ev1)
-
-        z = ev0.view(dtype=float)
-        np.savetxt(ID + ".dat", zip(y, ev0.real, ev0.imag,
-                                    np.ones_like(z)*K0.real,
-                                    np.ones_like(z)*K0.imag,
-                                    ev1.real, ev1.imag,
-                                    np.ones_like(z)*K1.real,
-                                    np.ones_like(z)*K1.imag),
-                   header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
-                           'Im(ev1) Re(K1) Im(K1)'))
-
-        shutil.copyfile("pic.geometry.sine_boundary.1.jpg", ID + ".jpg")
-
-        print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
+    pool = multiprocessing.Pool(processes=4)
+    job_args = enumerate(zip(x, eps, delta))
+    job_kwargs = {'K_0': K_0}
+    job_kwargs = wg_kwargs.update(job_kwargs)
+    pool.map(run_single_job, jobs_args)
 
     K_0, K_1, Chi_0, Chi_1, nmax = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
                                                       eps=2e-2, plot=False)
@@ -193,7 +203,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
     # K_0 *= -1
     # K_1 *= -1
-    
+
     # -------------------------
     # comment:
     # --------
