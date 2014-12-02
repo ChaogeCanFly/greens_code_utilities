@@ -88,7 +88,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop."""
 
-    # get input.xml
     greens_path = os.environ.get('GREENS_CODE_XML')
     XML = os.path.join(greens_path, "input_periodic_cell.xml")
 
@@ -124,11 +123,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         wg_kwargs_n = {'N': N,
                        'eta': eta,
                        'L': 2*np.pi/(WG.kr + deltan),
-                       'init_phase': 0.0*init_phase,
+                       'init_phase': 0.0,
                        'loop_direction': loop_direction,
                        'loop_type': 'Constant'}
-
         profile_kwargs.update(wg_kwargs_n)
+
         ep.profile.Generate_Profiles(**profile_kwargs)
 
         # run code
@@ -154,7 +153,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
                                                   return_velocities=True,
                                                   verbose=True,
-                                                  fold_back=True)
+                                                  fold_back=False)
 
         if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
             sys.exit("Error: group velocities are negative!")
@@ -191,23 +190,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
     # K_0 = np.unwrap(K_0.real*L_range) + 1j*K_0.imag
     # K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
-    # K_0 *= -1
-    # K_1 *= -1
-    
-    # -------------------------
-    # comment:
-    # --------
-    #
-    #  we have for the solutions of the empty waveguide:
-    #
-    #   chi_0 = a0*exp(i*k_0*x)
-    #   chi_1 = a1*exp(i*k_1*x)*cos(pi*y)
-    #
-    #   K_0 = k_0 = k_1 + kr
-    #   K_1 = k_1
-    #
-    # -------------------------
-
     # -------------------------------------------------------------------------
 
     part = np.real
