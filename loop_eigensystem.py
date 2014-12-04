@@ -182,7 +182,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=1e-2, plot=False)
+                                                eps=2e-2, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
 
     # test: unfolding ---------------------------------------------------------
@@ -218,8 +218,15 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     K_0_eff_int = scipy.interpolate.interp1d(WG.t, K_0_eff.real)
     K_1_eff_int = scipy.interpolate.interp1d(WG.t, K_1_eff.real)
 
-    K_0_eff = -K_0_eff_int(x) % (delta + WG.kr)
-    K_1_eff = -K_1_eff_int(x) % (delta + WG.kr)
+    G = delta + WG.kr
+    # K_0_eff = -K_0_eff_int(x) % G
+    # K_1_eff = -K_1_eff_int(x) % G
+    K_0_eff = ((-K_0_eff_int(x) + G/2.) % G - G/2.)
+    K_1_eff = ((-K_1_eff_int(x) + G/2.) % G - G/2.)
+
+    # for k in K_0_eff, K_1_eff:
+    #     k[k > G/2.] -= G[k > G/2.]
+    #     k[k < -G/2.] += G[k < -G/2.]
 
     # ------------------------------------------------------------------------
     # eigenvalues
@@ -233,8 +240,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         ax2.plot(x, part(K_1_eff), "g--")
         ax3.plot(x, abs(K_1 - K_0), "k-")
         ax3.plot(x, abs(K_1_eff - K_0_eff), "k--")
-        ax4.plot(x, K_0.real - K_0_eff_int(x), "k-")
-        ax4.plot(x, K_1.real - K_1_eff_int(x), "k--")
+        ax4.plot(x, K_0.real - K_0_eff, "k-")
+        ax4.plot(x, K_1.real - K_1_eff, "k--")
         f.savefig("eigenvalues.png")
         # plt.show()
     # eigenvectors
