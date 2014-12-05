@@ -84,10 +84,11 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                                      converters={0: convert_to_complex,
                                                  1: convert_to_complex})
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
-    k /= dx*r_nx  # = period L for chi(x+L) = chi(x)
+    # k /= dx*r_nx
+    k /= L  # = period L for chi(x+L) = chi(x) (note that generally L!=r_nx*dx)
 
-    # --- experimental: sort the array according to velocities first, then
-    # fill v_left and v_right with left and rightmovers -----------------------
+    # --- experimental: sort the array according to velocities first, then fill
+    # v_left and v_right with left and rightmovers ----------------------------
     # initial_sort = np.argsort(velocities.real)
     # k = k[initial_sort]
     # velocities = velocities[initial_sort]
