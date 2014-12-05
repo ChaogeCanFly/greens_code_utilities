@@ -4,7 +4,7 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import scipy.interpolate
+from scipy.interpolate import interp1d
 import shutil
 import subprocess
 import sys
@@ -47,7 +47,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
             Chi_0, Chi_1: (N,...) ndarray
     """
 
-    K_0, K_1 = [ np.array(z) for z in K_0, K_1]
+    K_0, K_1 = [ np.array(z) for z in K_0, K_1 ]
 
     if plot:
         f, (ax1, ax2) = plt.subplots(nrows=2)
@@ -182,23 +182,57 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=2e-2, plot=False)
-    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
-
-    # test: unfolding ---------------------------------------------------------
-    # L_range = 2*np.pi/(WG.kr + delta)  # make small error since L != r_nx*dx
-    # K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    # K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
-    # K_0 = np.unwrap(K_0.real*L_range) + 1j*K_0.imag
-    # K_1 = np.unwrap(K_1.real*L_range) + 1j*K_1.imag
-    # -------------------------------------------------------------------------
+                                                eps=7.5e-3, plot=False)
+    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
 
     part = np.real
+
+    # effective model predictons
+    Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
+    K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
+
+    print K_0_eff.shape
+    print K_1_eff.shape
+
+    K_0_eff = (interp1d(WG.t, K_0_eff.real)(x) +
+                1j*interp1d(WG.t, K_0_eff.imag)(x))
+    K_1_eff = (interp1d(WG.t, K_1_eff.real)(x) +
+                1j*interp1d(WG.t, K_1_eff.imag)(x))
+
+    print K_0_eff
+    print K_0_eff.shape
+    print K_1_eff
+    print K_1_eff.shape
+    print delta
+    print delta.shape
+
+    # fold back ---------------------------------------------------------------
+    G = delta + WG.kr
+    # K_0_eff = K_0_eff_int(x)
+    # K_1_eff = K_1_eff_int(x)
+    # K_0_eff = ((-K_0_eff_int(x) + G/2.) % G - G/2.)
+    # K_1_eff = ((-K_1_eff_int(x) + G/2.) % G - G/2.)
+    K_0_eff = ((-K_0_eff.real + G/2.) % G - G/2.) + 1j*K_0_eff.imag
+    K_1_eff = ((-K_1_eff.real + G/2.) % G - G/2.) + 1j*K_1_eff.imag
+    # -------------------------------------------------------------------------
+
+    # unwrapp phase -----------------------------------------------------------
+    G = delta + WG.kr
+    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
+    # for k in K_0, K_1, K_0_eff, K_1_eff:
+    #     k = np.unwrap(k.real*L_range)/L_range + 1j*k.imag
+
+    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
+    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
+    K_0_eff = np.unwrap(K_0_eff.real*L_range)/L_range + 1j*K_0_eff.imag
+    K_1_eff = np.unwrap(K_1_eff.real*L_range)/L_range + 1j*K_1_eff.imag
+    # -------------------------------------------------------------------------
 
     X, Y = np.meshgrid(x, y)
 
     plt.clf()
     Z = part(Chi_0 * np.exp(1j*K_0*x))
+    # Z = part(Chi_0 * np.exp(1j*(-K_0+G)*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
     # p.set_clim(-1.,1.)
@@ -206,27 +240,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
     plt.clf()
     Z = part(Chi_1 * np.exp(1j*K_1*x))
+    # Z = part(Chi_1 * np.exp(1j*(-K_1+G)*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
     # p.set_clim(-1.,1.)
     plt.savefig("Chi_1.png")
-
-    # effective model predictons
-    Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
-    K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
-
-    K_0_eff_int = scipy.interpolate.interp1d(WG.t, K_0_eff.real)
-    K_1_eff_int = scipy.interpolate.interp1d(WG.t, K_1_eff.real)
-
-    G = delta + WG.kr
-    # K_0_eff = -K_0_eff_int(x) % G
-    # K_1_eff = -K_1_eff_int(x) % G
-    K_0_eff = ((-K_0_eff_int(x) + G/2.) % G - G/2.)
-    K_1_eff = ((-K_1_eff_int(x) + G/2.) % G - G/2.)
-
-    # for k in K_0_eff, K_1_eff:
-    #     k[k > G/2.] -= G[k > G/2.]
-    #     k[k < -G/2.] += G[k < -G/2.]
 
     # ------------------------------------------------------------------------
     # eigenvalues
@@ -234,6 +252,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         plt.clf()
         # f, (ax1, ax2) = plt.subplots(nrows=2)
         f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
+        # ax1.plot(x, -part(K_0 + G), "r-")
+        # ax1.plot(x, -part(K_1 + G), "g--")
         ax1.plot(x, part(K_0), "r-")
         ax1.plot(x, part(K_1), "g--")
         ax2.plot(x, part(K_0_eff), "r-")
@@ -243,7 +263,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
         ax4.plot(x, K_0.real - K_0_eff, "k-")
         ax4.plot(x, K_1.real - K_1_eff, "k--")
         f.savefig("eigenvalues.png")
-        # plt.show()
+        plt.show()
     # eigenvectors
     if 0:
         plt.clf()
@@ -257,22 +277,18 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
 
-    print "WG.kr", WG.kr, 2*np.pi/WG.kr
-    print "WG.k0", WG.k0, 2*np.pi/WG.k0
-    print "WG.k1", WG.k1, 2*np.pi/WG.k1
-
     Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
     Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
-    Chi_0_eff = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
+    # Chi_0_eff = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
 
     Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1*np.ones_like(y))
     Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
-    Chi_1_eff = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
-                         np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
+    # Chi_1_eff = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*WG.t),
+    #                      np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
 
     plt.clf()
     Z_eff = part(Chi_0_eff.T)
