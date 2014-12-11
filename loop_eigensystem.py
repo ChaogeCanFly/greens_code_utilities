@@ -48,6 +48,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     """
 
     K_0, K_1 = [ np.array(z) for z in K_0, K_1 ]
+    Chi_0, Chi_1 = [ np.array(z) for z in Chi_0, Chi_1 ]
 
     if plot:
         f, (ax1, ax2) = plt.subplots(nrows=2)
@@ -57,17 +58,26 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
         ax1.plot(K_1.imag, "g--")
 
     K_0_diff, K_1_diff = [ abs(np.diff(k)) for k in K_0, K_1 ]
-    if K_0_diff.max() > K_1_diff.max():
-        diff_max = K_0_diff.max()
-        diff = K_0_diff
-    else:
-        diff_max = K_1_diff.max()
-        diff = K_1_diff
+    diff = K_0_diff
 
     # jump = np.logical_and(diff > eps, diff != diff_max)
-    jump = diff > eps
+    # jump = diff > eps
 
-    for n in np.where(jump)[0]:
+    # for n in np.where(jump)[0]:
+    #     print n
+    #     K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
+    #                 np.concatenate((K_1[:n+1], K_0[n+1:])))
+    #     Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1], Chi_1[n+1:])),
+    #                     np.concatenate((Chi_1[:n+1], Chi_0[n+1:])))
+
+    jump = K_0 < K_1
+    K_0[jump], K_1[jump] = K_1[jump], K_0[jump]
+    Chi_0[jump], Chi_1[jump] = Chi_1[jump], Chi_0[jump]
+
+    # find minimum distance between eigenvalues and switch (only for eta = 0)
+    # if abs(K_0 - K_1).min() < eps:
+    if 1:
+        n = np.argmin(abs(K_0 - K_1))
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
         Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1], Chi_1[n+1:])),
@@ -181,8 +191,19 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
+    # unwrapp phase -----------------------------------------------------------
+    G = delta + WG.kr
+    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
+
+    K_0, K_1 = [ np.array(z) for z in K_0, K_1 ]
+
+    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
+    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
+    # -------------------------------------------------------------------------
+
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=7.5e-3, plot=False)
+                                                eps=1e-2, plot=True)
+
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
 
     part = np.real
@@ -191,20 +212,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
-    print K_0_eff.shape
-    print K_1_eff.shape
-
     K_0_eff = (interp1d(WG.t, K_0_eff.real)(x) +
                 1j*interp1d(WG.t, K_0_eff.imag)(x))
     K_1_eff = (interp1d(WG.t, K_1_eff.real)(x) +
                 1j*interp1d(WG.t, K_1_eff.imag)(x))
-
-    print K_0_eff
-    print K_0_eff.shape
-    print K_1_eff
-    print K_1_eff.shape
-    print delta
-    print delta.shape
 
     # fold back ---------------------------------------------------------------
     G = delta + WG.kr
@@ -217,13 +228,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     # -------------------------------------------------------------------------
 
     # unwrapp phase -----------------------------------------------------------
-    G = delta + WG.kr
-    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
-    # for k in K_0, K_1, K_0_eff, K_1_eff:
-    #     k = np.unwrap(k.real*L_range)/L_range + 1j*k.imag
-
-    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
     K_0_eff = np.unwrap(K_0_eff.real*L_range)/L_range + 1j*K_0_eff.imag
     K_1_eff = np.unwrap(K_1_eff.real*L_range)/L_range + 1j*K_1_eff.imag
     # -------------------------------------------------------------------------
