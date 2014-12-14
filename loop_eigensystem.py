@@ -93,8 +93,9 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
                            nx=100, loop_direction="+", loop_type='Bell',
+                           init_state='a', init_phase=0.0,
                            mpi=False, pphw=100):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop."""
@@ -106,11 +107,32 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
                  'eta': eta,
                  'L': L,
                  'init_phase': init_phase,
+                 'init_state': init_state,
                  'loop_direction': loop_direction,
                  'loop_type': loop_type}
     WG = Waveguide(**wg_kwargs)
     WG.x_EP = eps
-    WG.solve_ODE()
+    _, b0, b1 = WG.solve_ODE()
+
+    # trajectories ------------------------------------------------------------
+    f, (ax1, ax2) = plt.subplots(nrows=2)
+    ax1.semilogy(WG.t, abs(b0), "r-")
+    ax1.semilogy(WG.t, abs(b1), "g-")
+
+    wg_kwargs['loop_direction'] = '+'
+    WG = Waveguide(**wg_kwargs)
+    WG.x_EP = eps
+    _, b0, b1 = WG.solve_ODE()
+
+    ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
+    ax1.semilogy(WG.t, abs(b1[::-1]), "g--")
+
+    ax2.plot(WG.t, WG.eVals[:,0].real, "r-")
+    ax2.plot(WG.t, WG.eVals[:,1].real, "g-")
+    ax2.plot(WG.t, WG.eVals[:,0].imag, "r--")
+    ax2.plot(WG.t, WG.eVals[:,1].imag, "g--")
+    plt.show()
+    # -------------------------------------------------------------------------
 
     x = np.linspace(0, L, nx)
     y = np.linspace(0, 1., (pphw*N+1))
@@ -306,6 +328,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., init_phase=0.0, eps=0.05,
     plt.colorbar(p)
     # p.set_clim(-7.,7.)
     plt.savefig("Chi_1_eff.png")
+
+    # save potential ----------------------------------------------------------
+    np.savetxt("potential_imag_0.dat", np.abs(Chi_0).flatten())
+    np.savetxt("potential_imag_1.dat", np.abs(Chi_1).flatten())
+    # -------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
