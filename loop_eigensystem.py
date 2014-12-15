@@ -115,23 +115,24 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
     _, b0, b1 = WG.solve_ODE()
 
     # trajectories ------------------------------------------------------------
-    f, (ax1, ax2) = plt.subplots(nrows=2)
-    ax1.semilogy(WG.t, abs(b0), "r-")
-    ax1.semilogy(WG.t, abs(b1), "g-")
+    if 0:
+        f, (ax1, ax2) = plt.subplots(nrows=2)
+        ax1.semilogy(WG.t, abs(b0), "r-")
+        ax1.semilogy(WG.t, abs(b1), "g-")
 
-    wg_kwargs['loop_direction'] = '+'
-    WG = Waveguide(**wg_kwargs)
-    WG.x_EP = eps
-    _, b0, b1 = WG.solve_ODE()
+        wg_kwargs['loop_direction'] = '+'
+        WG = Waveguide(**wg_kwargs)
+        WG.x_EP = eps
+        _, b0, b1 = WG.solve_ODE()
 
-    ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
-    ax1.semilogy(WG.t, abs(b1[::-1]), "g--")
+        ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
+        ax1.semilogy(WG.t, abs(b1[::-1]), "g--")
 
-    ax2.plot(WG.t, WG.eVals[:,0].real, "r-")
-    ax2.plot(WG.t, WG.eVals[:,1].real, "g-")
-    ax2.plot(WG.t, WG.eVals[:,0].imag, "r--")
-    ax2.plot(WG.t, WG.eVals[:,1].imag, "g--")
-    plt.show()
+        ax2.plot(WG.t, WG.eVals[:,0].real, "r-")
+        ax2.plot(WG.t, WG.eVals[:,1].real, "g-")
+        ax2.plot(WG.t, WG.eVals[:,0].imag, "r--")
+        ax2.plot(WG.t, WG.eVals[:,1].imag, "g--")
+        plt.show()
     # -------------------------------------------------------------------------
 
     x = np.linspace(0, L, nx)
@@ -193,6 +194,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
 
         K0, K1 = K[0], K[1]
         ev0, ev1 = ev[0,:], ev[1,:]
+        print "chi.shape", ev0.shape
 
         K_0.append(K0)
         K_1.append(K1)
@@ -315,7 +317,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
 
     plt.clf()
     Z_eff = part(Chi_0_eff.T)
-    # p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     p = plt.pcolormesh(X, Y, Z_eff)
     plt.colorbar(p)
     # p.set_clim(-7.,7.)
@@ -323,7 +324,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
 
     plt.clf()
     Z_eff = part(Chi_1_eff.T)
-    # p = plt.pcolormesh(X_eff, Y_eff, Z_eff)
     p = plt.pcolormesh(X, Y, Z_eff)
     plt.colorbar(p)
     # p.set_clim(-7.,7.)
