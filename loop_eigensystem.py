@@ -330,8 +330,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
     plt.savefig("Chi_1_eff.png")
 
     # save potential ----------------------------------------------------------
-    np.savetxt("potential_imag_0.dat", np.abs(Chi_0).flatten(order='F'))
-    np.savetxt("potential_imag_1.dat", np.abs(Chi_1).flatten(order='F'))
+    n = range(len(Chi_0))
+
+    Chi = np.abs(Chi_0).flatten(order='F')
+    np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = np.abs(Chi_1).flatten(order='F')
+    np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
     # -------------------------------------------------------------------------
 
 
