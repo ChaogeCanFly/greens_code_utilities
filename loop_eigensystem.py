@@ -319,18 +319,16 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
     Z_eff = part(Chi_0_eff.T)
     p = plt.pcolormesh(X, Y, Z_eff)
     plt.colorbar(p)
-    # p.set_clim(-7.,7.)
     plt.savefig("Chi_0_eff.png")
 
     plt.clf()
     Z_eff = part(Chi_1_eff.T)
     p = plt.pcolormesh(X, Y, Z_eff)
     plt.colorbar(p)
-    # p.set_clim(-7.,7.)
     plt.savefig("Chi_1_eff.png")
 
     # save potential ----------------------------------------------------------
-    n = range(len(Chi_0))
+    n = range(len(Chi_0.flatten()))
 
     Chi = np.abs(Chi_0).flatten(order='F')
     np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
