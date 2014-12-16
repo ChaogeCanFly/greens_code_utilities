@@ -3,6 +3,7 @@
 import glob
 import os
 import numpy as np
+import scipy.linalg
 
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
@@ -36,7 +37,8 @@ class S_Matrix:
         self._get_amplitudes()
 
     def _get_amplitudes(self):
-        """Get transmission and reflection amplitudes."""
+        """Get transmission and reflection amplitudes, as well as the S-matrix
+        dimensions, number of runs and the scattering energies."""
 
         try:
             # get number of scheduler steps and S-matrix dimensions
@@ -55,6 +57,14 @@ class S_Matrix:
             S = np.empty((nruns,ndims,ndims))
             S[:] = np.nan
 
+        try:
+            # get scattering energies (k**2/2.)
+            E = np.genfromtxt(self.infile, usecols=(0), autostrip=True,
+                              unpack=True, invalid_raise=False)
+            self.E = E[1::ndims*ndims+2]
+        except:
+            pass
+
         if self.probabilities:
             self.S = abs(S)**2
         else:
@@ -62,10 +72,12 @@ class S_Matrix:
 
         self.nruns = int(nruns)
         self.ndims = int(ndims)
+        self.modes = int(ndims) // 2
 
 
 def natural_sorting(text, args="delta"):
     """Sort text with respect to the argument value.
+
         Parameters:
         -----------
             text: str
@@ -73,10 +85,9 @@ def natural_sorting(text, args="delta"):
             args: str
                 Directory parsing parameters.
     """
-    #convert = lambda x: int(x) if x.isdigit() else x
-    #alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     index = lambda text: [ text.split("_").index(arg) for arg in args ]
     alphanum_key = lambda text: [ float(text.split("_")[i+1]) for i in index(text) ]
+
     return sorted(text, key=alphanum_key)
 
 
