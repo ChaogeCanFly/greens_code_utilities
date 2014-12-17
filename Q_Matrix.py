@@ -22,7 +22,7 @@ class Time_Delay_Matrix(object):
             S: S_Matrix object
                 The S-matrix of the scattering problem. Since we need to
                 discretize the energy derivative numerically, 3 distinct values
-                S(E0), S(E0+dE) and S(E0+2dE) are required.
+                S(E0-dE), S(E0) and S(E0+dE) are required.
             Q: (S.ndim, S.ndim) ndarray
                 Time-delay matrix.
     """
@@ -58,6 +58,9 @@ class Time_Delay_Matrix(object):
 
             ID_0
             coefficients_0
+
+            ID_1
+            coefficients_1
 
             etc.
         """
