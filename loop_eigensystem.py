@@ -75,7 +75,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
 
     # find minimum distance between eigenvalues and switch (only for eta = 0)
     # if abs(K_0 - K_1).min() < eps:
-    if 0:
+    if 1:
         n = np.argmin(abs(K_0 - K_1))
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
@@ -92,12 +92,42 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
-                           nx=100, loop_direction="+", loop_type='Bell',
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
+                           nx=None, loop_direction="+", loop_type='Bell',
                            init_state='a', init_phase=0.0,
                            mpi=False, pphw=100):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
-    in a parameter space loop."""
+    in a parameter space loop.
+    
+        Parameters:
+        -----------
+            N: float
+                Number of open modes (floor(N)).
+            eta: float
+                Dissipation strength.
+            L: float
+                System length.
+            d: float
+                System width.
+            eps: float
+                Half-maximum boundary roughness.
+            nx: int
+                Number of slices to calculate. If None, determine nx via
+                pphw and N automatically.
+            loop_direction: str
+                Loop direction of the parameter space trajectory. Allowed
+                values: + or -.
+            loop_type: str
+                Trajectory shape in parameter space.
+            init_state: str
+                Initial state of the evolution in the effective 2x2 system.
+            init_phase: float
+                Initial phase in the trajectory.
+            mpi: bool
+                Whether to use the parallel greens_code version.
+            pphw: int
+                Points per half-wavelength.
+    """
 
     greens_path = os.environ.get('GREENS_CODE_XML')
     XML = os.path.join(greens_path, "input_periodic_cell.xml")
@@ -134,8 +164,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
         plt.show()
     # -------------------------------------------------------------------------
 
+    nyout = pphw*N
+    if nx is None:
+        nx = int(L*(nyout+1.))
+        print "nx:", nx
+    ny = int(d*(nyout+1.))
+
     x = np.linspace(0, L, nx)
-    y = np.linspace(0, 1., (pphw*N+1))
+    y = np.linspace(0, d, ny)
     eps, delta = WG.get_cycle_parameters(x)
 
     K_0, K_1, Chi_0, Chi_1 = [ list() for n in range(4) ]
@@ -266,14 +302,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
     Z = part(Chi_0 * np.exp(1j*K_0*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
-    # p.set_clim(-1.,1.)
     plt.savefig("Chi_0.png")
 
     plt.clf()
     Z = part(Chi_1 * np.exp(1j*K_1*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
-    # p.set_clim(-1.,1.)
     plt.savefig("Chi_1.png")
 
     # eigenvalues -------------------------------------------------------------
@@ -288,9 +322,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
         ax3.plot(x, abs(K_1_eff - K_0_eff), "k--")
         ax4.plot(x, K_0.real - K_0_eff, "k-")
         ax4.plot(x, K_1.real - K_1_eff, "k--")
-        # f.savefig("eigenvalues.png")
         plt.savefig("eigenvalues.png")
-        # plt.show()
     # eigenvectors
     if 0:
         plt.clf()
@@ -303,6 +335,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., eps=0.05,
     # ------------------------------------------------------------------------
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
+
+    # Chi_0_eff[:,0] *= np.exp(+1j*K_0_eff*x)
+    # Chi_0_eff[:,1] *= np.exp(+1j*K_0_eff*x)
+    # Chi_1_eff[:,0] *= np.exp(+1j*K_1_eff*x)
+    # Chi_1_eff[:,1] *= np.exp(+1j*K_1_eff*x)
 
     Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
     Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*x),
