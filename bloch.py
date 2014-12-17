@@ -4,7 +4,7 @@ import numpy as np
 
 import argh
 
-from helpers import convert_to_complex
+from helper_functions import convert_to_complex
 from xmlparser import XML
 
 

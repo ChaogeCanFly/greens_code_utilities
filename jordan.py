@@ -8,7 +8,7 @@ import sys
 import argh
 
 import bloch
-from helpers import replace_in_file
+from helper_functions import replace_in_file
 from ep.waveguide import Waveguide
 from xmlparser import XML
 

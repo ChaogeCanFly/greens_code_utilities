@@ -7,7 +7,7 @@ import os
 import argh
 
 import bloch
-from helpers import natural_sorting
+from helper_functions import natural_sorting
 from xmlparser import XML
 
 

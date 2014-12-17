@@ -14,7 +14,6 @@ import argh
 import ep.profile
 from ep.waveguide import Waveguide
 import bloch
-import helpers
 
 
 def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
