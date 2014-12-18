@@ -16,7 +16,7 @@ from ep.waveguide import Waveguide
 import bloch
 
 
-def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
+def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eta=0.0, eps=2e-3, plot=True):
     """Find discontinuities in the eigenvalues and reorder the eigensystem to
     obtain a smooth spectrum.
 
@@ -37,6 +37,8 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
                 eigenvector list
             eps: float
                 maximum jump to be tolerated in the eigenvalues
+            eta: float
+                dissipation strengh (used as a switch to trigger sorting)
             plot: bool
                 whether to plot the spectrum before and after the smoothing
 
@@ -75,7 +77,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-3, plot=True):
 
     # find minimum distance between eigenvalues and switch (only for eta = 0)
     # if abs(K_0 - K_1).min() < eps:
-    if 1:
+    if eta:
         n = np.argmin(abs(K_0 - K_1))
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
@@ -267,11 +269,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     # smooth ------------------------------------------------------------------
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=1e-2, plot=False)
+                                                eta=eta, eps=1e-2, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
     # -------------------------------------------------------------------------
 
     part = np.real
+    # part = np.abs
 
     # interpolate -------------------------------------------------------------
     K_0_eff = (interp1d(WG.t, K_0_eff.real)(x) +
@@ -305,7 +308,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     plt.savefig("Chi_0.png")
 
     plt.clf()
-    Z = part(Chi_1 * np.exp(1j*K_1*x))
+    Z = part(Chi_1 * np.exp(1j*K_1*x) * np.exp(-1j*WG.kr*x))
     p = plt.pcolormesh(X, Y, Z)
     plt.colorbar(p)
     plt.savefig("Chi_1.png")
@@ -336,10 +339,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     X_eff, Y_eff = np.meshgrid(WG.t, y)
 
-    # Chi_0_eff[:,0] *= np.exp(+1j*K_0_eff*x)
-    # Chi_0_eff[:,1] *= np.exp(+1j*K_0_eff*x)
-    # Chi_1_eff[:,0] *= np.exp(+1j*K_1_eff*x)
-    # Chi_1_eff[:,1] *= np.exp(+1j*K_1_eff*x)
+    Chi_0_eff[:,0] *= np.exp(1j*K_0_eff*x)
+    Chi_0_eff[:,1] *= np.exp(1j*K_0_eff*x)
+    Chi_1_eff[:,0] *= np.exp(1j*K_1_eff*x)
+    Chi_1_eff[:,1] *= np.exp(1j*K_1_eff*x)
 
     Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1*np.ones_like(y))
     Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*x),
