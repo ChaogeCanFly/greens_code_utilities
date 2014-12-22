@@ -92,7 +92,7 @@ class Time_Delay_Matrix(object):
             self.evals_file = 'evals.Q_states.dat'
 
         np.savetxt(self.evals_file, zip(self.delay_times, self.nullspace_norm),
-                   header='delay times')
+                   header='delay times q & nullspace norms |Q21 q|')
 
 
 def parse_arguments():
