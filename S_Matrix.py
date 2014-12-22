@@ -42,7 +42,7 @@ class S_Matrix:
 
         try:
             # get number of scheduler steps and S-matrix dimensions
-            nruns, ndims = np.loadtxt(self.infile)[:3:2]
+            nruns, ndims = np.genfromtxt(self.infile, invalid_raise=False)[:3:2]
         except:
             nruns, ndims = 1, 4
 
