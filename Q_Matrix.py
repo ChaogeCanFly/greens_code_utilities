@@ -14,8 +14,10 @@ class Time_Delay_Matrix(object):
 
         Parameters:
         -----------
-            oufile: str
-                Output coefficients file.
+            coeff_file: str
+                Coefficients file.
+            evals: str
+                Eigenvalues file.
 
         Attributes:
         -----------
@@ -27,7 +29,7 @@ class Time_Delay_Matrix(object):
                 Time-delay matrix.
     """
 
-    def __init__(self, outfile=None, infile=None):
+    def __init__(self, coeff_file=None, evals_file=None, infile=None):
 
         S = S_Matrix(infile=infile)
         S0, S1, S2 = [ S.S[n,...] for n in 0, 1, 2 ]
@@ -41,13 +43,14 @@ class Time_Delay_Matrix(object):
         self.Q21 = self.Q[modes:, :modes]
 
         delay_times, delay_eigenstates = scipy.linalg.eig(self.Q11)
-
         self.delay_times = delay_times
         self.delay_eigenstates = delay_eigenstates.T
 
-        self.outfile = outfile
+        self.coeff_file = coeff_file
+        self.evals_file = evals_file
 
-    def write_states(self):
+
+    def write_eigenstates(self):
         """Write the coefficients of the time-delay-operator eigenstate in a
         format readable by the greens_code:
 
@@ -64,10 +67,10 @@ class Time_Delay_Matrix(object):
 
             etc.
         """
-        if not self.outfile:
-            self.outfile = 'coeff.Q_states.dat'
+        if not self.coeff_file:
+            self.coeff_file = 'coeff.Q_states.dat'
 
-        with open(self.outfile, "w") as f:
+        with open(self.coeff_file, "w") as f:
             f.write('1 -1\n')
             f.write('1.0 0.5\n')
             f.write('{} {}\n'.format(self.S.E[1], self.modes))
@@ -79,6 +82,15 @@ class Time_Delay_Matrix(object):
                     v = self.delay_eigenstates[n,m]
                     f.write('({v.real}, {v.imag})\n'.format(v=v))
 
+    def write_eigenvalues(self):
+        """Write the eigenvalues of the time-delay-operator."""
+
+        if not self.evals_file:
+            self.evals_file = 'evals.Q_states.dat'
+
+        np.savetxt(self.evals_file, self.delay_times,
+                   header='delay times')
+
 
 def parse_arguments():
     """Parse command-line arguments and write the Q_matrix eigenstates."""
@@ -87,14 +99,17 @@ def parse_arguments():
 
     parser.add_argument("-i", "--infile", default=None,
                         type=str, help="Input file to read S-matrix from.")
-    parser.add_argument("-o", "--outfile", default='coeff.Q_states.dat',
+    parser.add_argument("-c", "--coeff-file", default='coeff.Q_states.dat',
                         type=str, help="Time delay eigenstates output file.")
+    parser.add_argument("-e", "--evals-file", default='evals.Q_states.dat',
+                        type=str, help="Time delay eigenvalues output file.")
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
 
     Q = Time_Delay_Matrix(**args)
-    Q.write_states()
+    Q.write_eigenstates()
+    Q.write_eigenvalues()
 
 
 if __name__ == '__main__':
