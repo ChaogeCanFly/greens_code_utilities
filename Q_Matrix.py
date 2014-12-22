@@ -46,9 +46,12 @@ class Time_Delay_Matrix(object):
         self.delay_times = delay_times
         self.delay_eigenstates = delay_eigenstates.T
 
+        chi = self.Q21.dot(self.delay_eigenstates)
+        nullspace_norm =  np.linalg.norm(chi, axis=0)
+
         self.coeff_file = coeff_file
         self.evals_file = evals_file
-
+        self.nullspace_norm = nullspace_norm
 
     def write_eigenstates(self):
         """Write the coefficients of the time-delay-operator eigenstate in a
@@ -88,7 +91,7 @@ class Time_Delay_Matrix(object):
         if not self.evals_file:
             self.evals_file = 'evals.Q_states.dat'
 
-        np.savetxt(self.evals_file, self.delay_times,
+        np.savetxt(self.evals_file, zip(self.delay_times, self.nullspace_norm),
                    header='delay times')
 
 
