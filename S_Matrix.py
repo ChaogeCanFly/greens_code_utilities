@@ -143,9 +143,9 @@ class Write_S_Matrix:
 
         # translate S-matrix into transmission and reflection components
         header = [ "{}{}{}".format(s,i,j) for s in ("r","t")
-                                          for i in range(S.ndims//2)
-                                          for j in range(S.ndims//2) ]
-        headerdim = S.ndims*S.ndims//2
+                                          for i in range(S.modes)
+                                          for j in range(S.modes) ]
+        headerdim = S.ndims*S.modes
 
         headerfmt = '#'
         headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
@@ -160,11 +160,13 @@ class Write_S_Matrix:
 
         arg_values = self._parse_directory(dir)
         S = S_Matrix(indir=dir, **self.kwargs)
-
+        
+        # TODO: writes different nruns into same line
+        # only write r and t (dimension therefore 2modes*modes)
         data = [ S.S[i,j,k] for i in range(S.nruns)
                             for j in range(S.ndims)
-                            for k in range(S.ndims//2) ]
-        datadim = S.ndims*S.ndims//2
+                            for k in range(S.modes) ]
+        datadim = S.ndims*S.modes
 
         datafmt = " "
         datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
