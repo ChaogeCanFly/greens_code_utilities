@@ -16,7 +16,7 @@ from ep.waveguide import Waveguide
 import bloch
 
 
-def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eta=0.0, eps=2e-3, plot=True):
+def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
     """Find discontinuities in the eigenvalues and reorder the eigensystem to
     obtain a smooth spectrum.
 
@@ -35,10 +35,8 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eta=0.0, eps=2e-3, plot=True):
                 eigenvalue list
             Chi_0, Chi_1: list or (N,...) ndarray
                 eigenvector list
-            eps: float
-                maximum jump to be tolerated in the eigenvalues
             eta: float
-                dissipation strengh (used as a switch to trigger sorting)
+                roughness strengh (used as a switch to trigger sorting)
             plot: bool
                 whether to plot the spectrum before and after the smoothing
 
@@ -77,7 +75,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eta=0.0, eps=2e-3, plot=True):
 
     # find minimum distance between eigenvalues and switch (only for eta = 0)
     # if abs(K_0 - K_1).min() < eps:
-    if eta:
+    if not eps:
         n = np.argmin(abs(K_0 - K_1))
         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
                     np.concatenate((K_1[:n+1], K_0[n+1:])))
@@ -146,7 +144,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     _, b0, b1 = WG.solve_ODE()
 
     # trajectories ------------------------------------------------------------
-    if 0:
+    if 1:
         f, (ax1, ax2) = plt.subplots(nrows=2)
         ax1.semilogy(WG.t, abs(b0), "r-")
         ax1.semilogy(WG.t, abs(b1), "g-")
@@ -269,7 +267,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     # smooth ------------------------------------------------------------------
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eta=eta, eps=1e-2, plot=False)
+                                                eps=WG.x_EP, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
     # -------------------------------------------------------------------------
 
