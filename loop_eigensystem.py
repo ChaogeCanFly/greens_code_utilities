@@ -143,6 +143,24 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     WG.x_EP = eps
     _, b0, b1 = WG.solve_ODE()
 
+    # prepare waveguide and profile -------------------------------------------
+    profile_kwargs = {'eps': epsn,
+                      'delta': deltan,
+                      'pphw': pphw,
+                      'input_xml': XML,
+                      'custom_directory': os.getcwd(),
+                      'neumann': 1}
+    profile_kwargs.update(wg_kwargs)
+    ep.profile.Generate_Profiles(**profile_kwargs)
+
+    ID = 'boundary'
+    for file in glob.glob("N_*profile"):
+        if "lower" in file:
+            shutil.move(file, ID + ".lower_profile")
+        if "upper" in file:
+            shutil.move(file, ID + ".upper_profile")
+    # -------------------------------------------------------------------------
+
     # trajectories ------------------------------------------------------------
     if 1:
         f, (ax1, ax2) = plt.subplots(nrows=2)
