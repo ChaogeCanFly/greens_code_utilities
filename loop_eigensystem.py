@@ -144,8 +144,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
-    profile_kwargs = {'eps': epsn,
-                      'delta': deltan,
+    profile_kwargs = {'eps': eps,
                       'pphw': pphw,
                       'input_xml': XML,
                       'custom_directory': os.getcwd(),
@@ -162,7 +161,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
 
     # trajectories ------------------------------------------------------------
-    if 1:
+    if 0:
         f, (ax1, ax2) = plt.subplots(nrows=2)
         ax1.semilogy(WG.t, abs(b0), "r-")
         ax1.semilogy(WG.t, abs(b1), "g-")
@@ -182,11 +181,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         plt.show()
     # -------------------------------------------------------------------------
 
+    # change nx and ny accoring to pphw and modes -----------------------------
     nyout = pphw*N
     if nx is None:
         nx = int(L*(nyout+1.))
         print "nx:", nx
     ny = int(d*(nyout+1.))
+    # -------------------------------------------------------------------------
 
     x = np.linspace(0, L, nx)
     y = np.linspace(0, d, ny)
