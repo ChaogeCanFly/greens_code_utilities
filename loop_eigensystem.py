@@ -93,16 +93,20 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-# def run_single_job(*args):
 def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                    WG=None, loop_direction=None):
-    """."""
-    # n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction = args
-    # n, xn, epsn, deltan = args
-    # print args
+    """Calculate the Bloch eigensystem in a separate directory and extract the
+    eigenvalues and eigenvectors.
+    
+        Returns:
+        --------
+            K0, K1: complex
+               eigenvalues
+            ev0, ev1: (N,) ndarray
+               eigenvectors
+    """
 
     ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
-    print
     print ID
 
     CWD = os.getcwd()
@@ -135,8 +139,9 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
     greens_code.communicate()
 
     # get Bloch eigensystem
-    shutil.copyfile("Evecs.sine_boundary.dat", ID + ".evecs")
-    K, _, ev, _, v, _ = bloch.get_eigensystem(evecsfile=ID+".evecs",
+    evecsfile = ID + ".evecs"
+    shutil.copyfile("Evecs.sine_boundary.dat", evecsfile)
+    K, _, ev, _, v, _ = bloch.get_eigensystem(evecsfile=evecsfile,
                                               return_eigenvectors=True,
                                               return_velocities=True,
                                               verbose=True,
