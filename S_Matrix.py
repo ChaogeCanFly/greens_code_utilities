@@ -1,4 +1,7 @@
 #!/usr/bin/env python2.7
+# TODO:
+#  * write different nruns into same line
+#  * determine also r' and t'
 
 import glob
 import os
@@ -9,7 +12,7 @@ import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
 
 
-class S_Matrix:
+class S_Matrix(object):
     """Reads and processes the S-matrix.
 
             Parameters:
@@ -91,7 +94,7 @@ def natural_sorting(text, args="delta", delimiter="_"):
     return sorted(text, key=alphanum_key)
 
 
-class Write_S_Matrix:
+class Write_S_Matrix(object):
     """Class which handles directories and globbing.
 
         Parameters:
@@ -161,7 +164,6 @@ class Write_S_Matrix:
         arg_values = self._parse_directory(dir)
         S = S_Matrix(indir=dir, **self.kwargs)
         
-        # TODO: writes different nruns into same line
         # only write r and t (dimension therefore 2modes*modes)
         data = [ S.S[i,j,k] for i in range(S.nruns)
                             for j in range(S.ndims)
