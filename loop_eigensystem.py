@@ -164,10 +164,9 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                 header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
                         'Im(ev1) Re(K1) Im(K1)'))
     subprocess.call("gzip *", shell=True)
+    os.chdir(CWD)
 
     print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
-
-    os.chdir(CWD)
 
     return K0, K1, ev0, ev1
 
@@ -230,14 +229,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                       'custom_directory': os.getcwd(),
                       'neumann': 1}
     profile_kwargs.update(wg_kwargs)
+
     ep.profile.Generate_Profiles(**profile_kwargs)
 
-    # ID = 'boundary'
-    # for file in glob.glob("N_*profile"):
-    #     if "lower" in file:
-    #         shutil.move(file, ID + ".lower_profile")
-    #     if "upper" in file:
-    #         shutil.move(file, ID + ".upper_profile")
+    for file in glob.glob("N_*profile"):
+        if "lower" in file:
+            shutil.move(file, "boundary.lower_profile")
+        if "upper" in file:
+            shutil.move(file, "boundary.upper_profile")
     # -------------------------------------------------------------------------
 
     # trajectories ------------------------------------------------------------
@@ -282,7 +281,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                   'WG': WG,
                   'loop_direction': loop_direction}
 
-    # alternative parallelization
+    # alternative parallelization:
     # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
     #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     # results = pool.map(run_single_job, job_list)
@@ -369,9 +368,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
 
     # eigenvalues -------------------------------------------------------------
-    part = np.abs
-
     if 1:
+        part = np.abs
+
         plt.clf()
         f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
         ax1.plot(x, part(K_0), "r-")
@@ -383,15 +382,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         ax4.plot(x, K_0.real - K_0_eff, "k-")
         ax4.plot(x, K_1.real - K_1_eff, "k--")
         plt.savefig("eigenvalues.png")
-    # eigenvectors
-    if 0:
-        plt.clf()
-        incr = 100
-        plt.plot(WG.t[::incr], part(Chi_0_eff[:,0][::incr]), "r-")
-        plt.plot(WG.t[::incr], part(Chi_0_eff[:,1][::incr]), "g-")
-        plt.plot(WG.t[::incr], part(Chi_1_eff[:,0][::incr]), "r--")
-        plt.plot(WG.t[::incr], part(Chi_1_eff[:,1][::incr]), "g--")
-        plt.show()
     # ------------------------------------------------------------------------
 
     cmap = 'RdBu_r'
