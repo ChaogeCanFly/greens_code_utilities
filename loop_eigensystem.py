@@ -93,12 +93,22 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
     return K_0, K_1, Chi_0, Chi_1
 
 
-def run_single_job(args):
+# def run_single_job(*args):
+def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
+                   WG=None, loop_direction=None):
     """."""
-    n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction = args
+    # n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction = args
+    # n, xn, epsn, deltan = args
+    # print args
+
     ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
     print
     print ID
+
+    CWD = os.getcwd()
+    DIR = os.path.join(CWD, ID)
+    os.makedirs(ID)
+    os.chdir(DIR)
 
     # prepare waveguide and profile
     profile_kwargs = {'eps': epsn,
@@ -124,17 +134,10 @@ def run_single_job(args):
                                    stderr=subprocess.PIPE)
     greens_code.communicate()
 
-    # for file in glob.glob("N_*profile"):
-    #     if "lower" in file:
-    #         shutil.move(file, ID + ".lower_profile")
-    #     if "upper" in file:
-    #         shutil.move(file, ID + ".upper_profile")
-    #
-    # shutil.move("upper.dat", ID + ".upper_dat")
-    # shutil.move("lower.dat", ID + ".lower_dat")
-
     # get Bloch eigensystem
-    K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
+    shutil.copyfile("Evecs.sine_boundary.dat", ID + ".evecs")
+    K, _, ev, _, v, _ = bloch.get_eigensystem(evecsfile=ID+".evecs",
+                                              return_eigenvectors=True,
                                               return_velocities=True,
                                               verbose=True,
                                               fold_back=True)
@@ -151,12 +154,13 @@ def run_single_job(args):
                                 ev1.real, ev1.imag,
                                 np.ones_like(z)*K1.real,
                                 np.ones_like(z)*K1.imag),
-               header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
-                       'Im(ev1) Re(K1) Im(K1)'))
-
-    shutil.copyfile("pic.geometry.sine_boundary.1.jpg", ID + ".jpg")
+                header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
+                        'Im(ev1) Re(K1) Im(K1)'))
 
     print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+
+    os.chdir(CWD)
+
     return K0, K1, ev0, ev1
 
 
@@ -221,11 +225,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     ep.profile.Generate_Profiles(**profile_kwargs)
 
     ID = 'boundary'
-    for file in glob.glob("N_*profile"):
-        if "lower" in file:
-            shutil.move(file, ID + ".lower_profile")
-        if "upper" in file:
-            shutil.move(file, ID + ".upper_profile")
+    # for file in glob.glob("N_*profile"):
+    #     if "lower" in file:
+    #         shutil.move(file, ID + ".lower_profile")
+    #     if "upper" in file:
+    #         shutil.move(file, ID + ".upper_profile")
     # -------------------------------------------------------------------------
 
     # trajectories ------------------------------------------------------------
@@ -263,115 +267,41 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     K_0, K_1, Chi_0, Chi_1 = [ list() for n in range(4) ]
 
-    pool = multiprocessing.Pool(processes=4)
-    # job_args = enumerate(zip(x, eps, delta))
     job_kwargs = {'eta': eta,
                   'pphw': pphw,
                   'XML': XML,
                   'N': N,
                   'WG': WG,
                   'loop_direction': loop_direction}
-    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-    #     print n
-        # K0, K1, ev0, ev1 = pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
-        #                               kwds=job_kwargs).get()
-        # K_0.append(K0)
-        # K_1.append(K1)
-        # Chi_0.append(ev0)
-        # Chi_1.append(ev1)
 
-    job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction) for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-    print job_list
+    # alternative parallelization
+    # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
+    #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+    # results = pool.map(run_single_job, job_list)
 
-    pool.map(run_single_job, job_list)
-    K_0, K_1, Chi_0, Chi_1 = results
-    # K_0.append(K0)
-    # K_1.append(K1)
-    # Chi_0.append(ev0)
-    # Chi_1.append(ev1)
+    pool = multiprocessing.Pool(processes=4)
+    results = [ pool.apply_async(run_single_job,
+                                 args=(n, xn, epsn, deltan),
+                                 kwds=job_kwargs)
+                 for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+    results = [ p.get() for p in results ]
 
-    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=2e-2, plot=False)
-    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
+    print 50*'#'
+    print len(results)
 
-    # test: unwrapping --------------------------------------------------------
-    L_range = 2*np.pi/(WG.kr + delta)  # make small error since L != r_nx*dx
-    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
-
-    for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-
-        ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
-        print
-        print ID
-
-        # prepare waveguide and profile
-        profile_kwargs = {'eps': epsn,
-                          'delta': deltan,
-                          'pphw': pphw,
-                          'input_xml': XML,
-                          'custom_directory': os.getcwd(),
-                          'neumann': 1}
-        wg_kwargs_n = {'N': N,
-                       'eta': eta,
-                       'L': 2*np.pi/(WG.kr + deltan),
-                       'init_phase': 0.0,
-                       'loop_direction': loop_direction,
-                       'loop_type': 'Constant'}
-        profile_kwargs.update(wg_kwargs_n)
-
-        ep.profile.Generate_Profiles(**profile_kwargs)
-
-        # run code
-        if mpi:
-            cmd = "mpirun -np 4 solve_xml_mumps dev"
-        else:
-            cmd = "solve_xml_mumps dev"
-        greens_code = subprocess.Popen(cmd.split(),
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-        greens_code.communicate()
-
-        for file in glob.glob("N_*profile"):
-            if "lower" in file:
-                shutil.move(file, ID + ".lower_profile")
-            if "upper" in file:
-                shutil.move(file, ID + ".upper_profile")
-
-        shutil.move("upper.dat", ID + ".upper_dat")
-        shutil.move("lower.dat", ID + ".lower_dat")
-
-        # get Bloch eigensystem
-        K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
-                                                  return_velocities=True,
-                                                  verbose=True,
-                                                  fold_back=False)
-
-        if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
-            sys.exit("Error: group velocities are negative!")
-
-        K0, K1 = K[0], K[1]
-        ev0, ev1 = ev[0,:], ev[1,:]
-        print "chi.shape", ev0.shape
-
+    # properly unpack results
+    for res in results:
+        K0, K1, ev0, ev1 = res
         K_0.append(K0)
         K_1.append(K1)
         Chi_0.append(ev0)
         Chi_1.append(ev1)
 
-        z = ev0.view(dtype=float)
-        np.savetxt(ID + ".dat", zip(y, ev0.real, ev0.imag,
-                                    np.ones_like(z)*K0.real,
-                                    np.ones_like(z)*K0.imag,
-                                    ev1.real, ev1.imag,
-                                    np.ones_like(z)*K1.real,
-                                    np.ones_like(z)*K1.imag),
-                   header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
-                           'Im(ev1) Re(K1) Im(K1)'))
-
-        shutil.copyfile("pic.geometry.sine_boundary.1.jpg", ID + ".jpg")
-
-        print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
+                                                eps=2e-2, plot=False)
+    # why no transpose necessary?
+    # Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
+    Chi_0, Chi_1 = [ np.array(c) for c in Chi_0, Chi_1]
 
     # -------------------------------------------------------------------------
     # numerical data
