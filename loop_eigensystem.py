@@ -146,6 +146,9 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                                               return_velocities=True,
                                               verbose=True,
                                               fold_back=True)
+    subprocess.call(["gzip", evecsfile])
+    # remove file with absolute values of Psi(x,y)
+    os.remove("Evecs.sine_boundary.abs")
 
     if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
         sys.exit("Error: group velocities are negative!")
