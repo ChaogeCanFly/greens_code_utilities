@@ -139,15 +139,12 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
     greens_code.communicate()
 
     # get Bloch eigensystem
-    evecsfile = ID + ".evecs"
-    shutil.copyfile("Evecs.sine_boundary.dat", evecsfile)
-    K, _, ev, _, v, _ = bloch.get_eigensystem(evecsfile=evecsfile,
-                                              return_eigenvectors=True,
+    K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
                                               return_velocities=True,
                                               verbose=True,
                                               fold_back=True)
-    subprocess.call(["gzip", evecsfile])
-    # remove file with absolute values of Psi(x,y)
+    # remove eigenvalue files
+    os.remove("Evecs.sine_boundary.dat")
     os.remove("Evecs.sine_boundary.abs")
 
     if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
@@ -158,14 +155,15 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
     print "chi.shape", ev0.shape
 
     z = ev0.view(dtype=float)
-    np.savetxt(ID + ".dat", zip(ev0.real, ev0.imag,
-                                np.ones_like(z)*K0.real,
-                                np.ones_like(z)*K0.imag,
-                                ev1.real, ev1.imag,
-                                np.ones_like(z)*K1.real,
-                                np.ones_like(z)*K1.imag),
+    np.savetxt("eigensystem.dat", zip(ev0.real, ev0.imag,
+                                  np.ones_like(z)*K0.real,
+                                  np.ones_like(z)*K0.imag,
+                                  ev1.real, ev1.imag,
+                                  np.ones_like(z)*K1.real,
+                                  np.ones_like(z)*K1.imag),
                 header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
                         'Im(ev1) Re(K1) Im(K1)'))
+    subprocess.call("gzip *", shell=True)
 
     print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
