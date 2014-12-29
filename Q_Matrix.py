@@ -1,4 +1,6 @@
 #!/usr/bin/env python2.7
+# TODO:
+#  * add custom inoput of energies (s.t. one can use a B-field derivative f.i.)
 
 import numpy as np
 import scipy.linalg
