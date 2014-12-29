@@ -98,7 +98,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                            mpi=False, pphw=100):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
-    
+
         Parameters:
         -----------
             N: float
@@ -269,12 +269,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
-    # effective model predictons ----------------------------------------------
-    Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
-    K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
     # -------------------------------------------------------------------------
+    # numerical data
 
-    # unwrapp phase -----------------------------------------------------------
+    # unwrapp phase
     G = delta + WG.kr
     L_range = 2*np.pi/G  # make small error since L != r_nx*dx
 
@@ -282,18 +280,25 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
     K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
-    # -------------------------------------------------------------------------
 
-    # smooth ------------------------------------------------------------------
+    # smooth
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
                                                 eps=WG.x_EP, plot=False)
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
+
+    # assemble eigenvectors
+    Chi_0 *= np.exp(1j*K_0*x)
+    Chi_1 *= np.exp(1j*K_1*x) * np.exp(-1j*WG.kr*x)
     # -------------------------------------------------------------------------
 
-    part = np.real
-    # part = np.abs
+    # -------------------------------------------------------------------------
+    # effective model predictons
 
-    # interpolate -------------------------------------------------------------
+    # get eigensystem
+    Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
+    K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
+
+    # interpolate
     K_0_eff = (interp1d(WG.t, K_0_eff.real)(x) +
                 1j*interp1d(WG.t, K_0_eff.imag)(x))
     K_1_eff = (interp1d(WG.t, K_1_eff.real)(x) +
@@ -304,19 +309,16 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     Chi_1_eff = [ (interp1d(WG.t, Chi_1_eff[:,n].real)(x) +
                     1j*interp1d(WG.t, Chi_1_eff[:,n].imag)(x)) for n in 0, 1 ]
     Chi_0_eff, Chi_1_eff = [ np.array(c).T for c in Chi_0_eff, Chi_1_eff ]
-    # -------------------------------------------------------------------------
 
-    # fold back ---------------------------------------------------------------
+    # fold back
     K_0_eff = ((-K_0_eff.real + G/2.) % G - G/2.) + 1j*K_0_eff.imag
     K_1_eff = ((-K_1_eff.real + G/2.) % G - G/2.) + 1j*K_1_eff.imag
-    # -------------------------------------------------------------------------
 
-    # unwrapp phase -----------------------------------------------------------
+    # unwrapp phase
     K_0_eff = np.unwrap(K_0_eff.real*L_range)/L_range + 1j*K_0_eff.imag
     K_1_eff = np.unwrap(K_1_eff.real*L_range)/L_range + 1j*K_1_eff.imag
-    # -------------------------------------------------------------------------
 
-    # assemble effective model eigenvectors -----------------------------------
+    # assemble effective model eigenvectors
     Chi_0_eff[:,0] *= np.exp(1j*K_0_eff*x)
     Chi_0_eff[:,1] *= np.exp(1j*K_0_eff*x)
     Chi_1_eff[:,0] *= np.exp(1j*K_1_eff*x)
@@ -334,6 +336,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
 
     # eigenvalues -------------------------------------------------------------
+    part = np.abs
+
     if 1:
         plt.clf()
         f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
@@ -364,28 +368,28 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     for part in np.abs, np.angle, np.real, np.imag:
 
         plt.clf()
-        Z = part(Chi_0 * np.exp(1j*K_0*x))
+        Z = part(Chi_0)
         p = plt.pcolormesh(X, Y, Z, cmap=cmap)
         plt.colorbar(p)
-        plt.savefig("{0.__name__}_Chi_0.png".format(part))
+        plt.savefig("Chi_0_{0.__name__}.png".format(part))
 
         plt.clf()
-        Z = part(Chi_1 * np.exp(1j*K_1*x) * np.exp(-1j*WG.kr*x))
+        Z = part(Chi_1)
         p = plt.pcolormesh(X, Y, Z, cmap=cmap)
         plt.colorbar(p)
-        plt.savefig("{0.__name__}_Chi_1.png".format(part))
+        plt.savefig("Chi_1_{0.__name__}.png".format(part))
 
         plt.clf()
         Z_eff = part(Chi_0_eff.T)
         p = plt.pcolormesh(X, Y, Z_eff, cmap=cmap)
         plt.colorbar(p)
-        plt.savefig("{0.__name__}_Chi_0_eff.png".format(part))
+        plt.savefig("Chi_0_eff_{0.__name__}.png".format(part))
 
         plt.clf()
         Z_eff = part(Chi_1_eff.T)
         p = plt.pcolormesh(X, Y, Z_eff, cmap=cmap)
         plt.colorbar(p)
-        plt.savefig("{0.__name__}_Chi_1_eff.png".format(part))
+        plt.savefig("Chi_1_eff_{0.__name__}.png".format(part))
 
     # save potential ----------------------------------------------------------
     n = range(len(Chi_0.flatten()))
