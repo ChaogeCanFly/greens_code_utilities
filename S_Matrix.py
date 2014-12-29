@@ -1,14 +1,18 @@
 #!/usr/bin/env python2.7
+# TODO:
+#  * write different nruns into same line
+#  * determine also r' and t'
 
 import glob
 import os
 import numpy as np
+import scipy.linalg
 
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
 
 
-class S_Matrix:
+class S_Matrix(object):
     """Reads and processes the S-matrix.
 
             Parameters:
@@ -36,11 +40,12 @@ class S_Matrix:
         self._get_amplitudes()
 
     def _get_amplitudes(self):
-        """Get transmission and reflection amplitudes."""
+        """Get transmission and reflection amplitudes, as well as the S-matrix
+        dimensions, number of runs and the scattering energies."""
 
         try:
             # get number of scheduler steps and S-matrix dimensions
-            nruns, ndims = np.loadtxt(self.infile)[:3:2]
+            nruns, ndims = np.genfromtxt(self.infile, invalid_raise=False)[:3:2]
         except:
             nruns, ndims = 1, 4
 
@@ -55,6 +60,14 @@ class S_Matrix:
             S = np.empty((nruns,ndims,ndims))
             S[:] = np.nan
 
+        try:
+            # get scattering energies (k**2/2.)
+            E = np.genfromtxt(self.infile, usecols=(0), autostrip=True,
+                              unpack=True, invalid_raise=False)
+            self.E = E[1::ndims*ndims+2]
+        except:
+            pass
+
         if self.probabilities:
             self.S = abs(S)**2
         else:
@@ -62,10 +75,12 @@ class S_Matrix:
 
         self.nruns = int(nruns)
         self.ndims = int(ndims)
+        self.modes = int(ndims) // 2
 
 
 def natural_sorting(text, args="delta", delimiter="_"):
     """Sort text with respect to the argument value.
+
         Parameters:
         -----------
             text: str
@@ -73,14 +88,13 @@ def natural_sorting(text, args="delta", delimiter="_"):
             args: str
                 Directory parsing parameters.
     """
-    #convert = lambda x: int(x) if x.isdigit() else x
-    #alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     index = lambda text: [ text.split(delimiter).index(arg) for arg in args ]
     alphanum_key = lambda text: [ float(text.split(delimiter)[i+1]) for i in index(text) ]
+
     return sorted(text, key=alphanum_key)
 
 
-class Write_S_Matrix:
+class Write_S_Matrix(object):
     """Class which handles directories and globbing.
 
         Parameters:
@@ -132,9 +146,9 @@ class Write_S_Matrix:
 
         # translate S-matrix into transmission and reflection components
         header = [ "{}{}{}".format(s,i,j) for s in ("r","t")
-                                          for i in range(S.ndims//2)
-                                          for j in range(S.ndims//2) ]
-        headerdim = S.ndims*S.ndims//2
+                                          for i in range(S.modes)
+                                          for j in range(S.modes) ]
+        headerdim = S.ndims*S.modes
 
         headerfmt = '#'
         headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
@@ -149,11 +163,12 @@ class Write_S_Matrix:
 
         arg_values = self._parse_directory(dir)
         S = S_Matrix(indir=dir, **self.kwargs)
-
+        
+        # only write r and t (dimension therefore 2modes*modes)
         data = [ S.S[i,j,k] for i in range(S.nruns)
                             for j in range(S.ndims)
-                            for k in range(S.ndims//2) ]
-        datadim = S.ndims*S.ndims//2
+                            for k in range(S.modes) ]
+        datadim = S.ndims*S.modes
 
         datafmt = " "
         datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "

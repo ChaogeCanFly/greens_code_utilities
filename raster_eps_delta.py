@@ -10,7 +10,7 @@ import argh
 
 import bloch
 from ep.waveguide import Waveguide
-from helpers import replace_in_file
+from helper_functions import replace_in_file
 
 
 def run_code():

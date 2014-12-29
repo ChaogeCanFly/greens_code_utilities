@@ -1,18 +1,18 @@
 #!/usr/bin/env python2.7
 
 import numpy as np
-import re
 
 import argh
 
-from helpers import convert_to_complex
+from helper_functions import convert_to_complex
 from xmlparser import XML
 
 
 def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
-                    dx=None, r_nx=None, sort=True, fold_back=True, return_velocities=False,
-                    return_eigenvectors=False, verbose=True):
+                    dx=None, r_nx=None, sort=True, fold_back=True,
+                    return_velocities=False, return_eigenvectors=False,
+                    verbose=True):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -84,15 +84,16 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                                      converters={0: convert_to_complex,
                                                  1: convert_to_complex})
     k = np.angle(beta) - 1j*np.log(np.abs(beta))
-    k /= dx*r_nx  # = period L for chi(x+L) = chi(x)
+    # k /= dx*r_nx
+    k /= L  # = period L for chi(x+L) = chi(x) (note that generally L!=r_nx*dx)
 
-    # --- experimental: sort the array according to velocities first, then
-    # fill v_left and v_right with left and rightmovers
+    # --- experimental: sort the array according to velocities first, then fill
+    # v_left and v_right with left and rightmovers ----------------------------
     # initial_sort = np.argsort(velocities.real)
     # k = k[initial_sort]
     # velocities = velocities[initial_sort]
     # take care that other subroutines now use the correct order of k_l, k_r
-    # ---
+    # -------------------------------------------------------------------------
 
     k_left = k[:len(k)/2]
     k_right = k[len(k)/2:]
@@ -100,12 +101,12 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     v_left = velocities[:len(k)/2]
     v_right = velocities[len(k)/2:]
 
-    # --- experimental: len(v_left) != len(v_right)
+    # --- experimental: len(v_left) != len(v_right) ---------------------------
     # v_left = velocities[velocities.real < 0]
     # v_right = velocities[velocities.real > 0]
     # k_left = k[velocities.real < 0]
     # k_right = k[velocities.real > 0]
-    # ---
+    # -------------------------------------------------------------------------
 
     if sort:
         sort_right = np.argsort(abs(k_right.imag))
@@ -122,15 +123,20 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
         # TODO: handle conservative case
 
-
-    if fold_back:
-        # k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag
-        k_left, k_right = [ np.mod(x.real, G) + 1j*x.imag
-                             for x in k_left, k_right ]
-        # map into 1.BZ
-        for k in k_left, k_right:
-            k[k > G/2] -= G
-            k[k < -G/2] += G
+    # the following procedure is redundant:
+    # np.angle(x) maps x into the domain [-pi,pi], i.e.,
+    #   -pi <= k*L <= pi,
+    # thus the resulting eigenvalue is already given in the !. BZ:
+    #   -pi/L <= k <= pi/L
+    #
+    # if fold_back:
+    #     # k_left, k_right = [ np.mod(x.real, kr) + 1j*x.imag
+    #     k_left, k_right = [ np.mod(x.real, G) + 1j*x.imag
+    #                          for x in k_left, k_right ]
+    #     # map into 1.BZ
+    #     for k in k_left, k_right:
+    #         k[k > G/2] -= G
+    #         k[k < -G/2] += G
 
     if verbose:
         print "modes", modes
