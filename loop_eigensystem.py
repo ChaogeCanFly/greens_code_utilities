@@ -127,8 +127,8 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                    'init_phase': 0.0,
                    'loop_direction': loop_direction,
                    'loop_type': 'Constant'}
-
     profile_kwargs.update(wg_kwargs_n)
+
     ep.profile.Generate_Profiles(**profile_kwargs)
 
     # run code
@@ -146,11 +146,13 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                                               return_velocities=True,
                                               verbose=True,
                                               fold_back=True)
+
     if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
         sys.exit("Error: group velocities are negative!")
 
     K0, K1 = K[0], K[1]
     ev0, ev1 = ev[0,:], ev[1,:]
+    print "chi.shape", ev0.shape
 
     z = ev0.view(dtype=float)
     np.savetxt(ID + ".dat", zip(ev0.real, ev0.imag,
@@ -229,7 +231,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     profile_kwargs.update(wg_kwargs)
     ep.profile.Generate_Profiles(**profile_kwargs)
 
-    ID = 'boundary'
+    # ID = 'boundary'
     # for file in glob.glob("N_*profile"):
     #     if "lower" in file:
     #         shutil.move(file, ID + ".lower_profile")
@@ -291,9 +293,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                  for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     results = [ p.get() for p in results ]
 
-    print 50*'#'
-    print len(results)
-
     # properly unpack results
     for res in results:
         K0, K1, ev0, ev1 = res
@@ -301,12 +300,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         K_1.append(K1)
         Chi_0.append(ev0)
         Chi_1.append(ev1)
-
-    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=2e-2, plot=False)
-    # why no transpose necessary?
-    # Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1]
-    Chi_0, Chi_1 = [ np.array(c) for c in Chi_0, Chi_1]
 
     # -------------------------------------------------------------------------
     # numerical data
