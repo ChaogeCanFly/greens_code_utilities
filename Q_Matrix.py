@@ -1,6 +1,4 @@
 #!/usr/bin/env python2.7
-# TODO:
-#  * add custom inoput of energies (s.t. one can use a B-field derivative f.i.)
 
 import numpy as np
 import scipy.linalg
@@ -16,10 +14,21 @@ class Time_Delay_Matrix(object):
 
         Parameters:
         -----------
+            infile: str
+                Input file to read S-matrix from.
             coeff_file: str
-                Coefficients file.
-            evals: str
-                Eigenvalues file.
+                Time delay eigenstates output file.
+            evals_file: str
+                Time delay eigenvalues output file.
+            derivative_stepsize: float
+                Since the Smat.*.dat file does generally not contain the
+                scheduler variable values (except if the energy is varied),
+                the derivative-step dP in
+
+                    (S(P0+dP) - S(P0-dP) ) / (2*dP)
+
+                has to be supplied manually. Apart from dP, the S-matrix at
+                different values S(P_n) is read from the Smat.*.dat.
 
         Attributes:
         -----------
@@ -31,14 +40,20 @@ class Time_Delay_Matrix(object):
                 Time-delay matrix.
     """
 
-    def __init__(self, coeff_file=None, evals_file=None, infile=None):
+    def __init__(self, infile=None, coeff_file=None, evals_file=None,
+                 derivative_stepsize=None):
 
         S = S_Matrix(infile=infile)
         S0, S1, S2 = [ S.S[n,...] for n in 0, 1, 2 ]
-        dE = np.diff(S.E)[-1]
+
         modes = S.modes
         self.S = S
         self.modes = modes
+
+        if derivative_stepsize is None:
+            dE = np.diff(S.E)[-1]
+        else:
+            dE = derivative_stepsize
 
         self.Q = -1j*S1.conj().T.dot(S2-S0)/(2.*dE)
         self.Q11 = self.Q[:modes, :modes]
@@ -108,6 +123,9 @@ def parse_arguments():
                         type=str, help="Time delay eigenstates output file.")
     parser.add_argument("-e", "--evals-file", default='evals.Q_states.dat',
                         type=str, help="Time delay eigenvalues output file.")
+    parser.add_argument("-d", "--derivative-stepsize", default=None, type=float,
+                        help=("Derivative-step for which to calculate"
+                              "the Q-matrix."))
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
