@@ -163,8 +163,9 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                                   np.ones_like(z)*K1.imag),
                 header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
                         'Im(ev1) Re(K1) Im(K1)'))
-    subprocess.call("gzip *", shell=True)
     os.chdir(CWD)
+    # subprocess.call("gzip -r {}".format(DIR).split())
+    shutil.rmtree(DIR)
 
     print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
 
