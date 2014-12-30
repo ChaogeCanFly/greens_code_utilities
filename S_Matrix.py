@@ -1,7 +1,6 @@
 #!/usr/bin/env python2.7
 # TODO:
 #  * write different nruns into same line
-#  * determine also r' and t'
 
 import glob
 import os
@@ -115,13 +114,14 @@ class Write_S_Matrix(object):
     """
 
     def __init__(self, outfile="S_matrix.dat", directories=[], glob_args=[],
-                 delimiter="_", **kwargs):
+                 delimiter="_", full_smatrix=False, **kwargs):
 
         self.outfile = outfile
         self.directories = directories
         self.glob_args = glob_args
         self.nargs = len(glob_args) if glob_args else 0
         self.delimiter = delimiter
+        self.full_smatrix = full_smatrix
         self.kwargs = kwargs
 
         self._process_directories()
@@ -150,10 +150,13 @@ class Write_S_Matrix(object):
         spacing = 17 if S.probabilities else 35
 
         # translate S-matrix into transmission and reflection components
-        header = [ "{}{}{}".format(s,i,j) for s in ("r","t")
+        header = [ "{}{}{}".format(s,i,j) for s in ("r","t","t'","r'")
                                           for i in range(S.modes)
                                           for j in range(S.modes) ]
-        headerdim = S.ndims*S.modes
+        if self.full_smatrix:
+            headerdim = S.ndims*S.ndims
+        else:
+            headerdim = S.ndims*S.modes
 
         headerfmt = '#'
         headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
@@ -169,11 +172,21 @@ class Write_S_Matrix(object):
         arg_values = self._parse_directory(dir)
         S = S_Matrix(indir=dir, **self.kwargs)
         
-        # only write r and t (dimension therefore 2modes*modes)
+        # write r and t (dimension 2modes*modes)
         data = [ S.S[i,j,k] for i in range(S.nruns)
                             for j in range(S.ndims)
                             for k in range(S.modes) ]
-        datadim = S.ndims*S.modes
+        # write t' and r' (dimension 2modes*modes)
+        data_prime = [ S.S[i,j,k + S.modes] for i in range(S.nruns)
+                                            for j in range(S.ndims)
+                                            for k in range(S.modes) ]
+        # join data
+        data += data_prime
+
+        if self.full_smatrix:
+            datadim = S.ndims*S.ndims
+        else:
+            datadim = S.ndims*S.modes
 
         datafmt = " "
         datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
@@ -236,7 +249,10 @@ def parse_arguments():
     parser.add_argument("-i", "--infile", default=None,
                         type=str, help="Input file to read S-matrix from.")
     parser.add_argument("-p", "--probabilities", action="store_true",
-                        help="Wheter to calculate abs(S)^2.")
+                        help="Whether to calculate abs(S)^2.")
+    parser.add_argument("-f", "--full-smatrix", action="store_true",
+                        help=("Whether to write the full S-matrix (including"
+                              "the primed matrices t' and r)'."))
 
     parser.add_argument("-d", "--directories", default=[], nargs="*",
                         help="Directories to parse.")
