@@ -424,8 +424,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     Chi = np.abs(Chi_0).flatten(order='F')
     np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = (Chi - Chi.max())/Chi.max()
+    np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
     Chi = np.abs(Chi_1).flatten(order='F')
     np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = (Chi - Chi.max())/Chi.max()
+    np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
     # -------------------------------------------------------------------------
 
 
