@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 # TODO:
-#  * write different nruns into same line
+#  * write different nruns into same line or in different lines?
+#    -> in _process_directories()
 
 import glob
 import os
