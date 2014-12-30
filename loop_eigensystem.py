@@ -328,6 +328,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     # get eigensystem
     Chi_0_eff, Chi_1_eff = WG.eVecs_r[:,:,0], WG.eVecs_r[:,:,1]
+    # Chi_0_eff, Chi_1_eff = b0, b1
     K_0_eff, K_1_eff = WG.eVals[:,0], WG.eVals[:,1]
 
     # interpolate
@@ -340,6 +341,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                     1j*interp1d(WG.t, Chi_0_eff[:,n].imag)(x)) for n in 0, 1 ]
     Chi_1_eff = [ (interp1d(WG.t, Chi_1_eff[:,n].real)(x) +
                     1j*interp1d(WG.t, Chi_1_eff[:,n].imag)(x)) for n in 0, 1 ]
+    # Chi_0_eff = [ (interp1d(WG.t, Chi_0_eff[:].real)(x) +
+    #                 1j*interp1d(WG.t, Chi_0_eff[:].imag)(x)) for n in 0, 1 ]
+    # Chi_1_eff = [ (interp1d(WG.t, Chi_1_eff[:].real)(x) +
+    #                 1j*interp1d(WG.t, Chi_1_eff[:].imag)(x)) for n in 0, 1 ]
     Chi_0_eff, Chi_1_eff = [ np.array(c).T for c in Chi_0_eff, Chi_1_eff ]
 
     # fold back

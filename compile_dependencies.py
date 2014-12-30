@@ -42,10 +42,10 @@ PACKAGES = {'CJPEG':     'https://github.com/LuaDist/libjpeg.git',
             'ARPACK-NG': 'https://github.com/opencollab/arpack-ng.git',
             'PETSC':     'https://bitbucket.org/petsc/petsc.git'}
 
-CONFIGURE_PETSC = [#'--CXX=' + SCC,
-                   #'--FC=' + SFC,
+CONFIGURE_PETSC = ['--CXX=' + SCC,
+                   '--FC=' + SFC,
                    '--download-metis',
-                   # '--download-openmpi',
+                   '--download-openmpi',
                    '--download-mumps',
                    '--download-parmetis',
                    '--download-scalapack',
@@ -85,11 +85,11 @@ for name, url in PACKAGES.iteritems():
                 DIR = item.replace(".git", "")
                 ARPACK_DIR = os.path.join(os.getcwd(), DIR)
                 os.chdir(ARPACK_DIR)
-                # os.environ['LDFLAGS'] = "-L" + os.path.join(PETSC_DIR, "lib")
-                # params = {'F77': SFC,
-                #           'MPIF77': os.path.join(PETSC_DIR, "bin", "mpif90")}
-                # cmd = "./configure --enable-mpi F77={F77} MPIF77={MPIF77} && make".format(**params)
-                cmd = "./configure --enable-mpi && make" #.format(**params)
+                os.environ['LDFLAGS'] = "-L" + os.path.join(PETSC_DIR, "lib")
+                params = {'F77': SFC,
+                          'MPIF77': os.path.join(PETSC_DIR, "bin", "mpif90"),
+                          'SCC': CPP}
+                cmd = "./configure --enable-mpi F77={F77} MPIF77={MPIF77} CC={SCC} && make".format(**params)
                 subprocess.call(cmd, shell=True, env=os.environ)
 
             elif 'libjpeg' in item:
