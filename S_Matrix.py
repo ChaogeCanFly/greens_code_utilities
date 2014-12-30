@@ -11,6 +11,11 @@ import scipy.linalg
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
 
+# remove numpy's conversion warnings ------------------------------------------
+import warnings
+warnings.filterwarnings("ignore", category=np.lib._iotools.ConversionWarning)
+# -----------------------------------------------------------------------------
+
 
 class S_Matrix(object):
     """Reads and processes the S-matrix.
