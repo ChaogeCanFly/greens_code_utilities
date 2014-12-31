@@ -287,7 +287,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     # results = pool.map(run_single_job, job_list)
 
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
     results = [ pool.apply_async(run_single_job,
                                  args=(n, xn, epsn, deltan),
                                  kwds=job_kwargs)
