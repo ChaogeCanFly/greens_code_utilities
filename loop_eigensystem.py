@@ -18,7 +18,7 @@ from ep.waveguide import Waveguide
 import bloch
 
 
-def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
+def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
     """Find discontinuities in the eigenvalues and reorder the eigensystem to
     obtain a smooth spectrum.
 
@@ -37,8 +37,8 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
                 eigenvalue list
             Chi_0, Chi_1: list or (N,...) ndarray
                 eigenvector list
-            eta: float
-                roughness strengh (used as a switch to trigger sorting)
+            eps: float
+                maximum jump-height of signal
             plot: bool
                 whether to plot the spectrum before and after the smoothing
 
@@ -64,9 +64,21 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=0.0, plot=True):
     K_0[jump], K_1[jump] = K_1[jump], K_0[jump]
     Chi_0[jump], Chi_1[jump] = Chi_1[jump], Chi_0[jump]
 
-
     K_0_diff, K_1_diff = [ np.abs(np.diff(k.real)) for k in K_0, K_1 ]
     diff = K_0_diff
+
+    # search for points where diff(K_n) is larger than a threshold epsilon
+    # if, at these points, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
+    abs_diff = np.abs(np.diff(np.abs(K_0)))
+    real_diff = np.abs(np.diff(np.real(K_0)))
+
+    for n in np.where(real_diff > eps)[0]:
+        cross_diff = np.abs(K_0)[n] - np.abs(K_1)[n+1]
+        if np.abs(cross_diff) < np.abs(real_diff)[n]:
+            K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
+                        np.concatenate((K_1[:n+1], K_0[n+1:])))
+            Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1,:], Chi_1[n+1:,:])),
+                            np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
 
     # find minimum distance between eigenvalues and switch (only for eta = 0)
     # if abs(K_0 - K_1).min() < eps:
@@ -320,20 +332,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # smooth
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
                                                 eps=WG.x_EP, plot=False)
-
-    # search for points where diff(K_n) is larger than a threshold epsilon
-    # if, at these points, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
-    # diff = np.abs(np.diff(np.real(K_0))) > 5e-2
-    # for n in np.where(diff)[0]:
-    #     if np.abs(np.real(K_0)[n] - np.real(K_1)[n+1]) < np.abs(np.diff(np.real(K_0)))[n]:
-    diff = np.abs(np.diff(np.abs(K_0))) > 5e-2
-    for n in np.where(diff)[0]:
-        if np.abs(np.abs(K_0)[n] - np.abs(K_1)[n+1]) < np.abs(np.diff(np.abs(K_0)))[n]:
-            print n, x[n], np.abs(np.diff(np.abs(K_0)))[n]
-            K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
-                        np.concatenate((K_1[:n+1], K_0[n+1:])))
-            Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1,:], Chi_1[n+1:,:])),
-                            np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
 
     K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
