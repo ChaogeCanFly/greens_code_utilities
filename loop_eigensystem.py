@@ -313,17 +313,19 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
     # numerical data
 
-
-    K_0, K_1 = [ np.asarray(z) for z in K_0, K_1 ]
-    Chi_0, Chi_1 = [ np.asarray(z) for z in Chi_0, Chi_1 ]
+    # this is already done in smooth_eigensystem
+    # K_0, K_1 = [ np.asarray(z) for z in K_0, K_1 ]
+    # Chi_0, Chi_1 = [ np.asarray(z) for z in Chi_0, Chi_1 ]
 
     # smooth
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-            eps=WG.x_EP, plot=False)
-    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
+                                                eps=WG.x_EP, plot=False)
 
     # search for points where diff(K_n) is larger than a threshold epsilon
-    # if, at these pints, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
+    # if, at these points, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
+    # diff = np.abs(np.diff(np.real(K_0))) > 5e-2
+    # for n in np.where(diff)[0]:
+    #     if np.abs(np.real(K_0)[n] - np.real(K_1)[n+1]) < np.abs(np.diff(np.real(K_0)))[n]:
     diff = np.abs(np.diff(np.abs(K_0))) > 5e-2
     for n in np.where(diff)[0]:
         if np.abs(np.abs(K_0)[n] - np.abs(K_1)[n+1]) < np.abs(np.diff(np.abs(K_0)))[n]:
@@ -334,6 +336,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                             np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
 
     K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
+
+    # transpose array!
+    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
 
     # unwrapp phase
     G = delta + WG.kr
