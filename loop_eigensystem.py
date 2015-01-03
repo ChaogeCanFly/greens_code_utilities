@@ -457,13 +457,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
         plt.clf()
         Z_eff = part(Chi_0_eff.T)
-        p = plt.pcolormesh(X, Y, Z_eff, cmap=cmap)
+        p = plt.pcolormesh(X, Y[::-1,:], Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_0_eff_{0.__name__}.png".format(part))
 
         plt.clf()
         Z_eff = part(Chi_1_eff.T)
-        p = plt.pcolormesh(X, Y, Z_eff, cmap=cmap)
+        p = plt.pcolormesh(X, Y[::-1,:], Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_1_eff_{0.__name__}.png".format(part))
 
