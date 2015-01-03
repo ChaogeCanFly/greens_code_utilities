@@ -126,7 +126,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
     # the following procedure is redundant:
     # np.angle(x) maps x into the domain [-pi,pi], i.e.,
     #   -pi <= k*L <= pi,
-    # thus the resulting eigenvalue is already given in the !. BZ:
+    # thus the resulting eigenvalue is already given in the 1. BZ:
     #   -pi/L <= k <= pi/L
     #
     # if fold_back:
