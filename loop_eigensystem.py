@@ -313,9 +313,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
     # numerical data
 
-    # unwrapp phase
-    G = delta + WG.kr
-    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
 
     K_0, K_1 = [ np.asarray(z) for z in K_0, K_1 ]
     Chi_0, Chi_1 = [ np.asarray(z) for z in Chi_0, Chi_1 ]
@@ -338,6 +335,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
+    # unwrapp phase
+    G = delta + WG.kr
+    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
     K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
     K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
 
@@ -402,17 +402,16 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     # eigenvalues -------------------------------------------------------------
     if 1:
-        part = np.abs
-
         plt.clf()
         f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
-        # f, (ax0, ax1, ax2, ax3, ax4) = plt.subplots(nrows=5)
-        # ax0.plot(np.abs(np.diff(part(K_0))), "r-o")
-        # ax0.plot(np.abs(np.diff(part(K_1))), "g--o")
-        ax1.plot(x, part(K_0), "r-o")
-        ax1.plot(x, part(K_1), "g--o")
-        ax2.plot(x, part(K_0_eff), "r-o")
-        ax2.plot(x, part(K_1_eff), "g--o")
+        ax1.plot(x, K_0.real, "r-")
+        ax1.plot(x, K_0.imag, "b-")
+        ax1.plot(x, K_1.real, "r--")
+        ax1.plot(x, K_1.imag, "b--")
+        ax2.plot(x, K_0_eff.real, "r-")
+        ax2.plot(x, K_0_eff.imag, "b-")
+        ax2.plot(x, K_1_eff.real, "r--")
+        ax2.plot(x, K_1_eff.imag, "b--")
         ax3.plot(x, abs(K_1 - K_0), "k-")
         ax3.plot(x, abs(K_1_eff - K_0_eff), "k--")
         ax4.plot(x, K_0.real - K_0_eff.real, "k-")
