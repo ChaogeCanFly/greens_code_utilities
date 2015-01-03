@@ -9,6 +9,7 @@ from scipy.interpolate import interp1d
 import shutil
 import subprocess
 import sys
+import traceback
 
 import argh
 
@@ -97,7 +98,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                    WG=None, loop_direction=None):
     """Calculate the Bloch eigensystem in a separate directory and extract the
     eigenvalues and eigenvectors.
-    
+
         Returns:
         --------
             K0, K1: complex
@@ -107,6 +108,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
     """
 
     ID = "n_{:03}_xn_{:08.4f}".format(n, xn)
+    print
     print ID
 
     CWD = os.getcwd()
@@ -138,38 +140,42 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                                    stderr=subprocess.PIPE)
     greens_code.communicate()
 
-    # get Bloch eigensystem
-    K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
-                                              return_velocities=True,
-                                              verbose=True,
-                                              fold_back=True)
-    # remove eigenvalue files
-    os.remove("Evecs.sine_boundary.dat")
-    os.remove("Evecs.sine_boundary.abs")
+    try:
+        # get Bloch eigensystem
+        K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
+                                                  return_velocities=True,
+                                                  verbose=False,
+                                                  fold_back=True)
+        # remove eigenvalue files
+        # os.remove("Evecs.sine_boundary.dat")
+        # os.remove("Evecs.sine_boundary.abs")
 
-    if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
-        sys.exit("Error: group velocities are negative!")
+        # if np.real(v[0]) < 0. or np.real(v[1]) < 0.:
+        #     sys.exit("Error: group velocities are negative!" + 180*"-")
 
-    K0, K1 = K[0], K[1]
-    ev0, ev1 = ev[0,:], ev[1,:]
-    print "chi.shape", ev0.shape
+        K0, K1 = K[0], K[1]
+        ev0, ev1 = ev[0,:], ev[1,:]
+        print "chi.shape", ev0.shape
 
-    z = ev0.view(dtype=float)
-    np.savetxt("eigensystem.dat", zip(ev0.real, ev0.imag,
-                                  np.ones_like(z)*K0.real,
-                                  np.ones_like(z)*K0.imag,
-                                  ev1.real, ev1.imag,
-                                  np.ones_like(z)*K1.real,
-                                  np.ones_like(z)*K1.imag),
-                header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
-                        'Im(ev1) Re(K1) Im(K1)'))
-    os.chdir(CWD)
-    # subprocess.call("gzip -r {}".format(DIR).split())
-    shutil.rmtree(DIR)
+        z = ev0.view(dtype=float)
+        np.savetxt("eigensystem.dat", zip(ev0.real, ev0.imag,
+                                    np.ones_like(z)*K0.real,
+                                    np.ones_like(z)*K0.imag,
+                                    ev1.real, ev1.imag,
+                                    np.ones_like(z)*K1.real,
+                                    np.ones_like(z)*K1.imag),
+                    header=('y Re(ev0) Im(ev0) Re(K0) Im(K0) Re(ev1)'
+                            'Im(ev1) Re(K1) Im(K1)'))
+        os.chdir(CWD)
+        # subprocess.call("gzip -r {}".format(DIR).split())
+        # shutil.rmtree(DIR)
 
-    print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+        print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
+        return K0, K1, ev0, ev1
 
-    return K0, K1, ev0, ev1
+    except:
+        print traceback.print_exc()
+        return
 
 
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
@@ -282,21 +288,30 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                   'WG': WG,
                   'loop_direction': loop_direction}
 
+    # serialized version:
+    # results = []
+    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
+    #     run_single_job(n, xn, epsn, deltan, **job_kwargs)
+
     # alternative parallelization:
     # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
     #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     # results = pool.map(run_single_job, job_list)
 
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    results = [ pool.apply_async(run_single_job,
-                                 args=(n, xn, epsn, deltan),
+    results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
                                  kwds=job_kwargs)
-                 for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+                for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     results = [ p.get() for p in results ]
 
     # properly unpack results
     for res in results:
-        K0, K1, ev0, ev1 = res
+        if res is None:
+            # reuse last set of eigenvalues/eigenvectors if something went
+            # wrong in the function call of run_single_job
+            print "Warning: calculation failed."
+        else:
+            K0, K1, ev0, ev1 = res
         K_0.append(K0)
         K_1.append(K1)
         Chi_0.append(ev0)
@@ -390,6 +405,19 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         plt.savefig("eigenvalues.png")
     # ------------------------------------------------------------------------
 
+    # save potential ----------------------------------------------------------
+    n = range(len(Chi_0.flatten()))
+
+    Chi = np.abs(Chi_0).flatten(order='F')
+    np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = (Chi - Chi.max())/Chi.max()
+    np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = np.abs(Chi_1).flatten(order='F')
+    np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
+    Chi = (Chi - Chi.max())/Chi.max()
+    np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
+    # -------------------------------------------------------------------------
+
     cmap = 'RdBu_r'
 
     X, Y = np.meshgrid(x, y)
@@ -419,19 +447,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         p = plt.pcolormesh(X, Y, Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_1_eff_{0.__name__}.png".format(part))
-
-    # save potential ----------------------------------------------------------
-    n = range(len(Chi_0.flatten()))
-
-    Chi = np.abs(Chi_0).flatten(order='F')
-    np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = (Chi - Chi.max())/Chi.max()
-    np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = np.abs(Chi_1).flatten(order='F')
-    np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = (Chi - Chi.max())/Chi.max()
-    np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
-    # -------------------------------------------------------------------------
 
 
 if __name__ == '__main__':

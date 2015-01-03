@@ -50,7 +50,7 @@ class XML(object):
         r_nx = int(params.get("L")/dx)
         try:
             r_nx_fixed = params.get("r_nx")
-            print r_nx_fixed
+            print "r_nx_fixed", r_nx_fixed
         except:
             pass
 
