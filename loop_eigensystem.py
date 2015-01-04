@@ -57,29 +57,27 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
         ax1.plot(K_1.real, "r--")
         ax1.plot(K_1.imag, "g--")
 
-
+    # -------------------------------------------------------------------------
+    # the following is not necessary if a small eta is chosen, s.t.
+    # the eigenvalues can be ordered w.r.t. the magnitude of the imaginary part
+    #
     # sort all eigenvalues s.t. one eigenvalue is always larger than the other
-    jump = K_0.real < K_1.real
-
-    K_0[jump], K_1[jump] = K_1[jump], K_0[jump]
-    Chi_0[jump], Chi_1[jump] = Chi_1[jump], Chi_0[jump]
-
-    K_0_diff, K_1_diff = [ np.abs(np.diff(k.real)) for k in K_0, K_1 ]
-    diff = K_0_diff
-
+    # jump = K_0.real < K_1.real
+    # K_0[jump], K_1[jump] = K_1[jump], K_0[jump]
+    # Chi_0[jump], Chi_1[jump] = Chi_1[jump], Chi_0[jump]
+    #
     # search for points where diff(K_n) is larger than a threshold epsilon
     # if, at these points, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
-    abs_diff = np.abs(np.diff(np.abs(K_0)))
-    real_diff = np.abs(np.diff(np.abs(K_0)))
-
-    for n in np.where(real_diff > eps)[0]:
-        cross_diff = np.abs(K_0)[n] - np.abs(K_1)[n+1]
-        if np.abs(cross_diff) < np.abs(real_diff)[n]:
-            K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
-                        np.concatenate((K_1[:n+1], K_0[n+1:])))
-            Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1,:], Chi_1[n+1:,:])),
-                            np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
-
+    #
+    # for n in np.where(real_diff > 5e-2)[0]:
+    #     real_diff = np.abs(np.diff(np.real(K_1)))
+    #     cross_diff = np.abs(np.real(K_0)[n] - np.real(K_1)[n+1])
+    #     if cross_diff < real_diff[n]:
+    #         K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
+    #                     np.concatenate((K_1[:n+1], K_0[n+1:])))
+    #         Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1,:], Chi_1[n+1:,:])),
+    #                         np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
+    #
     # find minimum distance between eigenvalues and switch (only for eta = 0)
     # if abs(K_0 - K_1).min() < eps:
     # if not eps:
@@ -88,6 +86,25 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
     #                 np.concatenate((K_1[:n+1], K_0[n+1:])))
     #     Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1], Chi_1[n+1:])),
     #                     np.concatenate((Chi_1[:n+1], Chi_0[n+1:])))
+    # -------------------------------------------------------------------------
+
+    abs_diff = np.abs(np.diff(np.abs(K_0)))
+    real_diff = np.abs(np.diff(np.real(K_0)))
+
+    for n in np.where(real_diff > eps)[0]:
+        cross_diff_0 = np.abs(np.real(K_0)[n] - np.real(K_1)[n+1])
+        cross_diff_1 = np.abs(np.real(K_1)[n] - np.real(K_0)[n+1])
+        if abs(cross_diff_0 - cross_diff_1) < eps:
+            K_0, K_1 = (np.concatenate((K_0[:n+1], K_1[n+1:])),
+                        np.concatenate((K_1[:n+1], K_0[n+1:])))
+            Chi_0, Chi_1 = (np.concatenate((Chi_0[:n+1,:], Chi_1[n+1:,:])),
+                            np.concatenate((Chi_1[:n+1,:], Chi_0[n+1:,:])))
+
+    # find gain-state:
+    Gamma0, Gamma1  = [ np.sum(k.imag) for k in K_0, K_1 ]
+    print "Gamma", Gamma0, Gamma1
+    if Gamma0 < Gamma1:
+        K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
     if plot:
         ax2.plot(K_0.real, "r-")
@@ -179,6 +196,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
         return K0, K1, ev0, ev1
 
     except:
+        os.chdir(CWD)
         print traceback.print_exc()
         return
 
@@ -325,15 +343,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # -------------------------------------------------------------------------
     # numerical data
 
-    # this is already done in smooth_eigensystem
-    # K_0, K_1 = [ np.asarray(z) for z in K_0, K_1 ]
-    # Chi_0, Chi_1 = [ np.asarray(z) for z in Chi_0, Chi_1 ]
+    K_0, K_1, Chi_0, Chi_1 = [ np.asarray(z) for z in K_0, K_1, Chi_0, Chi_1 ]
 
     # smooth
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
                                                 eps=WG.x_EP, plot=False)
 
-    K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
+    # K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
     # transpose array!
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
@@ -417,8 +433,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         ax2.plot(x, K_1_eff.imag, "b--")
         ax3.plot(x, abs(K_1 - K_0), "k-")
         ax3.plot(x, abs(K_1_eff - K_0_eff), "k--")
-        ax4.plot(x, K_0.real - K_0_eff.real, "k-")
-        ax4.plot(x, K_1.real - K_1_eff.real, "k--")
+        ax4.plot(x, abs(K_0.real - K_0_eff.real), "k-")
+        ax4.plot(x, abs(K_1.real - K_1_eff.real), "k--")
         plt.savefig("eigenvalues.png")
     # ------------------------------------------------------------------------
 
@@ -436,21 +452,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     names = ("Chi_0", "Chi_1", "Chi_0_eff", "Chi_1_eff")
     for n, c in zip(names, wavefunctions):
         np.savetxt("potential_{}.dat".format(n), c)
-
-    # Chi = np.abs(Chi_0).flatten(order='F')
-    # np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
-    # Chi = (Chi - Chi.max())/Chi.max()
-    # np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
-    # Chi = np.abs(Chi_1).flatten(order='F')
-    # np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
-    # Chi = (Chi - Chi.max())/Chi.max()
-    # np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
     # -------------------------------------------------------------------------
 
     X, Y = np.meshgrid(x, y)
-
     for part in np.abs, np.angle, np.real, np.imag:
-
         if part == np.abs:
             cmap = 'Reds'
         else:
