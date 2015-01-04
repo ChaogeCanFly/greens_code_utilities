@@ -70,7 +70,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
     # search for points where diff(K_n) is larger than a threshold epsilon
     # if, at these points, |K_0[n] - K_1[n+1]| < |diff(K_n)|, switch
     abs_diff = np.abs(np.diff(np.abs(K_0)))
-    real_diff = np.abs(np.diff(np.real(K_0)))
+    real_diff = np.abs(np.diff(np.abs(K_0)))
 
     for n in np.where(real_diff > eps)[0]:
         cross_diff = np.abs(K_0)[n] - np.abs(K_1)[n+1]
@@ -423,23 +423,38 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # ------------------------------------------------------------------------
 
     # save potential ----------------------------------------------------------
-    n = range(len(Chi_0.flatten()))
+    for n, c in enumerate((Chi_0, Chi_1)):
+        c = np.abs(c).flatten(order='F')
+        nfile = range(len(c))
+        np.savetxt("potential_imag_{}.dat".format(n),
+                  zip(nfile, c), fmt='%i %10.6f')
+        c = (c.max() - c)/c.max()
+        np.savetxt("potential_imag_{}_normalized.dat".format(n),
+                   zip(nfile, c), fmt='%i %10.6f')
 
-    Chi = np.abs(Chi_0).flatten(order='F')
-    np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = (Chi - Chi.max())/Chi.max()
-    np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = np.abs(Chi_1).flatten(order='F')
-    np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
-    Chi = (Chi - Chi.max())/Chi.max()
-    np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
+    wavefunctions = (Chi_0, Chi_1, Chi_0_eff, Chi_1_eff)
+    names = ("Chi_0", "Chi_1", "Chi_0_eff", "Chi_1_eff")
+    for n, c in zip(names, wavefunctions):
+        np.savetxt("potential_{}.dat".format(n), c)
+
+    # Chi = np.abs(Chi_0).flatten(order='F')
+    # np.savetxt("potential_imag_0.dat", zip(n, Chi), fmt='%i %10.6f')
+    # Chi = (Chi - Chi.max())/Chi.max()
+    # np.savetxt("potential_imag_0_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
+    # Chi = np.abs(Chi_1).flatten(order='F')
+    # np.savetxt("potential_imag_1.dat", zip(n, Chi), fmt='%i %10.6f')
+    # Chi = (Chi - Chi.max())/Chi.max()
+    # np.savetxt("potential_imag_1_normalized.dat", zip(n, Chi), fmt='%i %10.6f')
     # -------------------------------------------------------------------------
-
-    cmap = 'RdBu_r'
 
     X, Y = np.meshgrid(x, y)
 
     for part in np.abs, np.angle, np.real, np.imag:
+
+        if part == np.abs:
+            cmap = 'Reds'
+        else:
+            cmap = 'RdBu_r'
 
         plt.clf()
         Z = part(Chi_0)
@@ -460,8 +475,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         plt.savefig("Chi_0_eff_{0.__name__}.png".format(part))
 
         plt.clf()
-        Z_eff = part(Chi_1_eff.T)
-        p = plt.pcolormesh(X, Y[::-1,:], Z_eff, cmap=cmap)
+        Z_eff = part(-1j*Chi_1_eff.T)
+        p = plt.pcolormesh(X, Y[::1,:], Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_1_eff_{0.__name__}.png".format(part))
 
