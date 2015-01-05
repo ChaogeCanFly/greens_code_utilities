@@ -102,7 +102,6 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
 
     # find gain-state:
     Gamma0, Gamma1  = [ np.sum(k.imag) for k in K_0, K_1 ]
-    print "Gamma", Gamma0, Gamma1
     if Gamma0 < Gamma1:
         K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
@@ -348,8 +347,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # smooth
     K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
                                                 eps=WG.x_EP, plot=False)
-
-    # K_0, K_1, Chi_0, Chi_1 = K_1, K_0, Chi_1, Chi_0
 
     # transpose array!
     Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
