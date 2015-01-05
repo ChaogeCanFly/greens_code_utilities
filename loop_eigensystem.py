@@ -408,13 +408,15 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     Chi_1_eff[:,0] *= np.exp(1j*K_1_eff*x)
     Chi_1_eff[:,1] *= np.exp(1j*K_1_eff*x)
 
+    # no additional factor of np.exp(-i*kr*x) since we unwrap the phase,
+    # corresponding to K_n -> K_n + n*G
     Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
-    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WG.kr*x),
+    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WG.kr*x),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
 
     Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
-    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WG.kr*x),
+    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*x),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
     # -------------------------------------------------------------------------
