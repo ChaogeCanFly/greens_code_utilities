@@ -424,20 +424,32 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     # eigenvalues -------------------------------------------------------------
     if 1:
         plt.clf()
-        f, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4)
-        ax1.plot(x, K_0.real, "r-")
-        ax1.plot(x, K_0.imag, "b-")
-        ax1.plot(x, K_1.real, "r--")
-        ax1.plot(x, K_1.imag, "b--")
-        ax2.plot(x, K_0_eff.real, "r-")
-        ax2.plot(x, K_0_eff.imag, "b-")
-        ax2.plot(x, K_1_eff.real, "r--")
-        ax2.plot(x, K_1_eff.imag, "b--")
-        ax3.plot(x, abs(K_1 - K_0), "k-")
-        ax3.plot(x, abs(K_1_eff - K_0_eff), "k--")
-        ax4.plot(x, abs(K_0.real - K_0_eff.real), "k-")
-        ax4.plot(x, abs(K_1.real - K_1_eff.real), "k--")
-        plt.savefig("eigenvalues.png")
+        f, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(8,6), dpi=80)
+        ax1.set_title(r"Numerical eigenvalues $K_n$")
+        ax1.plot(x, K_0.real, "r-", label=r"$\Re{K_0}$")
+        ax1.plot(x, K_0.imag, "b-", label=r"$\Im{K_0}$")
+        ax1.plot(x, K_1.real, "r--", label=r"$\Re{K_1}$")
+        ax1.plot(x, K_1.imag, "b--", label=r"$\Im{K_1}$")
+        ax1.set_xlabel(r"$x$")
+
+        ax2.set_title(r"Effective model eigenvalues $K^{\mathrm{eff}}_n$")
+        ax2.plot(x, K_0_eff.real, "r-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.plot(x, K_0_eff.imag, "b-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.plot(x, K_1_eff.real, "r--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.plot(x, K_1_eff.imag, "b--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.set_xlabel(r"$x$")
+
+        ax3.set_title("Comparison")
+        ax3.plot(x, abs(K_0 - K_0_eff)**2, "k-", label=r"$|K_0 - K^{\mathrm{eff}}_0|^2$")
+        ax3.plot(x, abs(K_1 - K_1_eff)**2, "k--", label=r"$|K_1 - K^{\mathrm{eff}}_1|^2$")
+        ax3.set_xlabel(r"$x$")
+
+        prop = {'size': 12}
+        l1 = ax1.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
+        l2 = ax2.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
+        l3 = ax3.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
+        plt.tight_layout()
+        plt.savefig("eigenvalues.png", bbox_extra_artists=([l3]), bbox_inches='tight')
     # ------------------------------------------------------------------------
 
     # save potential ----------------------------------------------------------
