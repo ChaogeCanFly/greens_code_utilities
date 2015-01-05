@@ -203,7 +203,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                            nx=None, loop_direction="+", loop_type='Bell',
                            init_state='a', init_phase=0.0,
-                           mpi=False, pphw=100):
+                           mpi=False, pphw=100, effective_model_only=False):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -235,6 +235,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                 Whether to use the parallel greens_code version.
             pphw: int
                 Points per half-wavelength.
+            effective_model_only: bool
+                Whether to only calculate the effective model predictions.
     """
 
     greens_path = os.environ.get('GREENS_CODE_XML')
@@ -320,52 +322,53 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
     # results = pool.map(run_single_job, job_list)
 
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
-                                 kwds=job_kwargs)
-                for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-    results = [ p.get() for p in results ]
+    if not effective_model_only:
+        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
+                                    kwds=job_kwargs)
+                    for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+        results = [ p.get() for p in results ]
 
-    # properly unpack results
-    for res in results:
-        if res is None:
-            # reuse last set of eigenvalues/eigenvectors if something went
-            # wrong in the function call of run_single_job
-            print "Warning: calculation failed."
-        else:
-            K0, K1, ev0, ev1 = res
-        K_0.append(K0)
-        K_1.append(K1)
-        Chi_0.append(ev0)
-        Chi_1.append(ev1)
+        # properly unpack results
+        for res in results:
+            if res is None:
+                # reuse last set of eigenvalues/eigenvectors if something went
+                # wrong in the function call of run_single_job
+                print "Warning: calculation failed."
+            else:
+                K0, K1, ev0, ev1 = res
+            K_0.append(K0)
+            K_1.append(K1)
+            Chi_0.append(ev0)
+            Chi_1.append(ev1)
 
-    # -------------------------------------------------------------------------
-    # numerical data
+        # -------------------------------------------------------------------------
+        # numerical data
 
-    K_0, K_1, Chi_0, Chi_1 = [ np.asarray(z) for z in K_0, K_1, Chi_0, Chi_1 ]
+        K_0, K_1, Chi_0, Chi_1 = [ np.asarray(z) for z in K_0, K_1, Chi_0, Chi_1 ]
 
-    # smooth
-    K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                eps=WG.x_EP, plot=False)
+        # smooth
+        K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
+                                                    eps=WG.x_EP, plot=False)
 
-    # transpose array!
-    Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
+        # transpose array!
+        Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
 
-    # unwrapp phase
-    G = delta + WG.kr
-    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
-    K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
-    K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
+        # unwrapp phase
+        G = delta + WG.kr
+        L_range = 2*np.pi/G  # make small error since L != r_nx*dx
+        K_0 = np.unwrap(K_0.real*L_range)/L_range + 1j*K_0.imag
+        K_1 = np.unwrap(K_1.real*L_range)/L_range + 1j*K_1.imag
 
-    # TODO: handle case for eps = 0.0
-    # remove discontinuous second order derivative (if we cross the DP)
-    # plt.plot(np.diff(np.abs(K_0), 2))
-    # plt.show()
+        # TODO: handle case for eps = 0.0
+        # remove discontinuous second order derivative (if we cross the DP)
+        # plt.plot(np.diff(np.abs(K_0), 2))
+        # plt.show()
 
-    # assemble eigenvectors
-    Chi_0 *= np.exp(1j*K_0*x)
-    Chi_1 *= np.exp(1j*K_1*x) * np.exp(-1j*WG.kr*x)
-    # -------------------------------------------------------------------------
+        # assemble eigenvectors
+        Chi_0 *= np.exp(1j*K_0*x)
+        Chi_1 *= np.exp(1j*K_1*x) * np.exp(-1j*WG.kr*x)
+        # -------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------
     # effective model predictons
@@ -392,6 +395,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     Chi_0_eff, Chi_1_eff = [ np.array(c).T for c in Chi_0_eff, Chi_1_eff ]
 
     # fold back
+    G = delta + WG.kr
+    L_range = 2*np.pi/G  # make small error since L != r_nx*dx
     K_0_eff = ((-K_0_eff.real + G/2.) % G - G/2.) + 1j*K_0_eff.imag
     K_1_eff = ((-K_1_eff.real + G/2.) % G - G/2.) + 1j*K_1_eff.imag
 
@@ -422,12 +427,16 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     if 1:
         plt.clf()
         f, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(8,6), dpi=80)
-        ax1.set_title(r"Numerical eigenvalues $K_n$")
-        ax1.plot(x, K_0.real, "r-", label=r"$\Re{K_0}$")
-        ax1.plot(x, K_0.imag, "b-", label=r"$\Im{K_0}$")
-        ax1.plot(x, K_1.real, "r--", label=r"$\Re{K_1}$")
-        ax1.plot(x, K_1.imag, "b--", label=r"$\Im{K_1}$")
-        ax1.set_xlabel(r"$x$")
+        prop = {'size': 12}
+
+        if not effective_model_only:
+            ax1.set_title(r"Numerical eigenvalues $K_n$")
+            ax1.plot(x, K_0.real, "r-", label=r"$\Re{K_0}$")
+            ax1.plot(x, K_0.imag, "b-", label=r"$\Im{K_0}$")
+            ax1.plot(x, K_1.real, "r--", label=r"$\Re{K_1}$")
+            ax1.plot(x, K_1.imag, "b--", label=r"$\Im{K_1}$")
+            ax1.set_xlabel(r"$x$")
+            l1 = ax1.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
 
         ax2.set_title(r"Effective model eigenvalues $K^{\mathrm{eff}}_n$")
         ax2.plot(x, K_0_eff.real, "r-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
@@ -435,34 +444,48 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         ax2.plot(x, K_1_eff.real, "r--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
         ax2.plot(x, K_1_eff.imag, "b--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
         ax2.set_xlabel(r"$x$")
-
-        ax3.set_title("Comparison")
-        ax3.plot(x, abs(K_0 - K_0_eff)**2, "k-", label=r"$|K_0 - K^{\mathrm{eff}}_0|^2$")
-        ax3.plot(x, abs(K_1 - K_1_eff)**2, "k--", label=r"$|K_1 - K^{\mathrm{eff}}_1|^2$")
-        ax3.set_xlabel(r"$x$")
-
-        prop = {'size': 12}
-        l1 = ax1.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
         l2 = ax2.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
-        l3 = ax3.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
+        extra_artist=[l2]
+
+        if not effective_model_only:
+            ax3.set_title("Comparison")
+            ax3.plot(x, abs(K_0 - K_0_eff)**2, "k-", label=r"$|K_0 - K^{\mathrm{eff}}_0|^2$")
+            ax3.plot(x, abs(K_1 - K_1_eff)**2, "k--", label=r"$|K_1 - K^{\mathrm{eff}}_1|^2$")
+            ax3.set_xlabel(r"$x$")
+            l3 = ax3.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
+            extra_artist=[l3]
+
         plt.tight_layout()
-        plt.savefig("eigenvalues.png", bbox_extra_artists=([l3]), bbox_inches='tight')
+        plt.savefig("eigenvalues.png", bbox_extra_artists=(extra_artist), 
+                    bbox_inches='tight')
     # ------------------------------------------------------------------------
 
     # save potential ----------------------------------------------------------
-    for n, c in enumerate((Chi_0, Chi_1)):
-        c = np.abs(c).flatten(order='F')
-        nfile = range(len(c))
-        np.savetxt("potential_imag_{}.dat".format(n),
-                  zip(nfile, c), fmt='%i %10.6f')
-        c = (c.max() - c)/c.max()
-        np.savetxt("potential_imag_{}_normalized.dat".format(n),
-                   zip(nfile, c), fmt='%i %10.6f')
+    # for n, c in enumerate((Chi_0, Chi_1)):
+    #     c = np.abs(c).flatten(order='F')
+    #     nfile = range(len(c))
+    #     np.savetxt("potential_imag_{}.dat".format(n),
+    #               zip(nfile, c), fmt='%i %10.6f')
+    #     c = (c.max() - c)/c.max()
+    #     np.savetxt("potential_imag_{}_normalized.dat".format(n),
+    #                zip(nfile, c), fmt='%i %10.6f')
 
-    wavefunctions = (Chi_0, Chi_1, Chi_0_eff, Chi_1_eff)
-    names = ("Chi_0", "Chi_1", "Chi_0_eff", "Chi_1_eff")
+    wavefunctions = [Chi_0_eff, Chi_1_eff]
+    names = ["Chi_0_eff", "Chi_1_eff"]
+    if not effective_model_only:
+        wavefunctions += [Chi_0, Chi_1]
+        names += ["Chi_0", "Chi_1"]
+
     for n, c in zip(names, wavefunctions):
         np.savetxt("potential_{}.dat".format(n), c)
+
+        c = np.abs(c).flatten(order='F')
+        nfile = range(len(c))
+        np.savetxt("potential_{}_imag.dat".format(n),
+                   zip(nfile, c), fmt='%i %10.6f')
+        c = (c.max() - c)/c.max()
+        np.savetxt("potential_{}_imag_normalized.dat".format(n),
+                   zip(nfile, c), fmt='%i %10.6f')
     # -------------------------------------------------------------------------
 
     X, Y = np.meshgrid(x, y)
@@ -472,17 +495,18 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         else:
             cmap = 'RdBu_r'
 
-        plt.clf()
-        Z = part(Chi_0)
-        p = plt.pcolormesh(X, Y, Z, cmap=cmap)
-        plt.colorbar(p)
-        plt.savefig("Chi_0_{0.__name__}.png".format(part))
+        if not effective_model_only:
+            plt.clf()
+            Z = part(Chi_0)
+            p = plt.pcolormesh(X, Y, Z, cmap=cmap)
+            plt.colorbar(p)
+            plt.savefig("Chi_0_{0.__name__}.png".format(part))
 
-        plt.clf()
-        Z = part(Chi_1)
-        p = plt.pcolormesh(X, Y, Z, cmap=cmap)
-        plt.colorbar(p)
-        plt.savefig("Chi_1_{0.__name__}.png".format(part))
+            plt.clf()
+            Z = part(Chi_1)
+            p = plt.pcolormesh(X, Y, Z, cmap=cmap)
+            plt.colorbar(p)
+            plt.savefig("Chi_1_{0.__name__}.png".format(part))
 
         plt.clf()
         Z_eff = part(Chi_0_eff.T)
