@@ -252,7 +252,7 @@ def parse_arguments():
     parser.add_argument("-p", "--probabilities", action="store_true",
                         help="Whether to calculate abs(S)^2.")
     parser.add_argument("-f", "--full-smatrix", action="store_true",
-                        help=("Whether to write the full S-matrix (including"
+                        help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
 
     parser.add_argument("-d", "--directories", default=[], nargs="*",
