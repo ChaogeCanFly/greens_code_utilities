@@ -421,6 +421,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*x),
                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
     Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+
+    Chi_0_eff, Chi_1_eff = [ c.T for c in Chi_0_eff, Chi_1_eff ]
     # -------------------------------------------------------------------------
 
     # eigenvalues -------------------------------------------------------------
@@ -509,13 +511,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
             plt.savefig("Chi_1_{0.__name__}.png".format(part))
 
         plt.clf()
-        Z_eff = part(Chi_0_eff.T)
+        Z_eff = part(Chi_0_eff)
         p = plt.pcolormesh(X, Y[::-1,:], Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_0_eff_{0.__name__}.png".format(part))
 
         plt.clf()
-        Z_eff = part(-1j*Chi_1_eff.T)
+        Z_eff = part(-1j*Chi_1_eff)
         p = plt.pcolormesh(X, Y[::-1,:], Z_eff, cmap=cmap)
         plt.colorbar(p)
         plt.savefig("Chi_1_eff_{0.__name__}.png".format(part))
