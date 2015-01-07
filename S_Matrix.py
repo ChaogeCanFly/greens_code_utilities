@@ -74,8 +74,10 @@ class S_Matrix(object):
             pass
 
         if self.probabilities:
+            self.S_amplitudes = S
             self.S = abs(S)**2
         else:
+            self.S_amplitudes = S
             self.S = S
 
         self.nruns = int(nruns)
@@ -115,14 +117,16 @@ class Write_S_Matrix(object):
     """
 
     def __init__(self, outfile="S_matrix.dat", directories=[], glob_args=[],
-                 delimiter="_", full_smatrix=False, **kwargs):
+                 delimiter="_", full_smatrix=False, diodicity=False, **kwargs):
 
         self.outfile = outfile
         self.directories = directories
         self.glob_args = glob_args
-        self.nargs = len(glob_args) if glob_args else 0
+        # self.nargs = len(glob_args) if glob_args else 0
+        self.nargs = len(glob_args)
         self.delimiter = delimiter
         self.full_smatrix = full_smatrix
+        self.diodicity = diodicity
         self.kwargs = kwargs
 
         self._process_directories()
@@ -151,17 +155,21 @@ class Write_S_Matrix(object):
         spacing = 17 if S.probabilities else 35
 
         # translate S-matrix into transmission and reflection components
-        header = [ "{}{}{}".format(s,i,j) for s in ("r","t","t'","r'")
+        header = [ "{}{}{}".format(s,i,j) for s in ("r","t")
                                           for i in range(S.modes)
                                           for j in range(S.modes) ]
+        header_prime = [ "{}{}{}".format(s,i,j) for s in ("t'","r'")
+                                                for i in range(S.modes)
+                                                for j in range(S.modes) ]
         if self.full_smatrix:
-            headerdim = S.ndims*S.ndims
-        else:
-            headerdim = S.ndims*S.modes
+            header += header_prime
+
+        if self.diodicity:
+            header += ["D_right", "D_left"]
 
         headerfmt = '#'
         headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        headerfmt += "  ".join([ '{:>{s}}' for n in range(headerdim) ])
+        headerfmt += "  ".join([ '{:>{s}}' for n in range(len(header)) ])
 
         header = headerfmt.format(*(self.glob_args + header), s=spacing)
 
@@ -182,16 +190,19 @@ class Write_S_Matrix(object):
                                             for j in range(S.ndims)
                                             for k in range(S.modes) ]
         # join data
-        data += data_prime
-
         if self.full_smatrix:
-            datadim = S.ndims*S.ndims
-        else:
-            datadim = S.ndims*S.modes
+            data += data_prime
+
+        if self.diodicity:
+            t00, t01, t10, t11 = [ S.S_amplitudes[0,i,j] for i in 2, 3
+                                                         for j in 0, 1 ]
+            D_right = abs((t00+t01)/(t10+t11))
+            D_left = abs((t00+t10)/(t01+t11))
+            data += [D_right, D_left]
 
         datafmt = " "
         datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        datafmt += "  ".join([ '{:> .10e}' for n in range(datadim) ])
+        datafmt += "  ".join([ '{:> .10e}' for n in range(len(data)) ])
 
         data = datafmt.format(*(arg_values + data))
 
@@ -254,6 +265,9 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
+    parser.add_argument("-y", "--diodicity", action="store_true",
+                        help=("Whether to add the diodicity measure to the "
+                              "output file."))
 
     parser.add_argument("-d", "--directories", default=[], nargs="*",
                         help="Directories to parse.")
