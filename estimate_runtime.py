@@ -40,7 +40,7 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
         Notes:
         ------
             Valid for greens_code revision 482 and above (as long as no
-            performance-critital changes are mode).
+            performance-critical changes are mode).
     """
 
     if not nx or not ny:
