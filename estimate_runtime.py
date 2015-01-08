@@ -4,12 +4,11 @@ from __future__ import division
 
 import argparse
 from argparse import RawDescriptionHelpFormatter
-from datetime import timedelta
 import math
 
 
-def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None, ny=None,
-                Ncores=None):
+def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
+                ny=None, Ncores=None):
     """Print the estimated greens_code runtime.
 
     If neither nx nor ny are provided, the variables pphw, modes, length and
