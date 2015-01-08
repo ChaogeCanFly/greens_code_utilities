@@ -57,7 +57,7 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
     T_m = (T // 60) % 60
     T_s = T % 60
 
-    print "Estimated runtime for {:4} cores: {:.0f}h {:2.0f}m {:2.0f}s".format(Ncores, T_h, T_m, T_s)
+    print "Estimated runtime for {:4} core(s): {:.0f}h {:2.0f}m {:2.0f}s".format(Ncores, T_h, T_m, T_s)
 
     return T
 
