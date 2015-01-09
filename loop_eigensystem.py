@@ -206,7 +206,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
                            loop_direction="+", loop_type='Bell', init_state='a',
                            init_phase=0.0, mpi=False, pphw=100,
                            effective_model_only=False,
-                           boundary_condition='Neumann'):
+                           neumann=1):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -240,10 +240,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
                 Points per half-wavelength.
             effective_model_only: bool
                 Whether to only calculate the effective model predictions.
-            boundary_condition: str
-                Which boundary condition to use when calculating the wavevectors
-                of the open modes.
-
+            neumann: int
+                Whether to use Neumann or Dirichlet boundary conditions.
     """
 
     greens_path = os.environ.get('GREENS_CODE_XML')
@@ -261,10 +259,6 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
-    if boundary_condition == 'Neumann':
-        neumann = 1
-    else:
-        neumann = 0
     profile_kwargs = {'eps': eps,
                       'pphw': pphw,
                       'input_xml': XML,
