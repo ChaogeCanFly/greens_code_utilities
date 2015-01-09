@@ -8,7 +8,7 @@ import math
 
 
 def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
-                ny=None, Ncores=None):
+                ny=None, Ncores=None, machine=None):
     """Print the estimated greens_code runtime.
 
     If neither nx nor ny are provided, the variables pphw, modes, length and
@@ -31,6 +31,8 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
                 Number of grid-points in transversal direction.
             Ncores: int
                 Number of cores.
+            machine: str
+                Machine on which greens_code is run (VSC1|VSC2|VSC3).
 
         Returns:
         --------
@@ -40,18 +42,27 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
         Notes:
         ------
             Valid for greens_code revision 482 and above (as long as no
-            performance-critical changes are mode).
+            performance-critical changes are made).
     """
 
     if not nx or not ny:
         nyout = pphw*modes
         dy = width/(nyout + 1)
         dx = dy
-
         nx = int(length/dx)
         ny = int(width/dy)
 
-    T = (6.*ny**3*(nx/Ncores) + math.log(Ncores, 2)*3.5*ny**3)*1e-9
+    if machine == 'VSC1':
+        a = 6.
+        b = 3.5
+    elif machine == 'VSC2':
+        a = 6.
+        b = 3.5
+    elif machine == 'VSC3':
+        a = 6.
+        b = 3.5
+
+    T = (a*ny**3*(nx/Ncores) + math.log(Ncores, 2)*b*ny**3)*1e-9
 
     T_h = T // 3600
     T_m = (T // 60) % 60
@@ -75,6 +86,7 @@ def parse_arguments():
     parser.add_argument("-x", "--nx", default=None, type=int)
     parser.add_argument("-y", "--ny", default=None, type=int)
     parser.add_argument("-N", "--Ncores", default=None, type=int)
+    parser.add_argument("-M", "--machine", default='VSC3', type=str)
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
