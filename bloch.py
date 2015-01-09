@@ -12,7 +12,7 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
                     dx=None, r_nx=None, sort=True, fold_back=True,
                     return_velocities=False, return_eigenvectors=False,
-                    verbose=True):
+                    verbose=True, boundary_condition='Neumann'):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -41,6 +41,9 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Whether to return eigenvalues and eigenvectors.
             verbose: bool
                 Print additional output.
+            boundary_condition: str
+                Which boundary condition to use when calculating the wavevectors
+                of the open modes.
 
         Returns:
         --------
@@ -63,7 +66,10 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         r_nx = xml_params.get("r_nx")
 
     # get k_x values for both modes
-    k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
+    if boundary_condition == 'Neumann':
+        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
+    elif boundary_condition == 'Dirichlet':
+        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (1, 2) ]
     kr = k0 - k1
 
     # get reciprocal lattice vector G
