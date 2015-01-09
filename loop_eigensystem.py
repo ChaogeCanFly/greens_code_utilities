@@ -191,7 +191,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                             'Im(ev1) Re(K1) Im(K1)'))
         os.chdir(CWD)
         # subprocess.call("gzip -r {}".format(DIR).split())
-        shutil.rmtree(DIR)
+        # shutil.rmtree(DIR)
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
         return K0, K1, ev0, ev1
@@ -253,7 +253,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
                  'init_phase': init_phase,
                  'init_state': init_state,
                  'loop_direction': loop_direction,
-                 'loop_type': loop_type}
+                 'loop_type': loop_type,
+                 'neumann': neumann}
     WG = Waveguide(**wg_kwargs)
     WG.x_EP = eps
     _, b0, b1 = WG.solve_ODE()
