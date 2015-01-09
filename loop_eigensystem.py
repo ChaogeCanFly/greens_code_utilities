@@ -447,9 +447,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
             l1 = ax1.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
 
         ax2.set_title(r"Effective model eigenvalues $K^{\mathrm{eff}}_n$")
-        ax2.plot(x, K_0_eff.real, "r-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
-        ax2.plot(x, K_0_eff.imag, "b-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
-        ax2.plot(x, K_1_eff.real, "r--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.plot(x, K_0_eff.real, "r-", label=r"$\Re{K^{\mathrm{eff}}_0}$")
+        ax2.plot(x, K_0_eff.imag, "b-", label=r"$\Im{K^{\mathrm{eff}}_0}$")
+        ax2.plot(x, K_1_eff.real, "r--", label=r"$\Re{K^{\mathrm{eff}}_1}$")
         ax2.plot(x, K_1_eff.imag, "b--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
         ax2.set_xlabel(r"$x$")
         l2 = ax2.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
