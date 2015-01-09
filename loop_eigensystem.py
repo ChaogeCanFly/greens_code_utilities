@@ -1,6 +1,8 @@
 #!/usr/bin/env python2.7
 
 import glob
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
@@ -116,7 +118,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
 
 
 def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
-                   WG=None, loop_direction=None):
+                   WG=None, loop_direction=None, neumann=None):
     """Calculate the Bloch eigensystem in a separate directory and extract the
     eigenvalues and eigenvectors.
 
@@ -143,7 +145,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                       'pphw': pphw,
                       'input_xml': XML,
                       'custom_directory': os.getcwd(),
-                      'neumann': 1}
+                      'neumann': neumann}
     wg_kwargs_n = {'N': N,
                    'eta': eta,
                    'L': 2*np.pi/(WG.kr + deltan),
@@ -189,7 +191,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                             'Im(ev1) Re(K1) Im(K1)'))
         os.chdir(CWD)
         # subprocess.call("gzip -r {}".format(DIR).split())
-        # shutil.rmtree(DIR)
+        shutil.rmtree(DIR)
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
         return K0, K1, ev0, ev1
@@ -200,10 +202,11 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
         return
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
-                           nx=None, loop_direction="+", loop_type='Bell',
-                           init_state='a', init_phase=0.0,
-                           mpi=False, pphw=100, effective_model_only=False):
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
+                           loop_direction="+", loop_type='Bell', init_state='a',
+                           init_phase=0.0, mpi=False, pphw=100,
+                           effective_model_only=False,
+                           boundary_condition='Neumann'):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -237,6 +240,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                 Points per half-wavelength.
             effective_model_only: bool
                 Whether to only calculate the effective model predictions.
+            boundary_condition: str
+                Which boundary condition to use when calculating the wavevectors
+                of the open modes.
+
     """
 
     greens_path = os.environ.get('GREENS_CODE_XML')
@@ -254,11 +261,15 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
+    if boundary_condition == 'Neumann':
+        neumann = 1
+    else:
+        neumann = 0
     profile_kwargs = {'eps': eps,
                       'pphw': pphw,
                       'input_xml': XML,
                       'custom_directory': os.getcwd(),
-                      'neumann': 1}
+                      'neumann': neumann}
     profile_kwargs.update(wg_kwargs)
 
     ep.profile.Generate_Profiles(**profile_kwargs)
@@ -310,7 +321,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                   'XML': XML,
                   'N': N,
                   'WG': WG,
-                  'loop_direction': loop_direction}
+                  'loop_direction': loop_direction,
+                  'neumann': neumann}
 
     # serialized version:
     # results = []
