@@ -168,7 +168,6 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
         K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
                                                   return_velocities=True,
                                                   verbose=True,
-                                                  fold_back=True,
                                                   neumann=neumann)
         # remove eigenvalue files
         # os.remove("Evecs.sine_boundary.dat")
