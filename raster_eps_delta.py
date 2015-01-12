@@ -19,7 +19,7 @@ def run_code():
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
         cmd = ("mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} "
-               "solve_xml_mumps").format(**os.environ)
+               "solve_xml_mumps dev").format(**os.environ)
     else:
         print "running code locally..."
         cmd = "solve_xml_mumps"
