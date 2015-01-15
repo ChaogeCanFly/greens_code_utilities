@@ -1,8 +1,8 @@
 #!/usr/bin/env python2.7
 
-# import matplotlib
+import matplotlib
 # matplotlib.use('Agg')
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
 import argh
@@ -10,10 +10,9 @@ import argh
 from ep.waveguide import Waveguide
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
                            loop_direction="+", loop_type='Bell', init_state='a',
-                           init_phase=0.0, mpi=False, pphw=100,
-                           effective_model_only=False, neumann=1):
+                           init_phase=0.0, neumann=1):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -52,13 +51,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
     WG.x_EP = eps
     _, b0, b1 = WG.solve_ODE()
 
-    x = np.linspace(0, L, 10)
+    x = np.linspace(0, L, nx)
     eps, delta = WG.get_cycle_parameters(x)
 
     for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-        wg_kwargs = {'N': N,
+        wgn_kwargs = {'N': N,
                     'eta': eta,
-                    'L': L,
+                    'L': 2*np.pi/(WG.kr + deltan),
                     'init_phase': init_phase,
                     'init_state': init_state,
                     'loop_direction': loop_direction,
@@ -67,11 +66,48 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
         WGn = Waveguide(**wgn_kwargs)
         WGn.x_EP = epsn
         WGn.y_EP = deltan
-        ID = "n_{:03}_xn_{:08.4f}_epsn_{}_deltan_{}".format(n, xn, epsn, deltan)
-        _, b0, b1 = WGn.solve_ODE(instantaneous_eigenbasis=True,
-                                  save_plot=ID + ".png")
+        _, b0, b1 = WGn.solve_ODE()
 
-        WGn.draw_wavefunction()
+        Chi_0_eff, Chi_1_eff = WGn.eVecs_r[:,:,0], WGn.eVecs_r[:,:,1]
+        K_0_eff, K_1_eff = WGn.eVals[:,0], WGn.eVals[:,1]
+
+        xnn = WGn.t
+        yN = len(xnn)/WGn.T
+        y = np.linspace(0, WGn.d, yN)
+        X, Y = np.meshgrid(xnn, y)
+
+        # assemble effective model eigenvectors
+        Chi_0_eff[:,0] *= np.exp(1j*K_0_eff*xnn)
+        Chi_0_eff[:,1] *= np.exp(1j*K_0_eff*xnn)
+        Chi_1_eff[:,0] *= np.exp(1j*K_1_eff*xnn)
+        Chi_1_eff[:,1] *= np.exp(1j*K_1_eff*xnn)
+
+        Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
+        Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                               np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
+        Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
+
+        Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
+        Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                               np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
+        Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+
+        Chi_0_eff, Chi_1_eff = [ c.T for c in Chi_0_eff, Chi_1_eff ]
+
+        ID = "n_{:03}_xn_{:08.4f}_epsn_{}_deltan_{}".format(n, xn, epsn, deltan)
+        print ID, WGn.kr
+        part = np.abs
+        f, (ax1, ax2) = plt.subplots(nrows=2)
+
+        ax1.pcolormesh(X, Y, part(Chi_0_eff), vmin=np.abs(Chi_0_eff).min(), vmax=np.abs(Chi_0_eff).max())
+        ax1.contour(X, Y, np.real(Chi_0_eff), levels=[0.0], colors='k', linestyles="solid")
+        ax1.contour(X, Y, np.imag(Chi_0_eff), levels=[0.0], colors='w', linestyles="dashed")
+
+        ax2.pcolormesh(X, Y, part(Chi_1_eff), vmin=np.abs(Chi_1_eff).min(), vmax=np.abs(Chi_1_eff).max())
+        ax2.contour(X, Y, np.real(Chi_1_eff), levels=[0.0], colors='k', linestyles="solid")
+        ax2.contour(X, Y, np.imag(Chi_1_eff), levels=[0.0], colors='w', linestyles="dashed")
+
+        plt.savefig(ID + ".png")
 
 
 if __name__ == '__main__':
