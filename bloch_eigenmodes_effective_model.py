@@ -82,15 +82,26 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
         Chi_1_eff[:,0] *= np.exp(1j*K_1_eff*xnn)
         Chi_1_eff[:,1] *= np.exp(1j*K_1_eff*xnn)
 
-        Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
-        Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
-                               np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
-        Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
+        if neumann:
+            Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
+            Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                                np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
+            Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
 
-        Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
-        Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
-                               np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
-        Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+            Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
+            Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                                np.sqrt(2.*WGn.k0/WGn.k1)*np.cos(np.pi*y))
+            Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+        else:
+            Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], np.sin(np.pi*y))
+            Chi_0_eff_1 = np.outer(Chi_0_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                                np.sqrt(WGn.k1/WGn.k0)*np.sin(2*np.pi*y))
+            Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
+
+            Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], np.sin(np.pi*y))
+            Chi_1_eff_1 = np.outer(Chi_1_eff[:,1]*np.exp(-1j*WGn.kr*xnn),
+                                np.sqrt(WGn.k1/WGn.k0)*np.sin(2*np.pi*y))
+            Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
 
         Chi_0_eff, Chi_1_eff = [ c.T for c in Chi_0_eff, Chi_1_eff ]
 
