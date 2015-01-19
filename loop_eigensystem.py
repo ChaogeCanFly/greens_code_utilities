@@ -2,7 +2,7 @@
 
 import glob
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
@@ -294,6 +294,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
         ax2.plot(WG.t, WG.eVals[:,1].real, "g-")
         ax2.plot(WG.t, WG.eVals[:,0].imag, "r--")
         ax2.plot(WG.t, WG.eVals[:,1].imag, "g--")
+        # plt.savefig("evals_trajectories.png")
         plt.show()
     # -------------------------------------------------------------------------
 
@@ -401,9 +402,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
     #                 1j*interp1d(WG.t, Chi_1_eff[:].imag)(x)) for n in 0, 1 ]
     Chi_0_eff, Chi_1_eff = [ np.array(c).T for c in Chi_0_eff, Chi_1_eff ]
 
+
     # fold back
     G = delta + WG.kr
     L_range = 2*np.pi/G  # make small error since L != r_nx*dx
+
+    # np.savetxt("output_data.dat", zip(G, L_range, K_0_eff.real, K_1_eff.real,
+    #                                   K_0.real, K_1.real),
+    #            header='G L_range K_0_eff K_1_eff K_0 K_1')
     K_0_eff = ((-K_0_eff.real + G/2.) % G - G/2.) + 1j*K_0_eff.imag
     K_1_eff = ((-K_1_eff.real + G/2.) % G - G/2.) + 1j*K_1_eff.imag
 
@@ -432,12 +438,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
     else:
         Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], np.sin(np.pi*y))
         Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WGn.kr*xnn),
-                            np.sqrt(WGn.k1/WGn.k0)*np.sin(2*np.pi*y))
+                            np.sqrt(WG.k1/WG.k0)*np.sin(2*np.pi*y))
         Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
 
         Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], np.sin(np.pi*y))
         Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WGn.kr*xnn),
-                            np.sqrt(WGn.k1/WGn.k0)*np.sin(2*np.pi*y))
+                            np.sqrt(WG.k1/WG.k0)*np.sin(2*np.pi*y))
         Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
 
     Chi_0_eff, Chi_1_eff = [ c.T for c in Chi_0_eff, Chi_1_eff ]
