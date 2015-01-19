@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -69,6 +69,11 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
         _, b0, b1 = WGn.solve_ODE()
 
         Chi_0_eff, Chi_1_eff = WGn.eVecs_r[:,:,0], WGn.eVecs_r[:,:,1]
+
+        # switch eigenvectors halfway
+        if n > len(x)/2:
+            Chi_0_eff, Chi_1_eff = Chi_1_eff, Chi_0_eff
+
         K_0_eff, K_1_eff = WGn.eVals[:,0], WGn.eVals[:,1]
 
         xnn = WGn.t
