@@ -362,7 +362,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
 
         # smooth
         K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                    eps=WG.x_EP, plot=False)
+                                                    eps=WG.x_R0, plot=False)
 
         # transpose array!
         Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]

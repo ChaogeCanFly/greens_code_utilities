@@ -20,9 +20,9 @@ class TransmissionMatrix(object):
                 delta: float
                     Constant to set y_EP (or, equivalently, y_EP -> y_EP + delta)
                 eps: float
-                    Set value for x_EP to eps (only done if not None)
+                    Set value for x_R0 to eps (only done if not None)
                 eps_factor: float
-                    Constant to shift x_EP -> x_EP * eps_factor
+                    Constant to shift x_R0 -> x_EP * eps_factor
                 N: float
                     Number of open modes int(k*d/pi)
                 infile: str
@@ -172,11 +172,11 @@ def compare_H_eff_to_S_matrix(N=1.01, eta=0.1, delta=0.0, eps=None,
         ax.set_title((r"$N={N}$, $\eta={eta}$, "
                       r"$\delta={delta}$, " 
                       r"$\epsilon={eps_factor} $"
-                      r"$\cdot \epsilon_{{EP}}$").format(N=N, eta=eta, 
-                                                         delta=delta, 
+                      r"$\cdot \epsilon_{{EP}}$").format(N=N, eta=eta,
+                                                         delta=delta,
                                                          eps_factor=eps_factor))
 
-    ax.legend(bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)      
+    ax.legend(bbox_to_anchor=(1.05, 1.0), loc=2, borderaxespad=0.)
     plt.show(block=False)
     
     
