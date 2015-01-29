@@ -16,7 +16,7 @@ import traceback
 import argh
 
 import ep.profile
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 import bloch
 
 
@@ -254,9 +254,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
                  'init_state': init_state,
                  'loop_direction': loop_direction,
                  'loop_type': loop_type,
-                 'neumann': neumann}
-    WG = Waveguide(**wg_kwargs)
-    WG.x_EP = eps
+                 'x_R0': eps
+    }
+    if neumann:
+        WG = Neumann(**wg_kwargs)
+    else:
+        WG = Dirichlet(**wg_kwargs)
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
@@ -283,8 +286,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
         ax1.semilogy(WG.t, abs(b1), "g-")
 
         wg_kwargs['loop_direction'] = '+'
-        WG = Waveguide(**wg_kwargs)
-        WG.x_EP = eps
+        if neumann:
+            WG = Neumann(**wg_kwargs)
+        else:
+            WG = Dirichlet(**wg_kwargs)
         _, b0, b1 = WG.solve_ODE()
 
         ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
