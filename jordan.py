@@ -9,7 +9,7 @@ import argh
 
 import bloch
 from helper_functions import replace_in_file
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 from xmlparser import XML
 
 
@@ -179,14 +179,13 @@ class Jordan(object):
         k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
         L = abs(2*np.pi/(k0 - k1 + y))
 
-        WG = Waveguide(L=L, loop_type='Constant', **self.waveguide_params)
+        if neumann:
+            WG = Neumann(L=L, loop_type='Constant', x_R0=x, y_R0=y,
+                         **self.waveguide_params)
+        else:
+            WG = Dirichlet(L=L, loop_type='Constant', x_R0=x, y_R0=y,
+                           **self.waveguide_params)
         self.WG = WG
-
-        print "WG.x_EP", WG.x_EP
-        print "WG.y_EP", WG.y_EP
-
-        WG.x_EP = x
-        WG.y_EP = y
 
         xi_lower, xi_upper = WG.get_boundary(eps=x, delta=y)
 
