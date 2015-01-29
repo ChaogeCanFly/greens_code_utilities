@@ -7,7 +7,7 @@ import numpy as np
 
 import argh
 
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 
 
 def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
@@ -46,9 +46,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
                  'init_state': init_state,
                  'loop_direction': loop_direction,
                  'loop_type': loop_type,
-                 'neumann': neumann}
-    WG = Waveguide(**wg_kwargs)
-    WG.x_EP = eps
+                 'x_R0': eps
+    }
+    if neumann:
+        WG = Neumann(**wg_kwargs)
+    else:
+        WG = Dirichlet(**wg_kwargs)
     _, b0, b1 = WG.solve_ODE()
 
     x = np.linspace(0, L, nx)
@@ -62,10 +65,12 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
                     'init_state': init_state,
                     'loop_direction': loop_direction,
                     'loop_type': 'Constant',
-                    'neumann': neumann}
-        WGn = Waveguide(**wgn_kwargs)
-        WGn.x_EP = epsn
-        WGn.y_EP = deltan
+                    'x_R0': epsn,
+                    'y_R0': deltan}
+        if neumann:
+            WGn = Neumann(**wg_kwargs)
+        else:
+            WGn = Dirichlet(**wg_kwargs)
         _, b0, b1 = WGn.solve_ODE()
 
         Chi_0_eff, Chi_1_eff = WGn.eVecs_r[:,:,0], WGn.eVecs_r[:,:,1]
