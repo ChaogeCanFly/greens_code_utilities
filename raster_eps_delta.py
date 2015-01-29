@@ -9,7 +9,7 @@ import sys
 import argh
 
 import bloch
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 from helper_functions import replace_in_file
 
 
@@ -76,7 +76,10 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
         # choose discretization such that r_nx < len(x_range)
         r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
-        WG = Waveguide(L=L, loop_type='Constant', N=N, eta=eta, neumann=neumann)
+        if neumann:
+            WG = Neumann(L=L, loop_type='Constant', N=N, eta=eta)
+        else:
+            WG = Dirichlet(L=L, loop_type='Constant', N=N, eta=eta)
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
         print "xi_lower.shape", xi_lower.shape
