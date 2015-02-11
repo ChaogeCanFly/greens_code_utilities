@@ -191,7 +191,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                             'Im(ev1) Re(K1) Im(K1)'))
         os.chdir(CWD)
         # subprocess.call("gzip -r {}".format(DIR).split())
-        shutil.rmtree(DIR)
+        # shutil.rmtree(DIR)
 
         print "xn", xn, "epsn", epsn, "deltan", deltan, "K0", K0, "K1", K1
         return K0, K1, ev0, ev1
@@ -325,22 +325,23 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
                   'loop_direction': loop_direction,
                   'neumann': neumann}
 
-    # serialized version:
-    # results = []
-    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-    #     run_single_job(n, xn, epsn, deltan, **job_kwargs)
-
-    # alternative parallelization:
-    # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
-    #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-    # results = pool.map(run_single_job, job_list)
 
     if not effective_model_only:
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
-                                    kwds=job_kwargs)
-                    for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-        results = [ p.get() for p in results ]
+        # serialized version:
+        results = []
+        for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
+            run_single_job(n, xn, epsn, deltan, **job_kwargs)
+
+        # pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        # results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
+        #                              kwds=job_kwargs)
+        #             for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+        # results = [ p.get() for p in results ]
+
+        # alternative parallelization:
+        # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
+        #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+        # results = pool.map(run_single_job, job_list)
 
         # properly unpack results
         for res in results:
