@@ -45,6 +45,7 @@ class Time_Delay_Matrix(object):
 
         S = S_Matrix(infile=infile)
         S0, S1, S2 = [ S.S[n,...] for n in 0, 1, 2 ]
+        self.S1 = S1
 
         modes = S.modes
         self.S = S
@@ -63,6 +64,15 @@ class Time_Delay_Matrix(object):
         self.delay_times = delay_times
         self.delay_eigenstates = delay_eigenstates.T
 
+        # transmission eigenvalues
+        self.t = self.S1[self.modes:, :self.modes]
+        self.T = (abs(self.t.dot(self.delay_eigenstates))**2).sum(axis=0)
+
+        # reflection eigenvalues
+        self.r = self.S1[:self.modes, :self.modes]
+        self.R = (abs(self.r.dot(self.delay_eigenstates))**2).sum(axis=0)
+
+        # not valid if time-reversal symmetry is violated?
         chi = self.Q21.dot(self.delay_eigenstates)
         nullspace_norm =  np.linalg.norm(chi, axis=0)
 
@@ -100,7 +110,7 @@ class Time_Delay_Matrix(object):
                 f.write('1.0\n')
                 for m in range(self.modes):
                     v = self.delay_eigenstates[n,m]
-                    f.write('({v.real}, {v.imag})\n'.format(v=v))
+                    f.write('({v.real}, {v.imag}))\n'.format(v=v))
 
     def write_eigenvalues(self):
         """Write the eigenvalues of the time-delay-operator."""
@@ -108,8 +118,12 @@ class Time_Delay_Matrix(object):
         if not self.evals_file:
             self.evals_file = 'evals.Q_states.dat'
 
-        np.savetxt(self.evals_file, zip(self.delay_times, self.nullspace_norm),
-                   header='delay times q & nullspace norms |Q21 q|')
+        np.savetxt(self.evals_file, zip(self.delay_times, self.T, self.R,
+                                        self.T + self.R, self.nullspace_norm),
+                   header=('delay times q, transmission probabilities '
+                           'T = |t q|**2 and R = |r q|**2, T+R, '
+                           'and nullspace norms |Q21 q|'),
+                   fmt='%.8e')
 
 
 def parse_arguments():
