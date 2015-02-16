@@ -62,7 +62,7 @@ class Time_Delay_Matrix(object):
 
         delay_times, delay_eigenstates = scipy.linalg.eig(self.Q11)
         self.delay_times = delay_times
-        self.delay_eigenstates = delay_eigenstates.T
+        self.delay_eigenstates = delay_eigenstates
 
         # transmission eigenvalues
         self.t = self.S1[self.modes:, :self.modes]
@@ -109,7 +109,7 @@ class Time_Delay_Matrix(object):
                 f.write('\n')
                 f.write('1.0\n')
                 for m in range(self.modes):
-                    v = self.delay_eigenstates[n,m]
+                    v = self.delay_eigenstates[m,n]
                     f.write('({v.real}, {v.imag})\n'.format(v=v))
 
     def write_eigenvalues(self):
