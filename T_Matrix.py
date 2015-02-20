@@ -99,6 +99,7 @@ class T_Matrix(object):
         if not self.evals_file:
             self.evals_file = 'evals.T_states.dat'
 
+        # readin with np.loadtxt(self.evals_file).view(complex)
         np.savetxt(self.evals_file, zip(self.eigenvalues.real,
                                         self.eigenvalues.imag),
                    header=('t*^T t eigenvalues'),
