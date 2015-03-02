@@ -41,8 +41,11 @@ class XML(object):
 
         # avoid confusion between parameter 'N' from the input-vector object
         # and the variable 'N' used for modes in the Waveguide class
-        params.pop("N")
-        params.pop("v[i]")
+        try:
+            params.pop("N")
+            params.pop("v[i]")
+        except:
+            print "Warning: could not remove 'N' and 'v[i]' parameters."
 
         nyout = params.get("modes")*params.get("points_per_halfwave")
         dx = params.get("W")/(nyout + 1.)
