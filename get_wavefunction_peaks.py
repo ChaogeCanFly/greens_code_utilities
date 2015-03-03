@@ -23,7 +23,10 @@ def get_array(input, L=100, W=1, r_nx=None, r_ny=None):
     return X, Y, Z
 
 
-def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
+@argh.arg('mode1', type=str)
+@argh.arg('mode2', type=str)
+def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
+         mode1=None, mode2=None):
     nyout = pphw*N + 1.
     r_nx_pot = int(nyout*L)
     r_ny_pot = int(nyout*W)
@@ -34,8 +37,13 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
                     'r_nx': r_nx_pot,
                     'r_ny': r_ny_pot}
 
-    X, Y, Za = get_array(glob("*.0000.streu.*.purewavefunction.ascii")[0], **array_kwargs)
-    _, _, Zb = get_array(glob("*.0001.streu.*.purewavefunction.ascii")[0], **array_kwargs)
+    if mode1 is None:
+        mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
+    if mode2 is None:
+        mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
+
+    X, Y, Za = get_array(mode1, **array_kwargs)
+    _, _, Zb = get_array(mode2, **array_kwargs)
 
     peaks_a, peaks_b = [ get_local_peaks(z, peak_type='minimum') for z in Za, Zb ]
     peaks_a[np.logical_or(Y > 0.9, Y < 0.1)] = 0.0
