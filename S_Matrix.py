@@ -170,10 +170,10 @@ class Write_S_Matrix(object):
         else:
             header_variables = ("r", "t")
             header_prime_variables = ("t'", "r'")
-        header = [ "{0}{2}{1}".format(s,i,j) for s in header_variables
+        header = [ "{0}{1}{2}".format(s,i,j) for s in header_variables
                                           for i in range(S.modes)
                                           for j in range(S.modes) ]
-        header_prime = [ "{0}{2}{1}".format(s,i,j)
+        header_prime = [ "{0}{1}{2}".format(s,i,j)
                             for s in header_prime_variables
                             for i in range(S.modes)
                             for j in range(S.modes) ]
