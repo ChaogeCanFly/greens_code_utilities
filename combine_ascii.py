@@ -12,7 +12,11 @@ from get_wavefunction_peaks import get_array
 from helper_functions import convert_to_complex
 
 
-def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
+@argh.arg('mode1', type=str)
+@argh.arg('mode2', type=str)
+@argh.arg('potential', type=str)
+def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
+         mode1=None, mode2=None, potential=None):
     nyout = pphw*N + 1.
     r_nx_pot = int(nyout*L)
     r_ny_pot = int(nyout*W)
@@ -23,10 +27,18 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
                     'r_nx': r_nx_pot,
                     'r_ny': r_ny_pot}
 
-    X, Y, Za = get_array(glob("*.0000.streu.*.purewavefunction.ascii")[0], **array_kwargs)
-    _, _, Zb = get_array(glob("*.0001.streu.*.purewavefunction.ascii")[0], **array_kwargs)
-    _, _, P = get_array(glob("potential.*.purewavefunction.ascii")[0], **array_kwargs)
+    if mode1 is None:
+        mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
+    if mode2 is None:
+        mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
+    if potential is None:
+        potential = glob("potential.*.purewavefunction.ascii")[0]
+
+    X, Y, Za = get_array(mode1, **array_kwargs)
+    _, _, Zb = get_array(mode2, **array_kwargs)
+    _, _, P = get_array(potential, **array_kwargs)
     P = P.max() - P
+
     np.save("potential.npy", P)
     np.save("potential_x.npy", X)
     np.save("potential_y.npy", Y)
@@ -50,12 +62,12 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
         mask = P < P.max()*6e-1
         # mask = idx_p
         ax1.scatter(X[mask], Y[mask], s=1.5e4, c="w", edgecolors=None)
-        # ax1.scatter(X[P < P.max()*1e-2], Y[P < P.max()*1e-2], s=1e4, c="k", edgecolors=None)
+        # ax1.scatter(X[mask], Y[mask], s=1e4, c="k", edgecolors=None)
 
         ax2.pcolormesh(X, Y, Zb, cmap=cmap)
         # ax2.scatter(X[idx_b], Y[idx_b], s=1.5e4, c="w", edgecolors=None)
         ax2.scatter(X[mask], Y[mask], s=1.5e4, c="w", edgecolors=None)
-        # ax2.scatter(X[P < P.max()*1e-2], Y[P < P.max()*1e-2], s=1e4, c="k", edgecolors=None)
+        # ax2.scatter(X[mask], Y[mask], s=1e4, c="k", edgecolors=None)
 
         for ax in (ax1, ax2):
             ax.set_xlim(X.min(), X.max())
@@ -63,18 +75,6 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
 
         plt.savefig('wavefunction.jpg', bbox_inches='tight')
         print "Wavefunction written."
-
-    Zp = np.zeros_like(X)
-    for (xn, yn) in zip(X[idx_b].flatten(), Y[idx_b].flatten()):
-            Zp -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
-
-    np.savetxt("output_potential.dat",
-               zip(range(len(Zp.flatten('F'))), Zp.flatten('F')))
-    print "output_potential.dat written."
-    np.savetxt("output_potential_rev.dat",
-               zip(range(len(Zp.flatten('F'))), np.fliplr(Zp).flatten('F')))
-
-    np.save("output_potential.npy", Zp)
 
 
 if __name__ == '__main__':
