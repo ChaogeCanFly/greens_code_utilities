@@ -61,16 +61,17 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True):
         plt.savefig('wavefunction.jpg', bbox_inches='tight')
         print "Wavefunction written."
 
-    Z_pot = np.zeros_like(X)
-
+    Zp = np.zeros_like(X)
     for (xn, yn) in zip(X[idx_b].flatten(), Y[idx_b].flatten()):
-            Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
+            Zp -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
 
     np.savetxt("output_potential.dat",
-               zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
+               zip(range(len(Zp.flatten('F'))), Zp.flatten('F')))
     print "output_potential.dat written."
+    np.savetxt("output_potential_rev.dat",
+               zip(range(len(Zp.flatten('F'))), np.fliplr(Zp).flatten('F')))
 
-    np.save("output_potential.npy", Z_pot)
+    np.save("output_potential.npy", Zp)
 
 
 if __name__ == '__main__':
