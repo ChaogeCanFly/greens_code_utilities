@@ -12,9 +12,9 @@ from get_wavefunction_peaks import get_array
 from helper_functions import convert_to_complex
 
 
-@argh.arg('mode1', type=str)
-@argh.arg('mode2', type=str)
-@argh.arg('potential', type=str)
+# @argh.arg('mode1', type=str)
+# @argh.arg('mode2', type=str)
+# @argh.arg('potential', type=str)
 def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
          mode1=None, mode2=None, potential=None):
     nyout = pphw*N + 1.

@@ -23,8 +23,8 @@ def get_array(input, L=100, W=1, r_nx=None, r_ny=None):
     return X, Y, Z
 
 
-@argh.arg('mode1', type=str)
-@argh.arg('mode2', type=str)
+# @argh.arg('mode1', type=str)
+# @argh.arg('mode2', type=str)
 def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
          mode1=None, mode2=None):
     nyout = pphw*N + 1.
