@@ -184,7 +184,7 @@ class Write_S_Matrix(object):
             header += ["D_right", "D_left"]
 
         if self.total_transmission:
-            header += ["T0", "T1"]
+            header += ["T0", "T1", "T'0", "T'1"]
 
         headerfmt = '#'
         headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
@@ -224,7 +224,9 @@ class Write_S_Matrix(object):
                                                                  for j in 0, 1 ]
             T0 = T00 + T10
             T1 = T01 + T11
-            data += [T0, T1]
+            Tp0 = T00 + T01
+            Tp1 = T10 + T11
+            data += [T0, T1, Tp0, Tp1]
 
         datafmt = " "
         datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
