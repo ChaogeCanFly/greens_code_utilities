@@ -43,9 +43,7 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
     _, _, P = get_array(potential, **array_kwargs)
     P = P.max() - P
 
-    np.save("potential.npy", P)
-    np.save("potential_x.npy", X)
-    np.save("potential_y.npy", Y)
+    np.savez("combine_ascii_potential_xy.npz", X=X, Y=Y, P=P)
     print "Potential files written."
 
     peaks_a, peaks_b, peaks_p = [ get_local_peaks(z, peak_type='minimum') for z in Za, Zb, P ]

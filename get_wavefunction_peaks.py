@@ -78,8 +78,7 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
     print "output_potential.dat written."
     np.savetxt("output_potential_rev.dat",
                zip(range(len(Zp.flatten('F'))), np.fliplr(Zp).flatten('F')))
-
-    np.save("output_potential.npy", Zp)
+    np.savez("output_potential.npz", X=X, Y=Y, P=Zp)
 
 
 if __name__ == '__main__':
