@@ -71,15 +71,15 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False,
         ax1.pcolormesh(X, Y, Z_1, cmap=cmap)
         ax2.pcolormesh(X, Y, Z_2, cmap=cmap)
 
+        if write_peaks:
+            ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+            ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+
         if potential:
             X_nodes = P_npz['X_nodes']
             Y_nodes = P_npz['Y_nodes']
             ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
             ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
-
-        if write_peaks:
-            ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
-            ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
 
         for ax in (ax1, ax2):
             ax.set_xlim(X.min(), X.max())
