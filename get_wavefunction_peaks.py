@@ -6,44 +6,60 @@ import matplotlib.pyplot as plt
 
 import argh
 
+from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks, get_local_minima
 from ep.potential import gauss
 from helper_functions import convert_to_complex
 
 
-def get_array(input, L=100, W=1, r_nx=None, r_ny=None):
-    n, psi = np.genfromtxt(input, unpack=True, usecols=(0,1), dtype=complex,
-                           converters={1: convert_to_complex})
-    x = np.linspace(0, L, r_nx)
-    y = np.linspace(0, W, r_ny)
-    X, Y = np.meshgrid(x,y)
-    Z = psi.reshape(r_ny, r_nx, order='F')
-    Z = np.abs(Z)**2
+# def get_array(input, L=100, W=1, r_nx=None, r_ny=None):
+#     n, psi = np.genfromtxt(input, unpack=True, usecols=(0,1), dtype=complex,
+#                            converters={1: convert_to_complex})
+#     x = np.linspace(0, L, r_nx)
+#     y = np.linspace(0, W, r_ny)
+#     X, Y = np.meshgrid(x,y)
+#     Z = psi.reshape(r_ny, r_nx, order='F')
+#     Z = np.abs(Z)**2
+#
+#     return X, Y, Z
 
-    return X, Y, Z
 
-
-# @argh.arg('mode1', type=str)
-# @argh.arg('mode2', type=str)
+@argh.arg('--mode1', type=str)
+@argh.arg('--mode2', type=str)
 def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
-         mode1=None, mode2=None):
-    nyout = pphw*N + 1.
-    r_nx_pot = int(nyout*L)
-    r_ny_pot = int(nyout*W)
-    print "r_nx_pot, r_ny_pot", r_nx_pot, r_ny_pot
+         pic_ascii=False, mode1=None, mode2=None):
 
-    array_kwargs = {'L': L,
-                    'W': W,
-                    'r_nx': r_nx_pot,
-                    'r_ny': r_ny_pot}
-
+    ascii_array_kwargs = {'L': L,
+                          'W': W,
+                          'pphw': pphw,
+                          'N': N,
+                          'pic_ascii': pic_ascii,
+                          'return_abs': True}
     if mode1 is None:
         mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
     if mode2 is None:
         mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
 
-    X, Y, Za = get_array(mode1, **array_kwargs)
-    _, _, Zb = get_array(mode2, **array_kwargs)
+    # nyout = pphw*N + 1.
+    # r_nx_pot = int(nyout*L)
+    # r_ny_pot = int(nyout*W)
+    # print "r_nx_pot, r_ny_pot", r_nx_pot, r_ny_pot
+    #
+    # array_kwargs = {'L': L,
+    #                 'W': W,
+    #                 'r_nx': r_nx_pot,
+    #                 'r_ny': r_ny_pot}
+    #
+    # if mode1 is None:
+    #     mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
+    # if mode2 is None:
+    #     mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
+    #
+    # X, Y, Za = get_array(mode1, **array_kwargs)
+    # _, _, Zb = get_array(mode2, **array_kwargs)
+
+    X, Y, Za = read_ascii_array(mode1, **ascii_array_kwargs)
+    _, _, Zb = read_ascii_array(mode2, **ascii_array_kwargs)
 
     peaks_a, peaks_b = [ get_local_peaks(z, peak_type='minimum') for z in Za, Zb ]
     peaks_a[np.logical_or(Y > 0.9, Y < 0.1)] = 0.0
@@ -66,19 +82,17 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig('wavefunction.jpg', bbox_inches='tight')
+        plt.savefig('wavefunction_peaks_wavefunction.jpg', bbox_inches='tight')
         print "Wavefunction written."
 
     Zp = np.zeros_like(X)
     for (xn, yn) in zip(X[idx_b].flatten(), Y[idx_b].flatten()):
             Zp -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
 
-    np.savetxt("output_potential.dat",
+    np.savetxt("wavefunction_peaks_potential.dat",
                zip(range(len(Zp.flatten('F'))), Zp.flatten('F')))
-    print "output_potential.dat written."
-    np.savetxt("output_potential_rev.dat",
-               zip(range(len(Zp.flatten('F'))), np.fliplr(Zp).flatten('F')))
-    np.savez("output_potential.npz", X=X, Y=Y, P=Zp)
+    np.savez("wavefunction_peaks_potential.npz", X=X, Y=Y, P=Zp)
+    print "Potential written."
 
 
 if __name__ == '__main__':

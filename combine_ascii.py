@@ -6,9 +6,10 @@ from matplotlib import pyplot as plt
 
 import argh
 
+from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks, get_local_minima
 from ep.potential import gauss
-from get_wavefunction_peaks import get_array
+# from get_wavefunction_peaks import get_array
 from helper_functions import convert_to_complex
 
 
@@ -16,17 +17,14 @@ from helper_functions import convert_to_complex
 @argh.arg('--mode2', type=str)
 @argh.arg('--potential', type=str)
 def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
-         mode1=None, mode2=None, potential=None):
-    nyout = pphw*N + 1.
-    r_nx_pot = int(nyout*L)
-    r_ny_pot = int(nyout*W)
-    print "r_nx_pot, r_ny_pot", r_nx_pot, r_ny_pot
+         pic_ascii=False, mode1=None, mode2=None, potential=None):
 
-    array_kwargs = {'L': L,
-                    'W': W,
-                    'r_nx': r_nx_pot,
-                    'r_ny': r_ny_pot}
-
+    ascii_array_kwargs = {'L': L,
+                          'W': W,
+                          'pphw': pphw,
+                          'N': N,
+                          'pic_ascii': pic_ascii,
+                          'return_abs': True}
     if mode1 is None:
         mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
     if mode2 is None:
@@ -38,12 +36,12 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
     print "mode2:", mode2
     print "potential:", potential
 
-    X, Y, Za = get_array(mode1, **array_kwargs)
-    _, _, Zb = get_array(mode2, **array_kwargs)
-    _, _, P = get_array(potential, **array_kwargs)
+    X, Y, Za = read_ascii_array(mode1, **ascii_array_kwargs)
+    _, _, Zb = read_ascii_array(mode2, **ascii_array_kwargs)
+    _, _, P = read_ascii_array(potential, **ascii_array_kwargs)
     P = P.max() - P
 
-    np.savez("combine_ascii_potential_xy.npz", X=X, Y=Y, P=P)
+    np.savez("combine_ascii_potential.npz", X=X, Y=Y, P=P)
     print "Potential files written."
 
     peaks_a, peaks_b, peaks_p = [ get_local_peaks(z, peak_type='minimum') for z in Za, Zb, P ]
@@ -87,7 +85,7 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig('wavefunction.jpg', bbox_inches='tight')
+        plt.savefig('combine_ascii_wavefunction.jpg', bbox_inches='tight')
         print "Wavefunction written."
 
 
