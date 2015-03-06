@@ -1,6 +1,5 @@
 #!/usr/bin/env python2.7
 
-from glob import glob
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -9,84 +8,86 @@ import argh
 from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks, get_local_minima
 from ep.potential import gauss
-# from get_wavefunction_peaks import get_array
 from helper_functions import convert_to_complex
 
 
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
 @argh.arg('--potential', type=str)
-def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
-         pic_ascii=False, mode1=None, mode2=None, potential=None):
+@argh.arg('--write-peaks', type=str)
+def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False,
+         pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
+         potential=None):
 
+    print "\nReading .ascii files..."
     ascii_array_kwargs = {'L': L,
                           'W': W,
                           'pphw': pphw,
                           'N': N,
                           'pic_ascii': pic_ascii,
                           'return_abs': True}
-    if mode1 is None:
-        mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
-    if mode2 is None:
-        mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
-    if potential is None:
-        potential = glob("potential.*.purewavefunction.ascii")[0]
+    X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
+    _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
+    print "done."
 
-    print "mode1:", mode1
-    print "mode2:", mode2
-    print "potential:", potential
+    if potential:
+        P_npz = np.load(potential)
+        P = P_npz['P']
+        # transform maxima to minima
+        P = P.max() - P
 
-    X, Y, Za = read_ascii_array(mode1, **ascii_array_kwargs)
-    _, _, Zb = read_ascii_array(mode2, **ascii_array_kwargs)
-    _, _, P = read_ascii_array(potential, **ascii_array_kwargs)
-    P = P.max() - P
+    if write_peaks:
+        if write_peaks == '1':
+            Z = Z_1
+        elif write_peaks == '2':
+            Z = Z_2
+        print "Writing potential based on mode {}...".format(write_peaks)
+        peaks = get_local_peaks(Z, peak_type='minimum')
 
-    np.savez("combine_ascii_potential.npz", X=X, Y=Y, P=P)
-    print "Potential files written."
+        # remove minma due to boundary conditions at walls
+        peaks[np.logical_or(Y > 0.95, Y < 0.05)] = 0.0
 
-    peaks_a, peaks_b, peaks_p = [ get_local_peaks(z, peak_type='minimum') for z in Za, Zb, P ]
+        # get array-indices of peaks
+        idx = np.where(peaks)
 
-    peaks_a[np.logical_or(Y > 0.9, Y < 0.1)] = 0.0
-    peaks_b[np.logical_or(Y > 0.9, Y < 0.1)] = 0.0
-    idx_a, idx_b, idx_p = [ np.where(p) for p in peaks_a, peaks_b, peaks_p ]
+        # build Gaussian potential at peaks
+        Z_pot = np.zeros_like(X)
+        for (xn, yn) in zip(X[idx].flatten(), Y[idx].flatten()):
+            Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
+
+        np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
+                   zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
+        np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
+                 X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
+                 X_nodes=X[idx], Y_nodes=Y[idx])
+        print "done."
 
     if plot:
-        print "Plotting..."
+        print "Plotting wavefunctions..."
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
         cmap = plt.cm.jet
-        # cmap.set_bad('dimgrey', 1)
 
-        ax1.pcolormesh(X, Y, Za, cmap=cmap)
-        # ax1.scatter(X[idx_b], Y[idx_b], s=1.5e4, c="w", edgecolors=None)
-        # ax1.scatter(X[idx_a], Y[idx_a], s=1.5e4, c="w", edgecolors=None)
-        mask = P < P.max()*9e-1
-        # mask = P < P.max()*1e-2
-        ax1.scatter(X[mask], Y[mask], s=1.5e4, c="w", edgecolors=None)
-        # ax1.scatter(X[mask], Y[mask], s=1e4, c="k", edgecolors=None)
+        # scattering wavefunction
+        ax1.pcolormesh(X, Y, Z_1, cmap=cmap)
+        ax2.pcolormesh(X, Y, Z_2, cmap=cmap)
 
-        ax2.pcolormesh(X, Y, Zb, cmap=cmap)
-        # ax2.scatter(X[idx_b], Y[idx_b], s=1.5e4, c="w", edgecolors=None)
-        # ax2.scatter(X[idx_a], Y[idx_a], s=1.5e4, c="w", edgecolors=None)
-        ax2.scatter(X[mask], Y[mask], s=1.5e4, c="w", edgecolors=None)
-        # ax2.scatter(X[mask], Y[mask], s=1e4, c="k", edgecolors=None)
+        if potential:
+            X_nodes = P_npz['X_nodes']
+            Y_nodes = P_npz['Y_nodes']
+            ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
+            ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
 
-        # Zpeaks = np.ma.masked_greater(P, P.max()*0.95)
-        # cmap_masked = plt.cm.Greys
-        #
-        # ax1.pcolormesh(X, Y, Za, cmap=cmap)
-        # ax1.pcolormesh(X, Y, Zpeaks, cmap=cmap_masked)
-        # # ax1.scatter(X[idx_a], Y[idx_a], s=1.5e4, c="w", edgecolors=None)
-        #
-        # ax2.pcolormesh(X, Y, Zb, cmap=cmap)
-        # ax2.pcolormesh(X, Y, Zpeaks, cmap=cmap_masked)
-        # ax2.scatter(X[idx_a], Y[idx_a], s=1.5e4, c="w", edgecolors=None)
+        if write_peaks:
+            ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+            ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
 
         for ax in (ax1, ax2):
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig('combine_ascii_wavefunction.jpg', bbox_inches='tight')
-        print "Wavefunction written."
+        plt.savefig('wavefunction.jpg', bbox_inches='tight')
+        np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
+        print "done."
 
 
 if __name__ == '__main__':
