@@ -12,21 +12,9 @@ from ep.potential import gauss
 from helper_functions import convert_to_complex
 
 
-# def get_array(input, L=100, W=1, r_nx=None, r_ny=None):
-#     n, psi = np.genfromtxt(input, unpack=True, usecols=(0,1), dtype=complex,
-#                            converters={1: convert_to_complex})
-#     x = np.linspace(0, L, r_nx)
-#     y = np.linspace(0, W, r_ny)
-#     X, Y = np.meshgrid(x,y)
-#     Z = psi.reshape(r_ny, r_nx, order='F')
-#     Z = np.abs(Z)**2
-#
-#     return X, Y, Z
-
-
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
-def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
+def main(pphw=50, N=2.5, L=100, W=1, s=0.1, sigma=0.01, plot=True,
          pic_ascii=False, mode1=None, mode2=None):
 
     ascii_array_kwargs = {'L': L,
@@ -40,24 +28,6 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
     if mode2 is None:
         mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
 
-    # nyout = pphw*N + 1.
-    # r_nx_pot = int(nyout*L)
-    # r_ny_pot = int(nyout*W)
-    # print "r_nx_pot, r_ny_pot", r_nx_pot, r_ny_pot
-    #
-    # array_kwargs = {'L': L,
-    #                 'W': W,
-    #                 'r_nx': r_nx_pot,
-    #                 'r_ny': r_ny_pot}
-    #
-    # if mode1 is None:
-    #     mode1 = glob("*.0000.streu.*.purewavefunction.ascii")[0]
-    # if mode2 is None:
-    #     mode2 = glob("*.0001.streu.*.purewavefunction.ascii")[0]
-    #
-    # X, Y, Za = get_array(mode1, **array_kwargs)
-    # _, _, Zb = get_array(mode2, **array_kwargs)
-
     X, Y, Za = read_ascii_array(mode1, **ascii_array_kwargs)
     _, _, Zb = read_ascii_array(mode2, **ascii_array_kwargs)
 
@@ -67,6 +37,7 @@ def main(pphw=50, N=2.5, L=100, W=1, eps=0.1, sigma=0.01, plot=True,
     idx_a, idx_b = [ np.where(p) for p in peaks_a, peaks_b ]
 
     if plot:
+        print "Plotting wavefunction..."
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
         cmap = plt.cm.jet
         cmap.set_bad('dimgrey', 1)
