@@ -77,7 +77,7 @@ class T_Matrix(object):
             self.coeff_file = 'coeff.T_states.dat'
 
         if self.S.nruns == 1:
-            E = self.S.E
+            E = self.S.E[0]
         elif self.S.nruns == 3:
             E = self.S.E[1]
 
