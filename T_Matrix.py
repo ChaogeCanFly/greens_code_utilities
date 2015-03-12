@@ -43,7 +43,7 @@ class T_Matrix(object):
         self.modes = modes
 
         if self.S.nruns == 1:
-            self.t = S.S[modes:, :modes]
+            self.t = S.S[0, modes:, :modes]
         elif self.S.nruns == 3:
             self.t = S.S[1, modes:, :modes]
 
