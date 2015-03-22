@@ -52,7 +52,7 @@ def main(ascii_file, pphw=50, N=2.5, L=100, W=1, plot=False, pic_ascii=False,
 
     print "Writing .npz files..."
     np.savez(output + ".npz", X=X, Y=Y, Z=Z)
-    print ".npz files written."
+    print "done."
 
     if plot:
         print "Plotting..."
@@ -66,7 +66,7 @@ def main(ascii_file, pphw=50, N=2.5, L=100, W=1, plot=False, pic_ascii=False,
             ax.set_ylim(Y.min(), Y.max())
 
         plt.savefig(output + '.jpg', bbox_inches='tight')
-        print ".jpg file written."
+        print "done."
 
 
 if __name__ == '__main__':
