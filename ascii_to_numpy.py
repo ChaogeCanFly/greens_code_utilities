@@ -54,7 +54,6 @@ def main(ascii_file, pphw=50, N=2.5, L=100, W=1, plot=False, pic_ascii=False,
     np.savez(output + ".npz", X=X, Y=Y, Z=Z)
     print ".npz files written."
 
-
     if plot:
         print "Plotting..."
         f, ax1 = plt.subplots(nrows=1, figsize=(2*L, L/2))
