@@ -89,7 +89,7 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig('wavefunction.jpg', bbox_inches='tight')
+        plt.savefig('wavefunction.png', bbox_inches='tight')
         np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
