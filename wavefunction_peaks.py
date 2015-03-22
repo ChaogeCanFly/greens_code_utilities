@@ -15,7 +15,9 @@ from helper_functions import convert_to_complex
 @argh.arg('--mode2', type=str)
 @argh.arg('--potential', type=str)
 @argh.arg('--write-peaks', type=str)
-def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False,
+@argh.arg('--r-nx', type=int)
+@argh.arg('--r-ny', type=int)
+def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None):
 
@@ -24,6 +26,8 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False,
                           'W': W,
                           'pphw': pphw,
                           'N': N,
+                          'r_nx': r_nx,
+                          'r_ny': r_ny,
                           'pic_ascii': pic_ascii,
                           'return_abs': True}
     X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
