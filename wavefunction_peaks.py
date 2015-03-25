@@ -49,7 +49,8 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
         peaks = get_local_peaks(Z, peak_type='minimum')
 
         # remove minma due to boundary conditions at walls
-        peaks[np.logical_or(Y > 0.95, Y < 0.05)] = 0.0
+        # peaks[np.logical_or(Y > 0.95, Y < 0.05)] = 0.0
+        peaks[np.logical_or(Y > 0.99, Y < 0.01)] = 0.0
 
         # get array-indices of peaks
         idx = np.where(peaks)
