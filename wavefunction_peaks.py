@@ -1,7 +1,8 @@
 #!/usr/bin/env python2.7
 
-import numpy as np
+import json
 from matplotlib import pyplot as plt
+import numpy as np
 
 import argh
 
@@ -20,6 +21,12 @@ from helper_functions import convert_to_complex
 def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None):
+
+    print json.dumps(vars(), sort_keys=True, indent=4)
+
+    with open("potential.cfg", "w") as f:
+        data = json.dumps(vars(), sort_keys=True, indent=4)
+        f.write(data)
 
     print "\nReading .ascii files..."
     ascii_array_kwargs = {'L': L,
