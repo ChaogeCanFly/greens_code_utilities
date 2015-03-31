@@ -71,7 +71,7 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
         Z_pot = np.zeros_like(X)
         for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
             if n % 500 == 0:
-                print n
+                print "iteration step n=", n
             Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
         print "done."
 
