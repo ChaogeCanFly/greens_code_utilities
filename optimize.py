@@ -58,16 +58,16 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None,
 def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, N0=None, L=10., W=1.,
              N=2.5, pphw=100, xml="input.xml", xml_template=None,
              loop_type='Allen-Eberly-Rubbmark', method='L-BFGS-B',
-             tol=1e-5, ncores=4):
+             ncores=4, min_tol=1e-5, min_stepsize=1e-2, min_maxiter=50):
     """Optimize the waveguide configuration with scipy.optimize.minimize."""
 
     args = (N, L, W, pphw, xml_template, xml, loop_type, ncores)
     x0 = (eps0, delta0, phase0)
-    bounds = ((0.0,0.4), (-0.7,0.7), (-4.0,4.0))
+    bounds = ((0.0,0.5), (0.0,1.0), (-5.0,5.0))
     min_kwargs = {'disp': True,
-                  'ftol': tol,
-                  'maxiter': 50,
-                  'eps': 1e-2}
+                  'ftol': min_tol,
+                  'maxiter': min_maxiter,
+                  'eps': min_stepsize}
 
     res = scipy.optimize.minimize(run_single_job, x0, args=args, bounds=bounds,
                                   method=method, options=min_kwargs)
