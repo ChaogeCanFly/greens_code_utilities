@@ -60,8 +60,8 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
             peaks[np.logical_or(Y > 0.95, Y < 0.05)] = 0.0
 
         elif peak_function == 'cut':
-            Y_mask = np.logical_and(0.1 < Y, Y < 0.9)
-            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
+            Y_mask = np.logical_and(0.05 < Y, Y < 0.95)
+            peaks = np.logical_and(Z < 5e4*Z.min(), Y_mask)
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -69,7 +69,9 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
 
         # build Gaussian potential at peaks
         Z_pot = np.zeros_like(X)
-        for (xn, yn) in zip(X[idx].flatten(), Y[idx].flatten()):
+        for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
+            if n % 500 == 0:
+                print n
             Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
         print "done."
 
