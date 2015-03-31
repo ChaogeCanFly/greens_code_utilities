@@ -17,6 +17,12 @@ from helper_functions import replace_in_file
 
 def run_single_job(x, N=None, L=None, W=None, pphw=None,
                    xml_template=None, xml=None, loop_type=None, ncores=None):
+    """Prepare and simulate a waveguide with profile
+
+        xi = xi(eps0, delta0, phase0)
+
+    with a parametrization function determined by loop_type.
+    """
     eps, delta, phase = x
 
     ep.potential.write_potential(N=N, pphw=pphw, L=L, W=W, x_R0=eps, y_R0=delta,
@@ -36,46 +42,37 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None,
 
     cmd = "mpirun -np {0} solve_xml_mumps_dev > tmp.out 2>&1 && S_Matrix.py -p".format(ncores)
     subprocess.call(cmd, shell=True)
+    S = np.loadtxt("S_matrix.dat")
+    T01 = S[5]
 
-    try:
-        S = np.loadtxt("S_matrix.dat")
-        with open("optimize.log", "a") as f:
-            np.savetxt(f, (eps, delta, phase), newline=" ", fmt='%.8f')
-            np.savetxt(f, S, newline=" ", fmt='%.8e')
-            f.write("\n")
-        T01 = S[5]
-        return 1. - T01
+    with open("optimize.log", "a") as f:
+        np.savetxt(f, (eps, delta, phase), newline=" ", fmt='%.8f')
+        np.savetxt(f, S, newline=" ", fmt='%.8e')
+        f.write("\n")
 
-    except:
-        print traceback.print_exc()
+    return 1. - T01
 
 
-@argh.arg("--L", "--length", type=float)
-@argh.arg("--W", "--width", type=float)
-@argh.arg("--N", type=float)
-@argh.arg("--pphw", type=int)
-@argh.arg("--loop-type", type=str)
+@argh.arg("--N0", type=float)
 @argh.arg("--xml-template", type=str)
-def optimize_RAP(eps0=0.209, delta0=0.41, phase0=-1.26, L=10., W=1., N=2.5,
-                 pphw=100, xml_template=None, xml="input.xml",
-                 loop_type='Allen-Eberly-Rubbmark', method='L-BFGS-B',
-                 tol=1e-6, ncores=4):
-    """docstring for optimize_RAP"""
-    print "optimize_vars", vars()
+def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, N0=None, L=10., W=1.,
+             N=2.5, pphw=100, xml="input.xml", xml_template=None,
+             loop_type='Allen-Eberly-Rubbmark', method='L-BFGS-B',
+             tol=1e-5, ncores=4):
+    """Optimize the waveguide configuration with scipy.optimize.minimize."""
 
     args = (N, L, W, pphw, xml_template, xml, loop_type, ncores)
     x0 = (eps0, delta0, phase0)
-    bounds = ((0.1,0.3), (0.0,0.7), (-4.0,0.0))
+    bounds = ((0.0,0.4), (-0.7,0.7), (-4.0,4.0))
+    min_kwargs = {'disp': True,
+                  'ftol': tol,
+                  'maxiter': 50,
+                  'eps': 1e-2}
 
-    res = scipy.optimize.minimize(run_single_job, x0, args=args,
-                                  bounds=bounds, method=method,
-                                  options={'disp': True,
-                                           'ftol': tol,
-                                           'maxiter': 50,
-                                           'eps': 1e-2})
-    print res
-    np.save("res.npy", res)
+    res = scipy.optimize.minimize(run_single_job, x0, args=args, bounds=bounds,
+                                  method=method, options=min_kwargs)
+    np.save("minimize_res.npy", res)
 
 
 if __name__ == '__main__':
-    argh.dispatch_command(optimize_RAP)
+    argh.dispatch_command(optimize)
