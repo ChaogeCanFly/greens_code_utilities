@@ -61,7 +61,7 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
 
         elif peak_function == 'cut':
             Y_mask = np.logical_and(0.05 < Y, Y < 0.95)
-            peaks = np.logical_and(Z < 5e4*Z.min(), Y_mask)
+            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
 
         # get array-indices of peaks
         idx = np.where(peaks)
