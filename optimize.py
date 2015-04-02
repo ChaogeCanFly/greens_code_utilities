@@ -46,7 +46,7 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None,
     T01 = S[5]
 
     with open("optimize.log", "a") as f:
-        np.savetxt(f, (eps, delta, phase), newline=" ", fmt='%.8f')
+        np.savetxt(f, (eps, delta, phase), newline=" ", fmt='%.16f')
         np.savetxt(f, S, newline=" ", fmt='%.8e')
         f.write("\n")
 
