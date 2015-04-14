@@ -2,12 +2,13 @@
 
 import json
 from matplotlib import pyplot as plt
+import multiprocessing
 import numpy as np
 
 import argh
 
 from ascii_to_numpy import read_ascii_array
-from ep.helpers import get_local_peaks, get_local_minima
+from ep.helpers import get_local_peaks, get_local_minima, split_array
 from ep.potential import gauss
 from helper_functions import convert_to_complex
 
@@ -20,7 +21,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--r-ny', type=int)
 def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, peak_function='local'):
+         potential=None, peak_function='local', processes=1):
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -66,6 +67,11 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
+
+        # pool = multiprocessing.Pool(processes=processes))
+        # results = [ pool.apply_async(gauss(X, xn, sigma)*gauss(Y, yn, sigma))
+        #             for (xn, yn) in  split_array(]
+        # results = [ p.get() for p in results ]
 
         # build Gaussian potential at peaks
         Z_pot = np.zeros_like(X)
