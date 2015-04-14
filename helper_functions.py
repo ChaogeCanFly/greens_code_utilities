@@ -17,6 +17,9 @@
 
     get_git_log(lines=5):
         Return the 'git log' output of the calling file.
+
+    split_array(array, n=10):
+        Split input array into n parts.
 """
 import numpy as np
 import os
@@ -87,3 +90,10 @@ def get_git_log(lines=5, relative_git_path="", outfile=None):
             return " ".join(gitlog_abbrev)
     except:
         sys.exit("No .git directory found.")
+
+
+def split_array(array, n=10):
+    """Split input array into n parts."""
+
+    s = len(array)/n
+    return [ array[i*s, (i+1)*s] for i in range(n) ]
