@@ -96,4 +96,4 @@ def split_array(array, n=10):
     """Split input array into n parts."""
 
     s = len(array)/n
-    return [ array[i*s, (i+1)*s] for i in range(n) ]
+    return [ array[i*s:(i+1)*s,...] for i in range(n) ]
