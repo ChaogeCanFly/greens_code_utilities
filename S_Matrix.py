@@ -175,19 +175,24 @@ class Write_S_Matrix(object):
         else:
             header_variables = ("r", "t")
             header_prime_variables = ("t'", "r'")
+
         header = ["{0}{1}{2}".format(s, i, j)
                   for s in header_variables
                   for i in range(S.modes)
                   for j in range(S.modes)]
-        header_prime = ["{0}{1}{2}".format(s, i, j)
-                        for s in header_prime_variables
-                        for i in range(S.modes)
-                        for j in range(S.modes)]
+
         if self.full_smatrix:
+            header_prime = ["{0}{1}{2}".format(s, i, j)
+                            for s in header_prime_variables
+                            for i in range(S.modes)
+                            for j in range(S.modes)]
             header += header_prime
 
         if self.total_transmission:
-            header += ["T0", "T1", "T'0", "T'1"]
+            header_total = ["{0}{1}".format(s, i, j)
+                            for s in header_variables
+                            for i in range(S.modes)]
+            header += header_total
 
         headerfmt = '#'
         headerfmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
@@ -204,26 +209,27 @@ class Write_S_Matrix(object):
         S = self.S
 
         # write r and t (dimension 2modes*modes)
-        data = [S.S[i, j, k] for i in range(S.nruns)
+        data = [S.S[i, j, k]
+                for i in range(S.nruns)
                 for j in range(S.ndims)
                 for k in range(S.modes)]
-        # write t' and r' (dimension 2modes*modes)
-        data_prime = [S.S[i, j, k + S.modes] for i in range(S.nruns)
-                      for j in range(S.ndims)
-                      for k in range(S.modes)]
+
         # join data
         if self.full_smatrix:
+            # write t' and r' (dimension 2modes*modes)
+            data_prime = [S.S[i, j, k + S.modes]
+                          for i in range(S.nruns)
+                          for j in range(S.ndims)
+                          for k in range(S.modes)]
             data += data_prime
 
         if self.total_transmission:
-            T00, T01, T10, T11 = [np.abs(S.S_amplitudes[0, i, j])**2
-                                  for i in (2, 3)
-                                  for j in (0, 1)]
-            T0 = T00 + T10
-            T1 = T01 + T11
-            Tp0 = T00 + T01
-            Tp1 = T10 + T11
-            data += [T0, T1, Tp0, Tp1]
+            data_total = [[np.abs(S.S_amplitudes[0, i, j])**2
+                           for i in range(S.ndims)]
+                          for j in range(S.modes)]
+            # sum over columns
+            data_total = np.sum(data_total, axis=0).tolist()
+            data += data_total
 
         datafmt = " "
         datafmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
@@ -294,7 +300,6 @@ def parse_arguments():
     parser.add_argument("-t", "--total-transmission", action="store_true",
                         help=("Whether to add the total mode tranmission to "
                               "the output file."))
-
     parser.add_argument("-d", "--directories", default=[], nargs="*",
                         help="Directories to parse.")
     parser.add_argument("-g", "--glob-args", default=[], nargs="*",
