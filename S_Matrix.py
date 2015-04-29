@@ -6,7 +6,6 @@
 import glob
 import numpy as np
 import os
-import scipy.linalg
 
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
@@ -56,19 +55,20 @@ class S_Matrix(object):
 
         try:
             # get number of scheduler steps and S-matrix dimensions
-            nruns, ndims = np.genfromtxt(self.infile, invalid_raise=False)[:3:2]
+            nruns, ndims = np.genfromtxt(self.infile,
+                                         invalid_raise=False)[:3:2]
         except:
-            nruns, ndims = 1, 4
+            nruns, ndims = (1, 4)
 
         try:
             # get real and imaginary parts of S-matrix
-            re, im = np.genfromtxt(self.infile, usecols=(2,3), autostrip=True,
+            re, im = np.genfromtxt(self.infile, usecols=(2, 3), autostrip=True,
                                    unpack=True, invalid_raise=False)
             # calculate transmission and reflection amplitudes
-            S = (re + 1j*im).reshape((nruns,ndims,ndims))
+            S = (re + 1j*im).reshape((nruns, ndims, ndims))
         except:
             # initialize nan S-matrix if no data available
-            S = np.empty((nruns,ndims,ndims))
+            S = np.empty((nruns, ndims, ndims))
             S[:] = np.nan
 
         try:
@@ -101,8 +101,9 @@ def natural_sorting(text, args="delta", delimiter="_"):
             args: str
                 Directory parsing parameters.
     """
-    index = lambda text: [ text.split(delimiter).index(arg) for arg in args ]
-    alphanum_key = lambda text: [ float(text.split(delimiter)[i+1]) for i in index(text) ]
+    index = lambda text: [text.split(delimiter).index(arg) for arg in args]
+    alphanum_key = lambda text: [float(text.split(delimiter)[i+1]) for
+                                 i in index(text)]
 
     return sorted(text, key=alphanum_key)
 
@@ -128,7 +129,7 @@ class Write_S_Matrix(object):
 
     def __init__(self, infile=None, probabilities=False,
                  outfile="S_matrix.dat", directories=[], glob_args=[],
-                 delimiter="_", full_smatrix=False, diodicity=False,
+                 delimiter="_", full_smatrix=False,
                  total_transmission=False, **s_matrix_kwargs):
 
         self.outfile = outfile
@@ -138,7 +139,6 @@ class Write_S_Matrix(object):
         self.delimiter = delimiter
         self.probabilities = probabilities
         self.full_smatrix = full_smatrix
-        self.diodicity = diodicity
         self.total_transmission = total_transmission
         self.s_matrix_kwargs = {'infile': infile,
                                 'probabilities': probabilities}
@@ -163,7 +163,6 @@ class Write_S_Matrix(object):
     def _get_header(self, dir):
         """Prepare data file header."""
 
-        # S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
         S = self.S
 
         # tune alignment spacing
@@ -176,25 +175,23 @@ class Write_S_Matrix(object):
         else:
             header_variables = ("r", "t")
             header_prime_variables = ("t'", "r'")
-        header = [ "{0}{1}{2}".format(s,i,j) for s in header_variables
-                                          for i in range(S.modes)
-                                          for j in range(S.modes) ]
-        header_prime = [ "{0}{1}{2}".format(s,i,j)
-                            for s in header_prime_variables
-                            for i in range(S.modes)
-                            for j in range(S.modes) ]
+        header = ["{0}{1}{2}".format(s, i, j)
+                  for s in header_variables
+                  for i in range(S.modes)
+                  for j in range(S.modes)]
+        header_prime = ["{0}{1}{2}".format(s, i, j)
+                        for s in header_prime_variables
+                        for i in range(S.modes)
+                        for j in range(S.modes)]
         if self.full_smatrix:
             header += header_prime
-
-        if self.diodicity:
-            header += ["D_right", "D_left"]
 
         if self.total_transmission:
             header += ["T0", "T1", "T'0", "T'1"]
 
         headerfmt = '#'
-        headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        headerfmt += "  ".join([ '{:>{s}}' for n in range(len(header)) ])
+        headerfmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
+        headerfmt += "  ".join(['{:>{s}}' for n in range(len(header))])
 
         header = headerfmt.format(*(self.glob_args + header), s=spacing)
 
@@ -204,31 +201,24 @@ class Write_S_Matrix(object):
         """Prepare S-matrix data for output."""
 
         arg_values = self._parse_directory(dir)
-        # S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
         S = self.S
 
         # write r and t (dimension 2modes*modes)
-        data = [ S.S[i,j,k] for i in range(S.nruns)
-                            for j in range(S.ndims)
-                            for k in range(S.modes) ]
+        data = [S.S[i, j, k] for i in range(S.nruns)
+                for j in range(S.ndims)
+                for k in range(S.modes)]
         # write t' and r' (dimension 2modes*modes)
-        data_prime = [ S.S[i,j,k + S.modes] for i in range(S.nruns)
-                                            for j in range(S.ndims)
-                                            for k in range(S.modes) ]
+        data_prime = [S.S[i, j, k + S.modes] for i in range(S.nruns)
+                      for j in range(S.ndims)
+                      for k in range(S.modes)]
         # join data
         if self.full_smatrix:
             data += data_prime
 
-        if self.diodicity:
-            t00, t01, t10, t11 = [ S.S_amplitudes[0,i,j] for i in 2, 3
-                                                         for j in 0, 1 ]
-            D_right = abs((t00+t01)/(t10+t11))
-            D_left = abs((t00+t10)/(t01+t11))
-            data += [D_right, D_left]
-
         if self.total_transmission:
-            T00, T01, T10, T11 = [ abs(S.S_amplitudes[0,i,j])**2 for i in 2, 3
-                                                                 for j in 0, 1 ]
+            T00, T01, T10, T11 = [np.abs(S.S_amplitudes[0, i, j])**2
+                                  for i in (2, 3)
+                                  for j in (0, 1)]
             T0 = T00 + T10
             T1 = T01 + T11
             Tp0 = T00 + T01
@@ -236,8 +226,8 @@ class Write_S_Matrix(object):
             data += [T0, T1, Tp0, Tp1]
 
         datafmt = " "
-        datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        datafmt += "  ".join([ '{:> .10e}' for n in range(len(data)) ])
+        datafmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
+        datafmt += "  ".join(['{:> .10e}' for n in range(len(data))])
 
         data = datafmt.format(*(arg_values + data))
 
@@ -277,7 +267,7 @@ def get_S_matrix_difference(a, b):
     params = {'unpack': True,
               'skiprows': 4}
 
-    a, b = [ np.loadtxt(i, **params) for i in (a,b) ]
+    a, b = [np.loadtxt(i, **params) for i in (a, b)]
 
     print "File a:"
     print a
@@ -301,9 +291,6 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
-    parser.add_argument("-y", "--diodicity", action="store_true",
-                        help=("Whether to add the diodicity measure to the "
-                              "output file."))
     parser.add_argument("-t", "--total-transmission", action="store_true",
                         help=("Whether to add the total mode tranmission to "
                               "the output file."))
