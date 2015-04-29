@@ -130,7 +130,7 @@ class Write_S_Matrix(object):
     def __init__(self, infile=None, probabilities=False,
                  outfile="S_matrix.dat", directories=[], glob_args=[],
                  delimiter="_", full_smatrix=False,
-                 total_transmission=False, **s_matrix_kwargs):
+                 total_transmission_reflection=False, **s_matrix_kwargs):
 
         self.outfile = outfile
         self.directories = directories
@@ -139,7 +139,7 @@ class Write_S_Matrix(object):
         self.delimiter = delimiter
         self.probabilities = probabilities
         self.full_smatrix = full_smatrix
-        self.total_transmission = total_transmission
+        self.total_transmission_reflection = total_transmission_reflection
         self.s_matrix_kwargs = {'infile': infile,
                                 'probabilities': probabilities}
 
@@ -188,7 +188,7 @@ class Write_S_Matrix(object):
                             for j in range(S.modes)]
             header += header_prime
 
-        if self.total_transmission:
+        if self.total_transmission_reflection:
             header_total = ["{0}{1}".format(s, i, j)
                             for s in header_variables
                             for i in range(S.modes)]
@@ -223,7 +223,7 @@ class Write_S_Matrix(object):
                           for k in range(S.modes)]
             data += data_prime
 
-        if self.total_transmission:
+        if self.total_transmission_reflection:
             data_total = [[np.abs(S.S_amplitudes[0, i, j])**2
                            for i in range(S.ndims)]
                           for j in range(S.modes)]
@@ -297,9 +297,10 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
-    parser.add_argument("-t", "--total-transmission", action="store_true",
-                        help=("Whether to add the total mode tranmission to "
-                              "the output file."))
+    parser.add_argument("-t", "--total-transmission-reflection",
+                        action="store_true",
+                        help=("Whether to add the total mode transmission and "
+                              "reflection to the output file."))
     parser.add_argument("-d", "--directories", default=[], nargs="*",
                         help="Directories to parse.")
     parser.add_argument("-g", "--glob-args", default=[], nargs="*",
