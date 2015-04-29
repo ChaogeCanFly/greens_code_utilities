@@ -1,11 +1,11 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # TODO:
 #  * write different nruns into same line or in different lines?
 #    -> in _process_directories()
 
 import glob
-import os
 import numpy as np
+import os
 import scipy.linalg
 
 import argparse
@@ -35,7 +35,13 @@ class S_Matrix(object):
         self.indir = indir
         if not infile:
             try:
-                self.infile = glob.glob("{}/Smat.*.dat".format(indir))[0]
+                infile = glob.glob("{}/Smat.*.dat*".format(indir))
+                if len(infile) > 1:
+                    print "Warning: more than one Smat.*.dat* found:"
+                    for smat in infile:
+                        print "\t" + os.path.basename(smat)
+                    print "Using the first entry in the following..."
+                self.infile = infile[0]
             except:
                 pass
         else:
@@ -128,7 +134,6 @@ class Write_S_Matrix(object):
         self.outfile = outfile
         self.directories = directories
         self.glob_args = glob_args
-        # self.nargs = len(glob_args) if glob_args else 0
         self.nargs = len(glob_args)
         self.delimiter = delimiter
         self.probabilities = probabilities
@@ -158,7 +163,8 @@ class Write_S_Matrix(object):
     def _get_header(self, dir):
         """Prepare data file header."""
 
-        S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
+        # S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
+        S = self.S
 
         # tune alignment spacing
         spacing = 17 if S.probabilities else 35
@@ -198,7 +204,8 @@ class Write_S_Matrix(object):
         """Prepare S-matrix data for output."""
 
         arg_values = self._parse_directory(dir)
-        S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
+        # S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
+        S = self.S
 
         # write r and t (dimension 2modes*modes)
         data = [ S.S[i,j,k] for i in range(S.nruns)
@@ -252,6 +259,7 @@ class Write_S_Matrix(object):
 
         with open(self.outfile, "w") as f:
             for n, dir in enumerate(dirs):
+                self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
                 if not n:
                     f.write("%s\n" % self._get_header(dir))
                 f.write("%s\n" % self._get_data(dir))
