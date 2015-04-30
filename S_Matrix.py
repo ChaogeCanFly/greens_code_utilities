@@ -58,6 +58,7 @@ class S_Matrix(object):
             nruns, ndims = np.genfromtxt(self.infile,
                                          invalid_raise=False)[:3:2]
         except:
+            print "Warning: couldn't determine S-matrix dimensions."
             nruns, ndims = (1, 4)
 
         try:
