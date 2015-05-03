@@ -255,11 +255,13 @@ class Write_S_Matrix(object):
                                delimiter=self.delimiter)
 
         with open(self.outfile, "w") as f:
-            for n, dir in enumerate(dirs):
+            for (n, dir) in enumerate(dirs):
                 self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
                 if not n:
-                    f.write("%s\n" % self._get_header(dir))
-                f.write("%s\n" % self._get_data(dir))
+                    f.write(self._get_header(dir))
+                f.write(self._get_data(dir))
+                #     f.write("%s\n" % self._get_header(dir))
+                # f.write("%s\n" % self._get_data(dir))
 
 
 def get_S_matrix_difference(a, b):
