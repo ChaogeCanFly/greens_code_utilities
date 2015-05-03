@@ -131,7 +131,7 @@ class Write_S_Matrix(object):
     def __init__(self, infile=None, probabilities=False,
                  outfile="S_matrix.dat", directories=[], glob_args=[],
                  delimiter="_", full_smatrix=False,
-                 total_transmission_reflection=False, **s_matrix_kwargs):
+                 total_probabilities=False, **s_matrix_kwargs):
 
         self.outfile = outfile
         self.directories = directories
@@ -140,7 +140,7 @@ class Write_S_Matrix(object):
         self.delimiter = delimiter
         self.probabilities = probabilities
         self.full_smatrix = full_smatrix
-        self.total_transmission_reflection = total_transmission_reflection
+        self.total_probabilities = total_probabilities
         self.s_matrix_kwargs = {'infile': infile,
                                 'probabilities': probabilities}
 
@@ -189,7 +189,7 @@ class Write_S_Matrix(object):
                             for j in range(S.modes)]
             header += header_prime
 
-        if self.total_transmission_reflection:
+        if self.total_probabilities:
             header_total = ["{0}{1}".format(s, i, j)
                             for s in header_variables
                             for i in range(S.modes)]
@@ -224,7 +224,7 @@ class Write_S_Matrix(object):
                           for k in range(S.modes)]
             data += data_prime
 
-        if self.total_transmission_reflection:
+        if self.total_probabilities:
             data_total = [[np.abs(S.S_amplitudes[0, i, j])**2
                            for i in range(S.ndims)]
                           for j in range(S.modes)]
