@@ -261,10 +261,8 @@ class Write_S_Matrix(object):
             for (n, dir) in enumerate(dirs):
                 self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
                 if not n:
-                    f.write(self._get_header(dir))
-                f.write(self._get_data(dir))
-                #     f.write("%s\n" % self._get_header(dir))
-                # f.write("%s\n" % self._get_data(dir))
+                    f.write(self._get_header(dir) + "\n")
+                f.write(self._get_data(dir) + "\n")
 
 
 def get_S_matrix_difference(a, b):
