@@ -231,9 +231,9 @@ class Write_S_Matrix(object):
                           for j in range(S.modes)]
             # sum over columns
             data_total = np.sum(data_total, axis=0)
-            T_total = np.sum(data_total[self.modes:])
-            R_total = np.sum(data_total[:self.modes])
-            data += data_total.tolist() + R_total.tolist() + T_total.tolist()
+            T_total = np.sum(data_total[S.modes:])
+            R_total = np.sum(data_total[:S.modes])
+            data += data_total.tolist() + [R_total] + [T_total]
 
         datafmt = " "
         datafmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
@@ -301,7 +301,7 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
-    parser.add_argument("-t", "--total-transmission-reflection",
+    parser.add_argument("-t", "--total-probabilities",
                         action="store_true",
                         help=("Whether to add the total mode transmission and "
                               "reflection to the output file."))
