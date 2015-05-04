@@ -193,6 +193,7 @@ class Write_S_Matrix(object):
             header_total = ["{0}{1}".format(s, i, j)
                             for s in header_variables
                             for i in range(S.modes)]
+            header_total += header_variables
             header += header_total
 
         headerfmt = '#'
@@ -229,8 +230,10 @@ class Write_S_Matrix(object):
                            for i in range(S.ndims)]
                           for j in range(S.modes)]
             # sum over columns
-            data_total = np.sum(data_total, axis=0).tolist()
-            data += data_total
+            data_total = np.sum(data_total, axis=0)
+            T_total = np.sum(data_total[self.modes:])
+            R_total = np.sum(data_total[:self.modes])
+            data += data_total.tolist() + R_total.tolist() + T_total.tolist()
 
         datafmt = " "
         datafmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
