@@ -93,6 +93,7 @@ def run_length_dependent_jobs(x, *single_job_args):
     # archive S_matrices
     num_smatrices = len(glob.glob("S_matrix*dat"))
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
+    print "finished iteration #", num_smatrices
 
     with open("optimize.log", "a") as f:
         data = np.concatenate((x, [A01, A10, A]))
