@@ -5,7 +5,9 @@ from __future__ import division
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+# from scipy.integrate import simps
 import scipy.optimize
+import shutil
 import subprocess
 import traceback
 
@@ -51,6 +53,37 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None,
         f.write("\n")
 
     return 1. - T01
+
+
+def run_length_dependent_jobs(x, L, **single_job_args):
+    """."""
+
+    CWD = os.getcwd()
+    S_matrix_global = os.path.join(CWD, "S_matrix.dat")
+
+    # here loop over x=0.0, ..., Lmax=50 in 50 steps
+    for l in L:
+        single_job_args.update('L') = l
+
+        ldir = "_L_" + str(l)
+        ldir = os.path.join(CWD, ldir)
+        os.mkdir(ldir)
+        os.chdir(ldir)
+        run_single_job(x, **single_job_args)
+        with open(S_matrix_global, "r") as s:
+            shutil.copyfileobj(open(
+
+    # use here area under T01 and T10 as function of length?
+    # varying parameters stay the same: eps0, delta0, phase0
+    L, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
+    A01, A10 = [simps(T, L) for T in (T01, T10)]
+    A = (A01 + A10)/2.
+
+    # clean directory
+    for l in L:
+        ldir = "_L_" + str(l)
+        ldir = os.path.join(CWD, ldir)
+        shutil.rmtree(ldir)
 
 
 @argh.arg("--N0", type=float)
