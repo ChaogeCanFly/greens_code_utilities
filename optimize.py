@@ -66,6 +66,12 @@ def run_length_dependent_jobs(x, *single_job_args):
     cwd = os.getcwd()
     args = list(single_job_args)
 
+    with open("optimize.log", "a") as f:
+        header="#{:>13} " + 7*"{:>14} "
+        f.write(header.format("iteration", "eps0", "delta0", "phase0",
+                              "A01", "A10", "A", "FF"))
+        f.write("\n")
+
     L = np.arange(1, args[1], 1)
 
     for l0 in L:
@@ -99,7 +105,7 @@ def run_length_dependent_jobs(x, *single_job_args):
     print "finished iteration #", num_smatrices
 
     with open("optimize.log", "a") as f:
-        data = np.concatenate((x, [A01, A10, A, FF]))
+        data = np.concatenate(([num_smatrices], x, [A01, A10, A, FF]))
         np.savetxt(f, data, newline=" ", fmt='%.8e')
         f.write("\n")
 
