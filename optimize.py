@@ -86,6 +86,9 @@ def run_length_dependent_jobs(x, *single_job_args):
     A01, A10 = [scipy.integrate.simps(T, L0) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
+    # complementary area fillingfactor
+    FF = (1. - A/L)
+
     # clean directory
     for ldir in glob.glob("_L_*"):
         shutil.rmtree(ldir)
@@ -96,11 +99,11 @@ def run_length_dependent_jobs(x, *single_job_args):
     print "finished iteration #", num_smatrices
 
     with open("optimize.log", "a") as f:
-        data = np.concatenate((x, [A01, A10, A]))
+        data = np.concatenate((x, [A01, A10, A, FF]))
         np.savetxt(f, data, newline=" ", fmt='%.8e')
         f.write("\n")
 
-    return 1./A
+    return FF
 
 
 @argh.arg("--xml-template", type=str)
