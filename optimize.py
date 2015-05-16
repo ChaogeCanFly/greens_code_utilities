@@ -67,9 +67,9 @@ def run_length_dependent_jobs(x, *single_job_args):
     args = list(single_job_args)
 
     with open("optimize.log", "a") as f:
-        header="#{:>13} " + 7*"{:>14} "
+        header="#{:>14}" + 8*" {:>15}"
         f.write(header.format("iteration", "eps0", "delta0", "phase0",
-                              "A01", "A10", "A", "FF"))
+                              "A01", "A10", "A", "1 - FF", "FF"))
         f.write("\n")
 
     L = np.arange(1, args[1], 1)
@@ -93,7 +93,7 @@ def run_length_dependent_jobs(x, *single_job_args):
     A = (A01 + A10)/2.
 
     # complementary area fillingfactor
-    FF = (1. - A/L)
+    FF = (1. - A/max(L0))
 
     # clean directory
     for ldir in glob.glob("_L_*"):
@@ -103,10 +103,10 @@ def run_length_dependent_jobs(x, *single_job_args):
     num_smatrices = len(glob.glob("S_matrix*dat"))
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
     print "finished iteration #", num_smatrices
-
     with open("optimize.log", "a") as f:
         data = np.concatenate(([num_smatrices], x, [A01, A10, A, FF]))
-        np.savetxt(f, data, newline=" ", fmt='%.8e')
+        data = np.concatenate(([num_smatrices], x, [A01, A10, A, 1.-FF, FF]))
+        np.savetxt(f, data, newline=" ", fmt='%+.8e')
         f.write("\n")
 
     return FF
