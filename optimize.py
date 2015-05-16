@@ -66,12 +66,6 @@ def run_length_dependent_jobs(x, *single_job_args):
     cwd = os.getcwd()
     args = list(single_job_args)
 
-    with open("optimize.log", "a") as f:
-        header="#{:>14}" + 8*" {:>15}"
-        f.write(header.format("iteration", "eps0", "delta0", "phase0",
-                              "A01", "A10", "A", "1 - FF", "FF"))
-        f.write("\n")
-
     L = np.arange(1, args[1], 1)
 
     for l0 in L:
@@ -129,6 +123,12 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
                   'eps': min_stepsize}
 
     if length_dependent:
+        with open("optimize.log", "a") as f:
+            header="#{:>14}" + 8*" {:>15}"
+            f.write(header.format("iteration", "eps0", "delta0", "phase0",
+                                "A01", "A10", "A", "1 - FF", "FF"))
+            f.write("\n")
+
         opt_func = run_length_dependent_jobs
     else:
         opt_func = run_single_job
