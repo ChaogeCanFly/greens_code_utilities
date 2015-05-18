@@ -49,14 +49,14 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
     subprocess.call(cmd, shell=True)
 
 
-def run_single_job(x, *job_args):
+def run_single_job(x, *args):
     """Prepare and simulate a waveguide with profile
 
         xi = xi(eps0, delta0, phase0)
 
     with a parametrization function determined by loop_type.
     """
-    prepare_and_run_calc(x, *job_args)
+    prepare_and_run_calc(x, *args)
 
     subprocess.call("S_Matrix.py -p", shell=True)
     S = np.loadtxt("S_matrix.dat", unpack=True, usecols=(5, 6))
@@ -70,19 +70,20 @@ def run_single_job(x, *job_args):
     return 1. - T
 
 
-def prepare_dir(x, lengths, cwd, args):
-    """Dummy function to allow pickling during multiprocess call."""
+def multiprocess_worker(x, lengths, args):
+    """Separate function to allow pickling during multiprocess call."""
+    cwd = os.getcwd()
     for Ln in lengths:
-        args[1] = Ln
-        ldir = "_L_" + str(Ln)
-        ldir = os.path.join(cwd, ldir)
+        ldir = os.path.join(cwd, "_L_" + str(Ln))
         os.mkdir(ldir)
         os.chdir(ldir)
+        # update lengths
+        args[1] = Ln
         prepare_and_run_calc(x, *args)
         os.chdir(cwd)
 
 
-def run_length_dependent_job(x, *job_args):
+def run_length_dependent_job(x, *args):
     """Prepare and simulate a waveguide with profile
 
         xi = xi(eps0, delta0, phase0)
@@ -90,14 +91,17 @@ def run_length_dependent_job(x, *job_args):
     with a parametrization function determined by loop_type and as a function
     of length L."""
 
-    cwd = os.getcwd()
-    args = list(job_args)
+    args = list(args)
 
-    L_list = np.arange(*job_args[1])
-    L_parallel = [L_list[n::4] for n in range(4)]
+    L0 = np.linspace(*args[1])
+    L0 = np.array([L0[n::4] for n in range(4)])
+    # improved slicing to have 4 slices with equal total lengths each
+    for idx in range(len(L0)//2):
+        L0[:, 2*idx+1] = L0[::-1, 2*idx+1]
 
     pool = multiprocessing.Pool(processes=4)
-    results = [pool.apply_async(prepare_dir, args=(x, L_batch, cwd, args)) for L_batch in L_parallel]
+    results = [pool.apply_async(multiprocess_worker,
+                                args=(x, L0n, args)) for L0n in L0]
     results = [p.get() for p in results]
 
     cmd = "S_Matrix.py -p -g L -d _L_*"
@@ -119,7 +123,7 @@ def run_length_dependent_job(x, *job_args):
     # archive S_matrices
     num_smatrices = len(glob.glob("S_matrix*dat"))
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
-    print "finished iteration #", num_smatrices
+    print "finished calculation of datapoint #", num_smatrices
     with open("optimize.log", "a") as f:
         data = np.concatenate(([num_smatrices], x, [FF]))
         np.savetxt(f, data, newline=" ", fmt='%+.8e')
