@@ -70,9 +70,8 @@ def run_single_job(x, *job_args):
     return 1. - T
 
 
-def prepare_dir(x, lengths, cwd, *args):
+def prepare_dir(x, lengths, cwd, args):
     """Dummy function to allow pickling during multiprocess call."""
-    args = list(args[0])
     for Ln in lengths:
         args[1] = Ln
         ldir = "_L_" + str(Ln)
@@ -98,7 +97,7 @@ def run_length_dependent_job(x, *job_args):
     L_parallel = [L_list[n::4] for n in range(4)]
 
     pool = multiprocessing.Pool(processes=4)
-    results = [pool.apply_async(prepare_dir, args=(x, L_chunks, cwd, args)) for L_chunks in L_parallel]
+    results = [pool.apply_async(prepare_dir, args=(x, L_batch, cwd, args)) for L_batch in L_parallel]
     results = [p.get() for p in results]
 
     cmd = "S_Matrix.py -p -g L -d _L_*"
