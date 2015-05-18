@@ -16,8 +16,9 @@ import ep.potential
 from helper_functions import replace_in_file
 
 
-def run_single_job(x, N=None, L=None, W=None, pphw=None, linearized=None,
-                   xml_template=None, xml=None, loop_type=None, ncores=None):
+def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
+                         xml_template=None, xml=None, loop_type=None,
+                         ncores=None):
     """Prepare and simulate a waveguide with profile
 
         xi = xi(eps0, delta0, phase0)
@@ -26,9 +27,10 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None, linearized=None,
     """
     eps, delta, phase = x
 
-    ep.potential.write_potential(N=N, pphw=pphw, L=L, W=W, x_R0=eps, y_R0=delta,
-                                 init_phase=phase, loop_type=loop_type,
-                                 boundary_only=True, shape='RAP', verbose=False,
+    ep.potential.write_potential(N=N, pphw=pphw, L=L, W=W,
+                                 x_R0=eps, y_R0=delta, init_phase=phase,
+                                 loop_type=loop_type, boundary_only=True,
+                                 shape='RAP', verbose=False,
                                  linearized=linearized)
     N_file = int(L*(pphw*N+1))
     replacements = {'L"> L':                             'L"> {}'.format(L),
@@ -42,20 +44,32 @@ def run_single_job(x, N=None, L=None, W=None, pphw=None, linearized=None,
                     }
     replace_in_file(xml_template, xml, **replacements)
 
-    cmd = "mpirun -np {0} solve_xml_mumps_dev > tmp.out 2>&1 && S_Matrix.py -p".format(ncores)
+    cmd = "mpirun -np {0} solve_xml_mumps_dev > tmp.out 2>&1".format(ncores)
     subprocess.call(cmd, shell=True)
+
+
+def run_single_job(x, *job_args):
+    """Prepare and simulate a waveguide with profile
+
+        xi = xi(eps0, delta0, phase0)
+
+    with a parametrization function determined by loop_type.
+    """
+    prepare_and_run_calc(x, *job_args)
+
+    subprocess.call("S_Matrix.py -p", shell=True)
     S = np.loadtxt("S_matrix.dat")
     T01 = S[5]
 
     with open("optimize.log", "a") as f:
-        np.savetxt(f, (eps, delta, phase), newline=" ", fmt='%.16f')
-        np.savetxt(f, S, newline=" ", fmt='%.8e')
+        np.savetxt(f, x, newline=" ", fmt='%+.8f')
+        np.savetxt(f, S, newline=" ", fmt='%+.8e')
         f.write("\n")
 
     return 1. - T01
 
 
-def run_length_dependent_jobs(x, *single_job_args):
+def run_length_dependent_job(x, *job_args):
     """Prepare and simulate a waveguide with profile
 
         xi = xi(eps0, delta0, phase0)
@@ -64,17 +78,15 @@ def run_length_dependent_jobs(x, *single_job_args):
     of length L."""
 
     cwd = os.getcwd()
-    args = list(single_job_args)
+    args = list(job_args)
 
-    L = np.arange(1, args[1], 1)
-
-    for l0 in L:
-        args[1] = l0
-        ldir = "_L_" + str(l0)
+    for Ln in np.arange(*job_args[1]):
+        args[1] = Ln
+        ldir = "_L_" + str(Ln)
         ldir = os.path.join(cwd, ldir)
         os.mkdir(ldir)
         os.chdir(ldir)
-        run_single_job(x, *args)
+        prepare_and_run_calc(x, *args)
         os.chdir(cwd)
 
     cmd = "S_Matrix.py -p -g L -d _L_*"
@@ -82,12 +94,12 @@ def run_length_dependent_jobs(x, *single_job_args):
 
     # use here area under T01 and T10 as function of length
     # varying parameters stay the same: eps0, delta0, phase0
-    L0, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
-    A01, A10 = [scipy.integrate.simps(T, L0) for T in (T01, T10)]
+    L, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
+    A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
-    # area fillingfactor
-    FF = A/max(L0)
+    # area fillingfactor; minimize complementary fillingfactor 1 - FF
+    FF = A/max(L)
 
     # clean directory
     for ldir in glob.glob("_L_*"):
@@ -106,12 +118,29 @@ def run_length_dependent_jobs(x, *single_job_args):
 
 
 @argh.arg("--xml-template", type=str)
+@argh.arg("-L", "--L", type=float, nargs="+")
 def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
-             length_dependent=False, N=2.5, pphw=100, xml='input.xml',
-             xml_template=None, linearized=False, loop_type='Allen-Eberly',
+             N=2.5, pphw=100, xml='input.xml', xml_template=None,
+             linearized=False, loop_type='Allen-Eberly',
              method='L-BFGS-B', ncores=4, min_tol=1e-5, min_stepsize=1e-2,
              min_maxiter=100):
     """Optimize the waveguide configuration with scipy.optimize.minimize."""
+
+    if len(L) > 1:
+        header = "#{:>14}" + 4*" {:>15}"
+        header = header.format("iteration", "eps0", "delta0", "phase0", "FF")
+        opt_func = run_length_dependent_job
+    else:
+        header = "#{:>14}" + 10*" {:>15}"
+        header = header.format("eps0", "delta0", "phase0",
+                               "r00", "r01", "r10", "r11",
+                               "t00", "t01", "t10", "t11")
+        opt_func = run_single_job
+        L = L[0]
+
+    with open("optimize.log", "a") as f:
+        f.write(header)
+        f.write("\n")
 
     args = (N, L, W, pphw, linearized, xml_template, xml, loop_type, ncores)
     x0 = (eps0, delta0, phase0)
@@ -120,16 +149,6 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
                   'ftol': min_tol,
                   'maxiter': min_maxiter,
                   'eps': min_stepsize}
-
-    if length_dependent:
-        with open("optimize.log", "a") as f:
-            header="#{:>14}" + 4*" {:>15}"
-            f.write(header.format("iteration", "eps0", "delta0", "phase0", "FF"))
-            f.write("\n")
-
-        opt_func = run_length_dependent_jobs
-    else:
-        opt_func = run_single_job
 
     res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
                                   method=method, options=min_kwargs)
