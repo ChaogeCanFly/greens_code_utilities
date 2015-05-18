@@ -69,9 +69,10 @@ def run_single_job(x, *job_args):
 
     return 1. - T
 
+
 def prepare_dir(x, lengths, cwd, *args):
+    """Dummy function to allow pickling during multiprocess call."""
     args = list(args[0])
-    print "args[1]", args
     for Ln in lengths:
         args[1] = Ln
         ldir = "_L_" + str(Ln)
@@ -80,6 +81,7 @@ def prepare_dir(x, lengths, cwd, *args):
         os.chdir(ldir)
         prepare_and_run_calc(x, *args)
         os.chdir(cwd)
+
 
 def run_length_dependent_job(x, *job_args):
     """Prepare and simulate a waveguide with profile
