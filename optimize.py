@@ -58,15 +58,15 @@ def run_single_job(x, *job_args):
     prepare_and_run_calc(x, *job_args)
 
     subprocess.call("S_Matrix.py -p", shell=True)
-    S = np.loadtxt("S_matrix.dat")
-    T01 = S[5]
+    S = np.loadtxt("S_matrix.dat", unpack=True, usecols=(5, 6))
+    T = (S[5] + S[6])/2.
 
     with open("optimize.log", "a") as f:
-        np.savetxt(f, x, newline=" ", fmt='%+.8f')
+        np.savetxt(f, x, newline=" ", fmt='%+15.8f')
         np.savetxt(f, S, newline=" ", fmt='%+.8e')
         f.write("\n")
 
-    return 1. - T01
+    return 1. - T
 
 
 def run_length_dependent_job(x, *job_args):
