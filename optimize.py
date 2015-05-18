@@ -86,8 +86,8 @@ def run_length_dependent_jobs(x, *single_job_args):
     A01, A10 = [scipy.integrate.simps(T, L0) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
-    # complementary area fillingfactor
-    FF = (1. - A/max(L0))
+    # area fillingfactor
+    FF = A/max(L0)
 
     # clean directory
     for ldir in glob.glob("_L_*"):
@@ -98,12 +98,11 @@ def run_length_dependent_jobs(x, *single_job_args):
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
     print "finished iteration #", num_smatrices
     with open("optimize.log", "a") as f:
-        data = np.concatenate(([num_smatrices], x, [A01, A10, A, FF]))
-        data = np.concatenate(([num_smatrices], x, [A01, A10, A, 1.-FF, FF]))
+        data = np.concatenate(([num_smatrices], x, [FF]))
         np.savetxt(f, data, newline=" ", fmt='%+.8e')
         f.write("\n")
 
-    return FF
+    return 1. - FF
 
 
 @argh.arg("--xml-template", type=str)
@@ -111,7 +110,7 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
              length_dependent=False, N=2.5, pphw=100, xml='input.xml',
              xml_template=None, linearized=False, loop_type='Allen-Eberly',
              method='L-BFGS-B', ncores=4, min_tol=1e-5, min_stepsize=1e-2,
-             min_maxiter=50):
+             min_maxiter=100):
     """Optimize the waveguide configuration with scipy.optimize.minimize."""
 
     args = (N, L, W, pphw, linearized, xml_template, xml, loop_type, ncores)
@@ -124,9 +123,8 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
 
     if length_dependent:
         with open("optimize.log", "a") as f:
-            header="#{:>14}" + 8*" {:>15}"
-            f.write(header.format("iteration", "eps0", "delta0", "phase0",
-                                "A01", "A10", "A", "1 - FF", "FF"))
+            header="#{:>14}" + 4*" {:>15}"
+            f.write(header.format("iteration", "eps0", "delta0", "phase0", "FF"))
             f.write("\n")
 
         opt_func = run_length_dependent_jobs
