@@ -74,11 +74,10 @@ def multiprocess_worker(x, lengths, args):
     """Separate function to allow pickling during multiprocess call."""
     cwd = os.getcwd()
     for Ln in lengths:
-        ldir = os.path.join(cwd, "_L_" + str(Ln))
-        os.mkdir(ldir)
-        os.chdir(ldir)
-        # update lengths
-        args[1] = Ln
+        Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
+        os.mkdir(Ln_dir)
+        os.chdir(Ln_dir)
+        args[1] = Ln  # update lengths
         prepare_and_run_calc(x, *args)
         os.chdir(cwd)
 
