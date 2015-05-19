@@ -89,14 +89,15 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
 
         # N_file = len(WG.t)
         N_file = len(x_range)
-        replacements = {'L"> L':             'L"> {}'.format(L),
-                        'modes"> modes':     'modes"> {}'.format(N),
-                        'wave"> pphw':       'wave"> {}'.format(pphw),
-                        'N_file"> N_file':   'N_file"> {}'.format(N_file),
-                        'neumann"> neumann': 'neumann"> {}'.format(neumann),
-                        'upper_file"> file_upper': 'upper_file"> upper.profile',
-                        'lower_file"> file_lower': 'lower_file"> lower.profile',
-                        'Gamma0"> Gamma0':   'Gamma0"> {}'.format(eta)}
+        replacements = {'LENGTH': str(L),
+                        'WIDTH': str(W),
+                        'MODES': str(N),
+                        'PPHW': str(pphw),
+                        'GAMMA0': '0.0',
+                        'NEUMANN': '0',
+                        'N_FILE_BOUNDARY': str(N_file),
+                        'BOUNDARY_UPPER': 'upper.boundary',
+                        'BOUNDARY_LOWER': 'lower.boundary'}
 
         replace_in_file(xml_template, xml, **replacements)
 
