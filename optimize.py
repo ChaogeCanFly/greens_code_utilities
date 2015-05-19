@@ -94,7 +94,8 @@ def run_length_dependent_job(x, *args):
 
     L0 = np.linspace(*args[1])
     L0 = np.array([L0[n::4] for n in range(4)])
-    # improved slicing to have 4 slices with equal total lengths each
+
+    # improved slicing: 4 slices with equal total lengths each
     for idx in range(len(L0)//2):
         L0[:, 2*idx+1] = L0[::-1, 2*idx+1]
 
@@ -102,6 +103,8 @@ def run_length_dependent_job(x, *args):
     results = [pool.apply_async(multiprocess_worker,
                                 args=(x, L0n, args)) for L0n in L0]
     results = [p.get() for p in results]
+    # alternative parallelization:
+    # pool.map(multiprocess_worker, [(x, L0n, args) for L0n in L0])
 
     cmd = "S_Matrix.py -p -g L -d _L_*"
     subprocess.call(cmd, shell=True)
