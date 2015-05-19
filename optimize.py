@@ -93,14 +93,23 @@ def run_length_dependent_job(x, *args):
 
     args = list(args)
 
+    # split workload into SPLIT jobs
+    ncores = args[-1]
+    ntasks = os.environ.get("SLURM_NTASKS")
+    if ntasks:
+        split = ntasks/ncores
+    else:
+        split = 4
+    print "split", split
+
     L0 = np.linspace(*args[1])
-    L0 = np.array([L0[n::4] for n in range(4)])
+    L0 = np.array([L0[n::split] for n in range(split)])
 
     # improved slicing: 4 slices with equal total lengths each
     for idx in range(len(L0)//2):
         L0[:, 2*idx+1] = L0[::-1, 2*idx+1]
 
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=ncores)
     results = [pool.apply_async(multiprocess_worker,
                                 args=(x, L0n, args)) for L0n in L0]
     results = [p.get() for p in results]
