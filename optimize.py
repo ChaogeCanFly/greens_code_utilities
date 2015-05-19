@@ -35,14 +35,15 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
                                  linearized=linearized)
     N_file = int(L*(pphw*N+1))
     replacements = {
-        'L"> L':                             'L"> {}'.format(L),
-        'modes"> modes':                     'modes"> {}'.format(N),
-        'wave"> pphw':                       'wave"> {}'.format(pphw),
-        'Gamma0"> Gamma0':                   'Gamma0"> 0.0',
-        'neumann"> neumann':                 'neumann"> 0',
-        'N_file_boundary"> N_file_boundary': 'N_file_boundary"> {}'.format(N_file),
-        'boundary_upper"> boundary_upper':   'boundary_upper"> upper.boundary',
-        'boundary_lower"> boundary_lower':   'boundary_lower"> lower.boundary',
+        'LENGTH': str(L),
+        'WIDTH': str(W),
+        'MODES': str(N),
+        'PPHW': str(pphw),
+        'GAMMA0': '0.0',
+        'NEUMANN': '0',
+        'N_FILE_BOUNDARY': str(N_file),
+        'BOUNDARY_UPPER': 'upper.boundary',
+        'BOUNDARY_LOWER': 'lower.boundary'
     }
     replace_in_file(xml_template, xml, **replacements)
 
