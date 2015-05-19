@@ -34,17 +34,15 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
                                  shape='RAP', verbose=False,
                                  linearized=linearized)
     N_file = int(L*(pphw*N+1))
-    replacements = {
-        'LENGTH': str(L),
-        'WIDTH': str(W),
-        'MODES': str(N),
-        'PPHW': str(pphw),
-        'GAMMA0': '0.0',
-        'NEUMANN': '0',
-        'N_FILE_BOUNDARY': str(N_file),
-        'BOUNDARY_UPPER': 'upper.boundary',
-        'BOUNDARY_LOWER': 'lower.boundary'
-    }
+    replacements = {'LENGTH': str(L),
+                    'WIDTH': str(W),
+                    'MODES': str(N),
+                    'PPHW': str(pphw),
+                    'GAMMA0': '0.0',
+                    'NEUMANN': '0',
+                    'N_FILE_BOUNDARY': str(N_file),
+                    'BOUNDARY_UPPER': 'upper.boundary',
+                    'BOUNDARY_LOWER': 'lower.boundary'}
     replace_in_file(xml_template, xml, **replacements)
 
     cmd = "mpirun -np {0} solve_xml_mumps_dev > greens.out 2>&1".format(ncores)
@@ -94,23 +92,22 @@ def run_length_dependent_job(x, *args):
 
     args = list(args)
 
-    # split workload into SPLIT jobs
+    # split workload into processes jobs
     ncores = args[-1]
     ntasks = os.environ.get("SLURM_NTASKS")
     if ntasks:
-        split = ntasks/ncores
+        processes = ntasks/ncores
     else:
-        split = 4
-    print "split", split
+        processes = 4
 
     L0 = np.linspace(*args[1])
-    L0 = np.array([L0[n::split] for n in range(split)])
+    L0 = np.array([L0[n::processes] for n in range(processes)])
 
     # improved slicing: 4 slices with equal total lengths each
     for idx in range(len(L0)//2):
         L0[:, 2*idx+1] = L0[::-1, 2*idx+1]
 
-    pool = multiprocessing.Pool(processes=ncores)
+    pool = multiprocessing.Pool(processes=processes)
     results = [pool.apply_async(multiprocess_worker,
                                 args=(x, L0n, args)) for L0n in L0]
     results = [p.get() for p in results]
