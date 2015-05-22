@@ -29,7 +29,7 @@ class S_Matrix(object):
                     Whether to calculate abs(S)^2.
     """
 
-    def __init__(self, indir=".", infile=None, probabilities=False):
+    def __init__(self, infile=None, indir=".", probabilities=False):
 
         self.indir = indir
         if not infile:
