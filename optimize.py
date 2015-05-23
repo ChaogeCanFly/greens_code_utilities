@@ -96,7 +96,7 @@ def run_length_dependent_job(x, *args):
     ncores = args[-1]
     ntasks = os.environ.get("SLURM_NTASKS")
     if ntasks:
-        processes = ntasks/ncores
+        processes = int(ntasks)//ncores
     else:
         processes = 4
 
