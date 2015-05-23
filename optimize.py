@@ -99,6 +99,8 @@ def run_length_dependent_job(x, *args):
         processes = int(ntasks)//ncores
     else:
         processes = 4
+    # TODO: fix # of processes
+    processes = 1
 
     L0 = np.linspace(*args[1])
     L0 = np.array([L0[n::processes] for n in range(processes)])
