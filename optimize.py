@@ -45,7 +45,7 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
                     'BOUNDARY_LOWER': 'lower.boundary'}
     replace_in_file(xml_template, xml, **replacements)
 
-    cmd = "mpirun -np {0} solve_xml_mumps_dev > greens.out 2>&1".format(ncores)
+    cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
     subprocess.call(cmd, shell=True)
 
 
