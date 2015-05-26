@@ -111,7 +111,7 @@ def run_length_dependent_job(x, *args):
     L_total = np.linspace(*args[1])
     L_total = np.array([L_total[n::nnodes] for n in range(nnodes)])
 
-    # improved slicing: 4 slices with equal total lengths each
+    # improved slicing: nnodes slices with (approximately) equal total lengths
     for idx in range(len(L_total)//2):
         L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
