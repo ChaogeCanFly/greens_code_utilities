@@ -10,6 +10,8 @@ import scipy.integrate
 import scipy.optimize
 import shutil
 import subprocess
+import sys
+import time
 
 import argh
 
@@ -54,7 +56,7 @@ def run_single_job(x, *args):
     """
     prepare_calc(x, *args)
     cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
-    subprocess.call(cmd, shell=True)
+    subprocess.call(cmd.split())
 
     subprocess.call("S_Matrix.py -p", shell=True)
     S = np.loadtxt("S_matrix.dat", unpack=True, usecols=(5, 6))
@@ -68,12 +70,13 @@ def run_single_job(x, *args):
     return 1. - T
 
 
-def get_shell_script_entry(Ln, ncores, root_dir):
+def get_shell_script_entry(Ln, node, ncores, root_dir):
     """Return shell command to run in background process."""
-    cmd = "cd {0}; mpirun -np {1} solve_xml_mumps_dev; cd {2}; "
+    # cmd = "cd {0}; mpirun -np {1} solve_xml_mumps; cd {2}; "
+    cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
     calc_dir = "_L_" + str(Ln)
 
-    return cmd.format(calc_dir, ncores, root_dir)
+    return cmd.format(calc_dir, node, ncores, root_dir)
 
 
 def multiprocess_worker(x, lengths, args):
@@ -121,14 +124,24 @@ def run_length_dependent_job(x, *args):
 
     # assemble shell-scripts for individual nnodes
     root_dir = os.getcwd()
-    shell_scripts = [[get_shell_script_entry(L_core, ncores, root_dir)
-                      for L_core in L_node]
-                     for L_node in L_total]
+    shell_scripts = []
+    for node, L_node in enumerate(L_total):
+        shell_core = []
+        for L_core in L_node:
+            shell_core.append(get_shell_script_entry(L_core, node, ncores, root_dir))
+        shell_scripts.append(shell_core)
+    print shell_scripts
+
+    # shell_scripts = [[get_shell_script_entry(L_core, nnodes, r, ncores, root_dir)
+    #                   for L_core in L_node]
+    #                  for L_node in L_total]
     # start nnodes number of jobs in background and wait until all are finished
     processes = []
     for s in shell_scripts:
         processes.append(subprocess.Popen("".join(s), shell=True))
-    [pn.wait() for pn in processes]
+        time.sleep(10.)
+    for pn in processes:
+        pn.communicate()
 
     # pool = multiprocessing.Pool(processes=processes)
     # results = [pool.apply_async(multiprocess_worker,
@@ -137,11 +150,10 @@ def run_length_dependent_job(x, *args):
     # alternative parallelization:
     # pool.map(multiprocess_worker, [(x, L0n, args) for L0n in L_total])
 
-    cmd = "S_Matrix.py -p -g L -d _L_*"
-    subprocess.call(cmd, shell=True)
-
     # use here area under T01 and T10 as function of length
     # varying parameters stay the same: eps0, delta0, phase0
+    cmd = "S_Matrix.py -p -g L -d _L_*"
+    subprocess.check_call(cmd, shell=True)
     L, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
     A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
     A = (A01 + A10)/2.
