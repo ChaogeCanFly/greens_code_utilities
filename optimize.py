@@ -45,8 +45,8 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
                     'BOUNDARY_LOWER': 'lower.boundary'}
     replace_in_file(xml_template, xml, **replacements)
 
-    cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
-    subprocess.call(cmd, shell=True)
+    # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+    # subprocess.call(cmd, shell=True)
 
 
 def run_single_job(x, *args):
@@ -68,6 +68,14 @@ def run_single_job(x, *args):
         f.write("\n")
 
     return 1. - T
+
+
+def get_shell_script_entry(Ln, ncores, root_dir):
+    """Return shell command to run in background process."""
+    cmd = "cd {0}; mpirun -np {1} solve_xml_mumps_dev; cd {2}; "
+    calc_dir = "_L_" + str(Ln)
+
+    return cmd.format(calc_dir, ncores, root_dir)
 
 
 def multiprocess_worker(x, lengths, args):
@@ -92,29 +100,41 @@ def run_length_dependent_job(x, *args):
 
     args = list(args)
 
-    # split workload into processes jobs
+    # split workload on nodes
     ncores = args[-1]
     ntasks = os.environ.get("SLURM_NTASKS")
     if ntasks:
-        processes = int(ntasks)//ncores
+        nodes = int(ntasks)//ncores
     else:
-        processes = 4
-    # TODO: fix # of processes
-    processes = 1
+        nodes = 4
 
-    L0 = np.linspace(*args[1])
-    L0 = np.array([L0[n::processes] for n in range(processes)])
+    L_total = np.linspace(*args[1])
+    L_total = np.array([L_total[n::nodes] for n in range(nodes)])
 
     # improved slicing: 4 slices with equal total lengths each
-    for idx in range(len(L0)//2):
-        L0[:, 2*idx+1] = L0[::-1, 2*idx+1]
+    for idx in range(len(L_total)//2):
+        L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
-    pool = multiprocessing.Pool(processes=processes)
-    results = [pool.apply_async(multiprocess_worker,
-                                args=(x, L0n, args)) for L0n in L0]
-    results = [p.get() for p in results]
+    # prepare calculations
+    for Ln in L_total:
+        multiprocess_worker(x, Ln, args)
+
+    # assemble shell-script for individual nodes
+    root_dir = os.getcwd()
+    shell_scripts = [[get_shell_script_entry(L_core, ncores, root_dir)
+                      for L_core in L_node]
+                     for L_node in L_total]
+    processes = []
+    for s in shell_scripts:
+        processes.append(subprocess.Popen("".join(s), shell=True))
+    [pn.wait() for pn in processes]
+
+    # pool = multiprocessing.Pool(processes=processes)
+    # results = [pool.apply_async(multiprocess_worker,
+    #                             args=(x, L0n, args)) for L0n in L_total]
+    # results = [p.get() for p in results]
     # alternative parallelization:
-    # pool.map(multiprocess_worker, [(x, L0n, args) for L0n in L0])
+    # pool.map(multiprocess_worker, [(x, L0n, args) for L0n in L_total])
 
     cmd = "S_Matrix.py -p -g L -d _L_*"
     subprocess.call(cmd, shell=True)
