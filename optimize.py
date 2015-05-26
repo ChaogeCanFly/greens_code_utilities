@@ -17,9 +17,8 @@ import ep.potential
 from helper_functions import replace_in_file
 
 
-def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
-                         xml_template=None, xml=None, loop_type=None,
-                         ncores=None):
+def prepare_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
+                 xml_template=None, xml=None, loop_type=None, ncores=None):
     """Prepare and simulate a waveguide with profile
 
         xi = xi(eps0, delta0, phase0)
@@ -45,9 +44,6 @@ def prepare_and_run_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
                     'BOUNDARY_LOWER': 'lower.boundary'}
     replace_in_file(xml_template, xml, **replacements)
 
-    # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
-    # subprocess.call(cmd, shell=True)
-
 
 def run_single_job(x, *args):
     """Prepare and simulate a waveguide with profile
@@ -56,7 +52,9 @@ def run_single_job(x, *args):
 
     with a parametrization function determined by loop_type.
     """
-    prepare_and_run_calc(x, *args)
+    prepare_calc(x, *args)
+    cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+    subprocess.call(cmd, shell=True)
 
     subprocess.call("S_Matrix.py -p", shell=True)
     S = np.loadtxt("S_matrix.dat", unpack=True, usecols=(5, 6))
@@ -86,7 +84,9 @@ def multiprocess_worker(x, lengths, args):
         os.mkdir(Ln_dir)
         os.chdir(Ln_dir)
         args[1] = Ln  # update lengths
-        prepare_and_run_calc(x, *args)
+        prepare_calc(x, *args)
+        # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+        # subprocess.call(cmd, shell=True)
         os.chdir(cwd)
 
 
@@ -100,16 +100,16 @@ def run_length_dependent_job(x, *args):
 
     args = list(args)
 
-    # split workload on nodes
+    # split workload on nnodes
     ncores = args[-1]
     ntasks = os.environ.get("SLURM_NTASKS")
     if ntasks:
-        nodes = int(ntasks)//ncores
+        nnodes = int(ntasks)//ncores
     else:
-        nodes = 4
+        nnodes = 4
 
     L_total = np.linspace(*args[1])
-    L_total = np.array([L_total[n::nodes] for n in range(nodes)])
+    L_total = np.array([L_total[n::nnodes] for n in range(nnodes)])
 
     # improved slicing: 4 slices with equal total lengths each
     for idx in range(len(L_total)//2):
@@ -119,11 +119,12 @@ def run_length_dependent_job(x, *args):
     for Ln in L_total:
         multiprocess_worker(x, Ln, args)
 
-    # assemble shell-script for individual nodes
+    # assemble shell-scripts for individual nnodes
     root_dir = os.getcwd()
     shell_scripts = [[get_shell_script_entry(L_core, ncores, root_dir)
                       for L_core in L_node]
                      for L_node in L_total]
+    # start nnodes number of jobs in background and wait until all are finished
     processes = []
     for s in shell_scripts:
         processes.append(subprocess.Popen("".join(s), shell=True))
