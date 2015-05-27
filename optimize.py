@@ -71,7 +71,11 @@ def run_single_job(x, *args):
 
 def get_shell_script_entry(Ln, node, ncores, root_dir):
     """Return shell command to run in background process."""
-    cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
+    try:
+        subprocess.check_call("squeue >> /dev/null 2>&1", shell=True)
+        cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
+    except:
+        cmd = "cd {0}; mpirun -np 2 solve_xml_mumps_dev; cd {3}; "
     calc_dir = "_L_" + str(Ln)
 
     return cmd.format(calc_dir, node, ncores, root_dir)
