@@ -3,7 +3,6 @@
 from __future__ import division
 
 import glob
-import multiprocessing
 import numpy as np
 import os
 import scipy.integrate
@@ -72,25 +71,24 @@ def run_single_job(x, *args):
 
 def get_shell_script_entry(Ln, node, ncores, root_dir):
     """Return shell command to run in background process."""
-    # cmd = "cd {0}; mpirun -np {1} solve_xml_mumps; cd {2}; "
     cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
     calc_dir = "_L_" + str(Ln)
 
     return cmd.format(calc_dir, node, ncores, root_dir)
 
 
-def multiprocess_worker(x, lengths, args):
-    """Separate function to allow pickling during multiprocess call."""
-    cwd = os.getcwd()
-    for Ln in lengths:
-        Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
-        os.mkdir(Ln_dir)
-        os.chdir(Ln_dir)
-        args[1] = Ln  # update lengths
-        prepare_calc(x, *args)
-        # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
-        # subprocess.call(cmd, shell=True)
-        os.chdir(cwd)
+# def multiprocess_worker(x, lengths, args):
+#     """Separate function to allow pickling during multiprocess call."""
+#     cwd = os.getcwd()
+#     for Ln in lengths:
+#         Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
+#         os.mkdir(Ln_dir)
+#         os.chdir(Ln_dir)
+#         args[1] = Ln  # update lengths
+#         prepare_calc(x, *args)
+#         # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+#         # subprocess.call(cmd, shell=True)
+#         os.chdir(cwd)
 
 
 def run_length_dependent_job(x, *args):
@@ -109,7 +107,7 @@ def run_length_dependent_job(x, *args):
     if ntasks:
         nnodes = int(ntasks)//ncores
     else:
-        nnodes = 4
+        nnodes = 2
 
     L_total = np.linspace(*args[1])
     L_total = np.array([L_total[n::nnodes] for n in range(nnodes)])
@@ -118,37 +116,34 @@ def run_length_dependent_job(x, *args):
     for idx in range(len(L_total)//2):
         L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
-    # prepare calculations
+    # prepare folders and input files
     for Ln in L_total:
-        multiprocess_worker(x, Ln, args)
+        Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
+        os.mkdir(Ln_dir)
+        os.chdir(Ln_dir)
+        args[1] = Ln  # update lengths
+        prepare_calc(x, *args)
+        os.chdir(cwd)
+
+    # workaround for bug: wait until all directories have been written
+    time.sleep(5.)
 
     # assemble shell-scripts for individual nnodes
     root_dir = os.getcwd()
     shell_scripts = []
     for node, L_node in enumerate(L_total):
-        shell_core = []
+        script_per_core = []
         for L_core in L_node:
-            shell_core.append(get_shell_script_entry(L_core, node, ncores, root_dir))
-        shell_scripts.append(shell_core)
-    print shell_scripts
+            script_per_core.append(get_shell_script_entry(L_core, node,
+                                                          ncores, root_dir))
+        shell_scripts.append(script_per_core)
 
-    # shell_scripts = [[get_shell_script_entry(L_core, nnodes, r, ncores, root_dir)
-    #                   for L_core in L_node]
-    #                  for L_node in L_total]
     # start nnodes number of jobs in background and wait until all are finished
     processes = []
     for s in shell_scripts:
         processes.append(subprocess.Popen("".join(s), shell=True))
-        time.sleep(10.)
     for pn in processes:
         pn.communicate()
-
-    # pool = multiprocessing.Pool(processes=processes)
-    # results = [pool.apply_async(multiprocess_worker,
-    #                             args=(x, L0n, args)) for L0n in L_total]
-    # results = [p.get() for p in results]
-    # alternative parallelization:
-    # pool.map(multiprocess_worker, [(x, L0n, args) for L0n in L_total])
 
     # use here area under T01 and T10 as function of length
     # varying parameters stay the same: eps0, delta0, phase0
@@ -161,18 +156,18 @@ def run_length_dependent_job(x, *args):
     # area fillingfactor; minimize complementary fillingfactor 1 - FF
     FF = A/max(L)
 
-    # clean directory
-    for ldir in glob.glob("_L_*"):
-        shutil.rmtree(ldir)
-
     # archive S_matrices
     num_smatrices = len(glob.glob("S_matrix*dat"))
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
-    print "finished calculation of datapoint #", num_smatrices
     with open("optimize.log", "a") as f:
         data = np.concatenate(([num_smatrices], x, [FF]))
         np.savetxt(f, data, newline=" ", fmt='%+.8e')
         f.write("\n")
+    print "finished calculation of datapoint #", num_smatrices
+
+    # clean directory
+    for ldir in glob.glob("_L_*"):
+        shutil.rmtree(ldir)
 
     return 1. - FF
 
