@@ -9,7 +9,6 @@ import scipy.integrate
 import scipy.optimize
 import shutil
 import subprocess
-import sys
 import time
 
 import argh
@@ -54,6 +53,7 @@ def run_single_job(x, *args):
     with a parametrization function determined by loop_type.
     """
     prepare_calc(x, *args)
+    ncores = args[-1]
     cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
     subprocess.call(cmd.split())
 
@@ -71,7 +71,11 @@ def run_single_job(x, *args):
 
 def get_shell_script_entry(Ln, node, ncores, root_dir):
     """Return shell command to run in background process."""
-    cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
+    try:
+        subprocess.check_call("squeue >> /dev/null 2>&1", shell=True)
+        cmd = "cd {0}; srun -l -N1 -r{1} -n{2} solve_xml_mumps; cd {3}; "
+    except:
+        cmd = "cd {0}; mpirun -np 2 solve_xml_mumps_dev; cd {3}; "
     calc_dir = "_L_" + str(Ln)
 
     return cmd.format(calc_dir, node, ncores, root_dir)
@@ -86,7 +90,7 @@ def get_shell_script_entry(Ln, node, ncores, root_dir):
 #         os.chdir(Ln_dir)
 #         args[1] = Ln  # update lengths
 #         prepare_calc(x, *args)
-#         # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+#         # cmd = "mpirun -np {0} solve_xml_mumps".format(ncores)
 #         # subprocess.call(cmd, shell=True)
 #         os.chdir(cwd)
 
@@ -117,20 +121,19 @@ def run_length_dependent_job(x, *args):
         L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
     # prepare folders and input files
-    cwd = os.getcwd()
-    for Ln in L_total:
-        Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
+    root_dir = os.getcwd()
+    for Ln in L_total.flatten():
+        Ln_dir = os.path.join(root_dir, "_L_" + str(Ln))
         os.mkdir(Ln_dir)
         os.chdir(Ln_dir)
         args[1] = Ln  # update lengths
         prepare_calc(x, *args)
-        os.chdir(cwd)
+        os.chdir(root_dir)
 
     # workaround for bug: wait until all directories have been written
     time.sleep(5.)
 
     # assemble shell-scripts for individual nnodes
-    root_dir = os.getcwd()
     shell_scripts = []
     for node, L_node in enumerate(L_total):
         script_per_core = []
@@ -154,7 +157,7 @@ def run_length_dependent_job(x, *args):
     A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
-    # area fillingfactor; minimize complementary fillingfactor 1 - FF
+    # area fillingfactor; minimize fillingfactor
     FF = A/max(L)
 
     # archive S_matrices
@@ -170,16 +173,16 @@ def run_length_dependent_job(x, *args):
     for ldir in glob.glob("_L_*"):
         shutil.rmtree(ldir)
 
-    return 1. - FF
+    return -FF
 
 
 @argh.arg("--xml-template", type=str)
 @argh.arg("-L", "--L", type=float, nargs="+")
 def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
              N=2.5, pphw=100, xml='input.xml', xml_template=None,
-             linearized=False, loop_type='Allen-Eberly',
-             method='L-BFGS-B', ncores=4, min_tol=1e-5, min_stepsize=1e-2,
-             min_maxiter=100):
+             linearized=False, loop_type='Allen-Eberly', ncores=4,
+             algorithm='minimize', method='L-BFGS-B',
+             min_tol=1e-5, min_stepsize=1e-2, min_maxiter=100):
     """Optimize the waveguide configuration with scipy.optimize.minimize."""
 
     if len(L) > 1:
@@ -199,15 +202,26 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
         f.write("\n")
 
     args = (N, L, W, pphw, linearized, xml_template, xml, loop_type, ncores)
-    x0 = (eps0, delta0, phase0)
-    bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
-    min_kwargs = {'disp': True,
-                  'ftol': min_tol,
-                  'maxiter': min_maxiter,
-                  'eps': min_stepsize}
 
-    res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
-                                  method=method, options=min_kwargs)
+    if algorithm == 'minimize':
+        x0 = (eps0, delta0, phase0)
+        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
+        min_kwargs = {'disp': True,
+                      'ftol': min_tol,
+                      'maxiter': min_maxiter,
+                      'eps': min_stepsize}
+
+        res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
+                                      method=method, options=min_kwargs)
+    elif algorithm == 'differential_evolution':
+        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
+        de_kwargs = {'disp': True,
+                     'tol': min_tol,
+                     'maxiter': min_maxiter}
+
+        res = scipy.optimize.differential_evolution(opt_func, args=args,
+                                                    bounds=bounds,
+                                                    **de_kwargs)
     np.save("minimize_res.npy", res)
 
 
