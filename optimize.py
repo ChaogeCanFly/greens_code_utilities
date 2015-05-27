@@ -117,6 +117,7 @@ def run_length_dependent_job(x, *args):
         L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
     # prepare folders and input files
+    cwd = os.getcwd()
     for Ln in L_total:
         Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
         os.mkdir(Ln_dir)
