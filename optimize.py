@@ -176,9 +176,9 @@ def run_length_dependent_job(x, *args):
 @argh.arg("-L", "--L", type=float, nargs="+")
 def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
              N=2.5, pphw=100, xml='input.xml', xml_template=None,
-             linearized=False, loop_type='Allen-Eberly',
-             method='L-BFGS-B', ncores=4, min_tol=1e-5, min_stepsize=1e-2,
-             min_maxiter=100):
+             linearized=False, loop_type='Allen-Eberly', ncores=4,
+             algorithm='minimize', method='L-BFGS-B',
+             min_tol=1e-5, min_stepsize=1e-2, min_maxiter=100):
     """Optimize the waveguide configuration with scipy.optimize.minimize."""
 
     if len(L) > 1:
@@ -198,15 +198,26 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
         f.write("\n")
 
     args = (N, L, W, pphw, linearized, xml_template, xml, loop_type, ncores)
-    x0 = (eps0, delta0, phase0)
-    bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
-    min_kwargs = {'disp': True,
-                  'ftol': min_tol,
-                  'maxiter': min_maxiter,
-                  'eps': min_stepsize}
 
-    res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
-                                  method=method, options=min_kwargs)
+    if algorithm == 'minimize':
+        x0 = (eps0, delta0, phase0)
+        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
+        min_kwargs = {'disp': True,
+                      'ftol': min_tol,
+                      'maxiter': min_maxiter,
+                      'eps': min_stepsize}
+
+        res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
+                                      method=method, options=min_kwargs)
+    elif algorithm == 'differential_evolution':
+        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
+        de_kwargs = {'disp': True,
+                     'tol': min_tol,
+                     'maxiter': min_maxiter}
+
+        res = scipy.optimize.differential_evolution(opt_func, args=args,
+                                                    bounds=bounds,
+                                                    **de_kwargs)
     np.save("minimize_res.npy", res)
 
 
