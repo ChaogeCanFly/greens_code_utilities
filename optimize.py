@@ -9,7 +9,6 @@ import scipy.integrate
 import scipy.optimize
 import shutil
 import subprocess
-import sys
 import time
 
 import argh
@@ -54,6 +53,7 @@ def run_single_job(x, *args):
     with a parametrization function determined by loop_type.
     """
     prepare_calc(x, *args)
+    ncores = args[-1]
     cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
     subprocess.call(cmd.split())
 
@@ -86,7 +86,7 @@ def get_shell_script_entry(Ln, node, ncores, root_dir):
 #         os.chdir(Ln_dir)
 #         args[1] = Ln  # update lengths
 #         prepare_calc(x, *args)
-#         # cmd = "mpirun -np {0} solve_xml_mumps > greens.out 2>&1".format(ncores)
+#         # cmd = "mpirun -np {0} solve_xml_mumps".format(ncores)
 #         # subprocess.call(cmd, shell=True)
 #         os.chdir(cwd)
 
@@ -117,19 +117,19 @@ def run_length_dependent_job(x, *args):
         L_total[:, 2*idx+1] = L_total[::-1, 2*idx+1]
 
     # prepare folders and input files
-    for Ln in L_total:
-        Ln_dir = os.path.join(cwd, "_L_" + str(Ln))
+    root_dir = os.getcwd()
+    for Ln in L_total.flatten():
+        Ln_dir = os.path.join(root_dir, "_L_" + str(Ln))
         os.mkdir(Ln_dir)
         os.chdir(Ln_dir)
         args[1] = Ln  # update lengths
         prepare_calc(x, *args)
-        os.chdir(cwd)
+        os.chdir(root_dir)
 
     # workaround for bug: wait until all directories have been written
     time.sleep(5.)
 
     # assemble shell-scripts for individual nnodes
-    root_dir = os.getcwd()
     shell_scripts = []
     for node, L_node in enumerate(L_total):
         script_per_core = []
@@ -153,7 +153,7 @@ def run_length_dependent_job(x, *args):
     A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
-    # area fillingfactor; minimize complementary fillingfactor 1 - FF
+    # area fillingfactor; minimize fillingfactor
     FF = A/max(L)
 
     # archive S_matrices
@@ -169,7 +169,7 @@ def run_length_dependent_job(x, *args):
     for ldir in glob.glob("_L_*"):
         shutil.rmtree(ldir)
 
-    return 1. - FF
+    return -FF
 
 
 @argh.arg("--xml-template", type=str)
