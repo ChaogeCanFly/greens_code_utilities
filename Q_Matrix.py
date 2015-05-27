@@ -65,6 +65,9 @@ class Time_Delay_Matrix(object):
         self.Q21 = self.Q[modes:, :modes]
 
         eigenvalues, eigenstates = scipy.linalg.eig(self.Q11)
+        idx = eigenvalues.argsort()
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
         self.eigenvalues = eigenvalues
         self.eigenstates = eigenstates
 
