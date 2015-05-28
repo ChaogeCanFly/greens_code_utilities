@@ -18,7 +18,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
-def main(pphw=50, N=2.5, L=100., W=1, sigma=0.01, plot=False, r_nx=None, r_ny=None,
+def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, peak_function='local'):
 
