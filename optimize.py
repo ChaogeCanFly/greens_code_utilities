@@ -154,6 +154,7 @@ def run_length_dependent_job(x, *args):
     cmd = "S_Matrix.py -p -g L -d _L_*"
     subprocess.check_call(cmd, shell=True)
     L, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
+    T01, T10 = [np.nan_to_num(Tnm) for Tnm in (T01, T10)]
     A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
     A = (A01 + A10)/2.
 
