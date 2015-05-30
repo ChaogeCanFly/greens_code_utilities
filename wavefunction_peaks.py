@@ -20,7 +20,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--r-ny', type=int)
 def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, peak_function='local'):
+         potential=None, peak_function='local', savez=False):
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -81,9 +81,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
-        np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
-                 X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
-                 X_nodes=X[idx], Y_nodes=Y[idx])
+        if savez:
+            np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
+                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
+                     X_nodes=X[idx], Y_nodes=Y[idx])
         print "done."
 
     if plot:
@@ -110,7 +111,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             ax.set_ylim(Y.min(), Y.max())
 
         plt.savefig('wavefunction.png', bbox_inches='tight')
-        np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
+        if savez:
+            np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
 
