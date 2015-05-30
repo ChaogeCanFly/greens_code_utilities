@@ -203,26 +203,25 @@ def optimize(eps0=0.2, delta0=0.4, phase0=-1.0, L=10., W=1.,
         f.write("\n")
 
     args = (N, L, W, pphw, linearized, xml_template, xml, loop_type, ncores)
+    BOUNDS = ((0.0, 0.35), (0.0, 3.5), (-3.5, 0.0))
 
     if algorithm == 'minimize':
         x0 = (eps0, delta0, phase0)
-        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
         min_kwargs = {'disp': True,
                       'ftol': min_tol,
                       'maxiter': min_maxiter,
                       'eps': min_stepsize}
-
-        res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=bounds,
+        res = scipy.optimize.minimize(opt_func, x0, args=args, bounds=BOUNDS,
                                       method=method, options=min_kwargs)
+
     elif algorithm == 'differential_evolution':
-        bounds = ((0.0, 0.35), (0.0, 3.0), (-5.0, 1.0))
         de_kwargs = {'disp': True,
                      'tol': min_tol,
                      'maxiter': min_maxiter}
-
         res = scipy.optimize.differential_evolution(opt_func, args=args,
-                                                    bounds=bounds,
+                                                    bounds=BOUNDS,
                                                     **de_kwargs)
+
     np.save("minimize_res.npy", res)
 
 
