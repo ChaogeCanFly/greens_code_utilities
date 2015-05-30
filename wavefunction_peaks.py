@@ -60,23 +60,28 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             peaks[np.logical_or(Y > 0.95*W, Y < 0.05*W)] = 0.0
 
         elif peak_function == 'cut':
-            # Y_mask = np.logical_and(0.05 < Y, Y < 0.95)
             Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
             peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
+
+        elif peak_function == 'points':
+            Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
+            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
+            Z_pot = np.zeros_like(X)
+            Z_pot[np.where(peaks)] = 1.0
 
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
 
-        # build Gaussian potential at peaks
-        Z_pot = np.zeros_like(X)
-        sigma *= W  # scale sigma with waveguide dimensions
-        for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
-            if n % 500 == 0:
-                print "iteration step n=", n
-            # Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
-            Z_pot -= np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/(2.*np.pi*sigma**2)
-        print "done."
+        if peak_function == 'local' or peak_function == 'cut':
+            # build Gaussian potential at peaks
+            Z_pot = np.zeros_like(X)
+            sigma *= W  # scale sigma with waveguide dimensions
+            for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
+                if n % 500 == 0:
+                    print "iteration step n=", n
+                Z_pot -= np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/(2.*np.pi*sigma**2)
+            print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
