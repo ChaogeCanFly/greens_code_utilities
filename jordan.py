@@ -9,7 +9,7 @@ import argh
 
 import bloch
 from helper_functions import replace_in_file
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 from xmlparser import XML
 
 
@@ -179,14 +179,13 @@ class Jordan(object):
         k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
         L = abs(2*np.pi/(k0 - k1 + y))
 
-        WG = Waveguide(L=L, loop_type='Constant', **self.waveguide_params)
+        if neumann:
+            WG = Neumann(L=L, loop_type='Constant', x_R0=x, y_R0=y,
+                         **self.waveguide_params)
+        else:
+            WG = Dirichlet(L=L, loop_type='Constant', x_R0=x, y_R0=y,
+                           **self.waveguide_params)
         self.WG = WG
-
-        print "WG.x_EP", WG.x_EP
-        print "WG.y_EP", WG.y_EP
-
-        WG.x_EP = x
-        WG.y_EP = y
 
         xi_lower, xi_upper = WG.get_boundary(eps=x, delta=y)
 
@@ -194,10 +193,15 @@ class Jordan(object):
         np.savetxt("upper.profile", zip(WG.t, xi_upper))
 
         N_file = len(WG.t)
-        replacements = {'L"> L':           'L"> {}'.format(L),
-                        'wave"> pphw':     'wave"> {}'.format(self.pphw),
-                        'N_file"> N_file': 'N_file"> {}'.format(N_file),
-                        'Gamma0"> Gamma0': 'Gamma0"> {}'.format(eta)}
+        replacements = {'LENGTH': str(L),
+                        'WIDTH': str(W),
+                        'MODES': str(N),
+                        'PPHW': str(self.pphw),
+                        'GAMMA0': str(eta),
+                        'NEUMANN': '0',
+                        'N_FILE_BOUNDARY': str(N_file),
+                        'BOUNDARY_UPPER': 'upper.boundary',
+                        'BOUNDARY_LOWER': 'lower.boundary'}
 
         replace_in_file(self.template, self.xml, **replacements)
 

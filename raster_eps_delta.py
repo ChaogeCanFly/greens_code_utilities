@@ -9,7 +9,7 @@ import sys
 import argh
 
 import bloch
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 from helper_functions import replace_in_file
 
 
@@ -19,7 +19,7 @@ def run_code():
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
         cmd = ("mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} "
-               "solve_xml_mumps").format(**os.environ)
+               "solve_xml_mumps_dev").format(**os.environ)
     else:
         print "running code locally..."
         cmd = "solve_xml_mumps"
@@ -31,10 +31,14 @@ def run_code():
 @argh.arg("--delta", type=float, nargs="+")
 def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
                      xml_template="input.xml_template", eps=[0.01, 0.1, 30],
-                     delta=[0.3, 0.7, 50], dryrun=False):
+                     delta=[0.3, 0.7, 50], dryrun=False, neumann=1):
 
     # k_x for modes 0 and 1
-    k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
+    if neumann:
+        k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
+    else:
+        k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 1, 2 ]
+
     kr = k0 - k1
 
     # ranges
@@ -72,7 +76,10 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
         # choose discretization such that r_nx < len(x_range)
         r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
-        WG = Waveguide(L=L, loop_type='Constant', N=N, eta=eta)
+        if neumann:
+            WG = Neumann(L=L, loop_type='Constant', N=N, eta=eta)
+        else:
+            WG = Dirichlet(L=L, loop_type='Constant', N=N, eta=eta)
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
         print "xi_lower.shape", xi_lower.shape
@@ -82,10 +89,15 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
 
         # N_file = len(WG.t)
         N_file = len(x_range)
-        replacements = {'L"> L':             'L"> {}'.format(L),
-                        'wave"> pphw':       'wave"> {}'.format(pphw),
-                        'N_file"> N_file':   'N_file"> {}'.format(N_file),
-                        'Gamma0"> Gamma0':   'Gamma0"> {}'.format(eta)}
+        replacements = {'LENGTH': str(L),
+                        'WIDTH': str(W),
+                        'MODES': str(N),
+                        'PPHW': str(pphw),
+                        'GAMMA0': '0.0',
+                        'NEUMANN': '0',
+                        'N_FILE_BOUNDARY': str(N_file),
+                        'BOUNDARY_UPPER': 'upper.boundary',
+                        'BOUNDARY_LOWER': 'lower.boundary'}
 
         replace_in_file(xml_template, xml, **replacements)
 
@@ -102,7 +114,7 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
                 ##bloch_evals = np.array(bloch_evals)[0, :2]
                 # if bloch.get_eigensystem is not called with modes, dx, etc.,
                 # these values are read from the xml file
-                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True)
+                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True, neumann=neumann)
                 bloch_evals, bloch_evecs = [ np.array(x)[:2] for x in bloch_evals, bloch_evecs ]
                 bloch_evecs_overlap = (np.abs(bloch_evecs[0]-bloch_evecs[1])**2).sum()
                 print "overlap", bloch_evecs_overlap
@@ -122,9 +134,11 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
                     evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
                     shutil.copy("Evals.sine_boundary.dat", evals_file)
                     subprocess.call(['gzip', evals_file])
-                    evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
-                    shutil.copy("Evecs.sine_boundary.dat", evecs_file)
-                    subprocess.call(['gzip', evecs_file])
+                    os.remove("Evecs.sine_boundary.dat")
+                    os.remove("Evecs.sine_boundary.abs")
+                    # evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
+                    # shutil.copy("Evecs.sine_boundary.dat", evecs_file)
+                    # subprocess.call(['gzip', evecs_file])
                     xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
                     shutil.copy("input.xml", xml_file)
                     subprocess.call(['gzip', xml_file])

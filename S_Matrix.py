@@ -1,12 +1,11 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # TODO:
 #  * write different nruns into same line or in different lines?
 #    -> in _process_directories()
 
 import glob
-import os
 import numpy as np
-import scipy.linalg
+import os
 
 import argparse
 from argparse import ArgumentDefaultsHelpFormatter as default_help
@@ -30,12 +29,18 @@ class S_Matrix(object):
                     Whether to calculate abs(S)^2.
     """
 
-    def __init__(self, indir=".", infile=None, probabilities=False):
+    def __init__(self, infile=None, indir=".", probabilities=False):
 
         self.indir = indir
         if not infile:
             try:
-                self.infile = glob.glob("{}/Smat.*.dat".format(indir))[0]
+                infile = glob.glob("{}/Smat.*.dat*".format(indir))
+                if len(infile) > 1:
+                    print "Warning: more than one Smat.*.dat* found:"
+                    for smat in infile:
+                        print "\t" + os.path.basename(smat)
+                    print "Using the first entry in the following..."
+                self.infile = infile[0]
             except:
                 pass
         else:
@@ -50,19 +55,21 @@ class S_Matrix(object):
 
         try:
             # get number of scheduler steps and S-matrix dimensions
-            nruns, ndims = np.genfromtxt(self.infile, invalid_raise=False)[:3:2]
+            nruns, ndims = np.genfromtxt(self.infile,
+                                         invalid_raise=False)[:3:2]
         except:
-            nruns, ndims = 1, 4
+            print "Warning: couldn't determine S-matrix dimensions."
+            nruns, ndims = (1, 4)
 
         try:
             # get real and imaginary parts of S-matrix
-            re, im = np.genfromtxt(self.infile, usecols=(2,3), autostrip=True,
+            re, im = np.genfromtxt(self.infile, usecols=(2, 3), autostrip=True,
                                    unpack=True, invalid_raise=False)
             # calculate transmission and reflection amplitudes
-            S = (re + 1j*im).reshape((nruns,ndims,ndims))
+            S = (re + 1j*im).reshape((nruns, ndims, ndims))
         except:
             # initialize nan S-matrix if no data available
-            S = np.empty((nruns,ndims,ndims))
+            S = np.empty((nruns, ndims, ndims))
             S[:] = np.nan
 
         try:
@@ -95,8 +102,9 @@ def natural_sorting(text, args="delta", delimiter="_"):
             args: str
                 Directory parsing parameters.
     """
-    index = lambda text: [ text.split(delimiter).index(arg) for arg in args ]
-    alphanum_key = lambda text: [ float(text.split(delimiter)[i+1]) for i in index(text) ]
+    index = lambda text: [text.split(delimiter).index(arg) for arg in args]
+    alphanum_key = lambda text: [float(text.split(delimiter)[i+1]) for
+                                 i in index(text)]
 
     return sorted(text, key=alphanum_key)
 
@@ -106,6 +114,10 @@ class Write_S_Matrix(object):
 
         Parameters:
         -----------
+            infile: str
+                Input file to read S-matrix from.
+            probabilities: bool
+                Whether to calculate abs(S)^2.
             outfile: str
                 S-matrix output file.
             directories: list of str
@@ -116,18 +128,21 @@ class Write_S_Matrix(object):
                 Directory parsing delimiter.
     """
 
-    def __init__(self, outfile="S_matrix.dat", directories=[], glob_args=[],
-                 delimiter="_", full_smatrix=False, diodicity=False, **kwargs):
+    def __init__(self, infile=None, probabilities=False,
+                 outfile="S_matrix.dat", directories=[], glob_args=[],
+                 delimiter="_", full_smatrix=False,
+                 total_probabilities=False, **s_matrix_kwargs):
 
         self.outfile = outfile
         self.directories = directories
         self.glob_args = glob_args
-        # self.nargs = len(glob_args) if glob_args else 0
         self.nargs = len(glob_args)
         self.delimiter = delimiter
+        self.probabilities = probabilities
         self.full_smatrix = full_smatrix
-        self.diodicity = diodicity
-        self.kwargs = kwargs
+        self.total_probabilities = total_probabilities
+        self.s_matrix_kwargs = {'infile': infile,
+                                'probabilities': probabilities}
 
         self._process_directories()
 
@@ -149,27 +164,41 @@ class Write_S_Matrix(object):
     def _get_header(self, dir):
         """Prepare data file header."""
 
-        S = S_Matrix(indir=dir, **self.kwargs)
+        S = self.S
 
         # tune alignment spacing
         spacing = 17 if S.probabilities else 35
 
         # translate S-matrix into transmission and reflection components
-        header = [ "{}{}{}".format(s,i,j) for s in ("r","t")
-                                          for i in range(S.modes)
-                                          for j in range(S.modes) ]
-        header_prime = [ "{}{}{}".format(s,i,j) for s in ("t'","r'")
-                                                for i in range(S.modes)
-                                                for j in range(S.modes) ]
+        if self.probabilities:
+            header_variables = ("R", "T")
+            header_prime_variables = ("T'", "R'")
+        else:
+            header_variables = ("r", "t")
+            header_prime_variables = ("t'", "r'")
+
+        header = ["{0}{1}{2}".format(s, i, j)
+                  for s in header_variables
+                  for i in range(S.modes)
+                  for j in range(S.modes)]
+
         if self.full_smatrix:
+            header_prime = ["{0}{1}{2}".format(s, i, j)
+                            for s in header_prime_variables
+                            for i in range(S.modes)
+                            for j in range(S.modes)]
             header += header_prime
 
-        if self.diodicity:
-            header += ["D_right", "D_left"]
+        if self.total_probabilities:
+            header_total = ["{0}{1}".format(s, i, j)
+                            for s in header_variables
+                            for i in range(S.modes)]
+            header_total += header_variables
+            header += header_total
 
         headerfmt = '#'
-        headerfmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        headerfmt += "  ".join([ '{:>{s}}' for n in range(len(header)) ])
+        headerfmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
+        headerfmt += "  ".join(['{:>{s}}' for n in range(len(header))])
 
         header = headerfmt.format(*(self.glob_args + header), s=spacing)
 
@@ -179,30 +208,36 @@ class Write_S_Matrix(object):
         """Prepare S-matrix data for output."""
 
         arg_values = self._parse_directory(dir)
-        S = S_Matrix(indir=dir, **self.kwargs)
-        
+        S = self.S
+
         # write r and t (dimension 2modes*modes)
-        data = [ S.S[i,j,k] for i in range(S.nruns)
-                            for j in range(S.ndims)
-                            for k in range(S.modes) ]
-        # write t' and r' (dimension 2modes*modes)
-        data_prime = [ S.S[i,j,k + S.modes] for i in range(S.nruns)
-                                            for j in range(S.ndims)
-                                            for k in range(S.modes) ]
+        data = [S.S[i, j, k]
+                for i in range(S.nruns)
+                for j in range(S.ndims)
+                for k in range(S.modes)]
+
         # join data
         if self.full_smatrix:
+            # write t' and r' (dimension 2modes*modes)
+            data_prime = [S.S[i, j, k + S.modes]
+                          for i in range(S.nruns)
+                          for j in range(S.ndims)
+                          for k in range(S.modes)]
             data += data_prime
 
-        if self.diodicity:
-            t00, t01, t10, t11 = [ S.S_amplitudes[0,i,j] for i in 2, 3
-                                                         for j in 0, 1 ]
-            D_right = abs((t00+t01)/(t10+t11))
-            D_left = abs((t00+t10)/(t01+t11))
-            data += [D_right, D_left]
+        if self.total_probabilities:
+            data_total = [[np.abs(S.S_amplitudes[0, i, j])**2
+                           for i in range(S.ndims)]
+                          for j in range(S.modes)]
+            # sum over columns
+            data_total = np.sum(data_total, axis=0)
+            T_total = np.sum(data_total[S.modes:])
+            R_total = np.sum(data_total[:S.modes])
+            data += data_total.tolist() + [R_total] + [T_total]
 
         datafmt = " "
-        datafmt += "  ".join([ '{:>12}' for n in range(self.nargs) ]) + "  "
-        datafmt += "  ".join([ '{:> .10e}' for n in range(len(data)) ])
+        datafmt += "  ".join(['{:>12}' for n in range(self.nargs)]) + "  "
+        datafmt += "  ".join(['{:> .10e}' for n in range(len(data))])
 
         data = datafmt.format(*(arg_values + data))
 
@@ -223,10 +258,11 @@ class Write_S_Matrix(object):
                                delimiter=self.delimiter)
 
         with open(self.outfile, "w") as f:
-            for n, dir in enumerate(dirs):
+            for (n, dir) in enumerate(dirs):
+                self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
                 if not n:
-                    f.write("%s\n" % self._get_header(dir))
-                f.write("%s\n" % self._get_data(dir))
+                    f.write(self._get_header(dir) + "\n")
+                f.write(self._get_data(dir) + "\n")
 
 
 def get_S_matrix_difference(a, b):
@@ -241,7 +277,7 @@ def get_S_matrix_difference(a, b):
     params = {'unpack': True,
               'skiprows': 4}
 
-    a, b = [ np.loadtxt(i, **params) for i in (a,b) ]
+    a, b = [np.loadtxt(i, **params) for i in (a, b)]
 
     print "File a:"
     print a
@@ -265,10 +301,10 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
-    parser.add_argument("-y", "--diodicity", action="store_true",
-                        help=("Whether to add the diodicity measure to the "
-                              "output file."))
-
+    parser.add_argument("-t", "--total-probabilities",
+                        action="store_true",
+                        help=("Whether to add the total mode transmission and "
+                              "reflection to the output file."))
     parser.add_argument("-d", "--directories", default=[], nargs="*",
                         help="Directories to parse.")
     parser.add_argument("-g", "--glob-args", default=[], nargs="*",
@@ -290,6 +326,6 @@ def parse_arguments():
         del args['diff']
         Write_S_Matrix(**args)
 
-   
+
 if __name__ == '__main__':
     parse_arguments()

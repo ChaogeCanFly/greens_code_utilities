@@ -1,6 +1,8 @@
 #!/usr/bin/env python2.7
 
 import glob
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
@@ -14,7 +16,7 @@ import traceback
 import argh
 
 import ep.profile
-from ep.waveguide import Waveguide
+from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
 import bloch
 
 
@@ -116,7 +118,7 @@ def smooth_eigensystem(K_0, K_1, Chi_0, Chi_1, eps=2e-2, plot=True):
 
 
 def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
-                   WG=None, loop_direction=None):
+                   WG=None, loop_direction=None, neumann=None):
     """Calculate the Bloch eigensystem in a separate directory and extract the
     eigenvalues and eigenvectors.
 
@@ -143,7 +145,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
                       'pphw': pphw,
                       'input_xml': XML,
                       'custom_directory': os.getcwd(),
-                      'neumann': 1}
+                      'neumann': neumann}
     wg_kwargs_n = {'N': N,
                    'eta': eta,
                    'L': 2*np.pi/(WG.kr + deltan),
@@ -166,7 +168,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
         K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
                                                   return_velocities=True,
                                                   verbose=True,
-                                                  fold_back=True)
+                                                  neumann=neumann)
         # remove eigenvalue files
         # os.remove("Evecs.sine_boundary.dat")
         # os.remove("Evecs.sine_boundary.abs")
@@ -200,10 +202,11 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
         return
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
-                           nx=None, loop_direction="+", loop_type='Bell',
-                           init_state='a', init_phase=0.0,
-                           mpi=False, pphw=100, effective_model_only=False):
+def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
+                           loop_direction="+", loop_type='Bell', init_state='a',
+                           init_phase=0.0, mpi=False, pphw=100,
+                           effective_model_only=False,
+                           neumann=1):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -237,6 +240,8 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                 Points per half-wavelength.
             effective_model_only: bool
                 Whether to only calculate the effective model predictions.
+            neumann: int
+                Whether to use Neumann or Dirichlet boundary conditions.
     """
 
     greens_path = os.environ.get('GREENS_CODE_XML')
@@ -248,9 +253,13 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                  'init_phase': init_phase,
                  'init_state': init_state,
                  'loop_direction': loop_direction,
-                 'loop_type': loop_type}
-    WG = Waveguide(**wg_kwargs)
-    WG.x_EP = eps
+                 'loop_type': loop_type,
+                 'x_R0': eps
+    }
+    if neumann:
+        WG = Neumann(**wg_kwargs)
+    else:
+        WG = Dirichlet(**wg_kwargs)
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
@@ -258,7 +267,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                       'pphw': pphw,
                       'input_xml': XML,
                       'custom_directory': os.getcwd(),
-                      'neumann': 1}
+                      'neumann': neumann}
     profile_kwargs.update(wg_kwargs)
 
     ep.profile.Generate_Profiles(**profile_kwargs)
@@ -277,8 +286,10 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         ax1.semilogy(WG.t, abs(b1), "g-")
 
         wg_kwargs['loop_direction'] = '+'
-        WG = Waveguide(**wg_kwargs)
-        WG.x_EP = eps
+        if neumann:
+            WG = Neumann(**wg_kwargs)
+        else:
+            WG = Dirichlet(**wg_kwargs)
         _, b0, b1 = WG.solve_ODE()
 
         ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
@@ -288,6 +299,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
         ax2.plot(WG.t, WG.eVals[:,1].real, "g-")
         ax2.plot(WG.t, WG.eVals[:,0].imag, "r--")
         ax2.plot(WG.t, WG.eVals[:,1].imag, "g--")
+        # plt.savefig("evals_trajectories.png")
         plt.show()
     # -------------------------------------------------------------------------
 
@@ -310,24 +322,26 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
                   'XML': XML,
                   'N': N,
                   'WG': WG,
-                  'loop_direction': loop_direction}
+                  'loop_direction': loop_direction,
+                  'neumann': neumann}
 
-    # serialized version:
-    # results = []
-    # for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
-    #     run_single_job(n, xn, epsn, deltan, **job_kwargs)
-
-    # alternative parallelization:
-    # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
-    #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-    # results = pool.map(run_single_job, job_list)
 
     if not effective_model_only:
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
-                                    kwds=job_kwargs)
-                    for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
-        results = [ p.get() for p in results ]
+        # serialized version:
+        results = []
+        for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)):
+            run_single_job(n, xn, epsn, deltan, **job_kwargs)
+
+        # pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        # results = [ pool.apply_async(run_single_job, args=(n, xn, epsn, deltan),
+        #                              kwds=job_kwargs)
+        #             for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+        # results = [ p.get() for p in results ]
+
+        # alternative parallelization:
+        # job_list = [ (n, xn, epsn, deltan, eta, pphw, XML, N, WG, loop_direction)
+        #               for n, (xn, epsn, deltan) in enumerate(zip(x, eps, delta)) ]
+        # results = pool.map(run_single_job, job_list)
 
         # properly unpack results
         for res in results:
@@ -349,7 +363,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
         # smooth
         K_0, K_1, Chi_0, Chi_1 = smooth_eigensystem(K_0, K_1, Chi_0, Chi_1,
-                                                    eps=WG.x_EP, plot=False)
+                                                    eps=WG.x_R0, plot=False)
 
         # transpose array!
         Chi_0, Chi_1 = [ np.array(c).T for c in Chi_0, Chi_1 ]
@@ -394,9 +408,14 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
     #                 1j*interp1d(WG.t, Chi_1_eff[:].imag)(x)) for n in 0, 1 ]
     Chi_0_eff, Chi_1_eff = [ np.array(c).T for c in Chi_0_eff, Chi_1_eff ]
 
+
     # fold back
     G = delta + WG.kr
     L_range = 2*np.pi/G  # make small error since L != r_nx*dx
+
+    # np.savetxt("output_data.dat", zip(G, L_range, K_0_eff.real, K_1_eff.real,
+    #                                   K_0.real, K_1.real),
+    #            header='G L_range K_0_eff K_1_eff K_0 K_1')
     K_0_eff = ((-K_0_eff.real + G/2.) % G - G/2.) + 1j*K_0_eff.imag
     K_1_eff = ((-K_1_eff.real + G/2.) % G - G/2.) + 1j*K_1_eff.imag
 
@@ -412,15 +431,26 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
 
     # no additional factor of np.exp(-i*kr*x) since we unwrap the phase,
     # corresponding to K_n -> K_n + n*G
-    Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
-    Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WG.kr*x),
-                           np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
-    Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
+    if neumann:
+        Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], 1.*np.ones_like(y))
+        Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WG.kr*x),
+                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
+        Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
 
-    Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
-    Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*x),
-                           np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
-    Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+        Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], 1.*np.ones_like(y))
+        Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*x),
+                            np.sqrt(2.*WG.k0/WG.k1)*np.cos(np.pi*y))
+        Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
+    else:
+        Chi_0_eff_0 = np.outer(Chi_0_eff[:,0], np.sin(np.pi*y))
+        Chi_0_eff_1 = np.outer(Chi_0_eff[:,1], #*np.exp(-1j*WG.kr*x),
+                            np.sqrt(WG.k1/WG.k0)*np.sin(2*np.pi*y))
+        Chi_0_eff = Chi_0_eff_0 + Chi_0_eff_1
+
+        Chi_1_eff_0 = np.outer(Chi_1_eff[:,0], np.sin(np.pi*y))
+        Chi_1_eff_1 = np.outer(Chi_1_eff[:,1], #*np.exp(-1j*WG.kr*x),
+                            np.sqrt(WG.k1/WG.k0)*np.sin(2*np.pi*y))
+        Chi_1_eff = Chi_1_eff_0 + Chi_1_eff_1
 
     Chi_0_eff, Chi_1_eff = [ c.T for c in Chi_0_eff, Chi_1_eff ]
     # -------------------------------------------------------------------------
@@ -441,9 +471,9 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05,
             l1 = ax1.legend(bbox_to_anchor=(1.3,1.075), prop=prop)
 
         ax2.set_title(r"Effective model eigenvalues $K^{\mathrm{eff}}_n$")
-        ax2.plot(x, K_0_eff.real, "r-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
-        ax2.plot(x, K_0_eff.imag, "b-", label=r"$\Im{K^{\mathrm{eff}}_1}$")
-        ax2.plot(x, K_1_eff.real, "r--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
+        ax2.plot(x, K_0_eff.real, "r-", label=r"$\Re{K^{\mathrm{eff}}_0}$")
+        ax2.plot(x, K_0_eff.imag, "b-", label=r"$\Im{K^{\mathrm{eff}}_0}$")
+        ax2.plot(x, K_1_eff.real, "r--", label=r"$\Re{K^{\mathrm{eff}}_1}$")
         ax2.plot(x, K_1_eff.imag, "b--", label=r"$\Im{K^{\mathrm{eff}}_1}$")
         ax2.set_xlabel(r"$x$")
         l2 = ax2.legend(bbox_to_anchor=(1.3,1.075), prop=prop)

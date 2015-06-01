@@ -10,9 +10,9 @@ from xmlparser import XML
 
 def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
-                    dx=None, r_nx=None, sort=True, fold_back=True,
+                    dx=None, r_nx=None, sort=True,
                     return_velocities=False, return_eigenvectors=False,
-                    verbose=True):
+                    verbose=True, neumann=1):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -33,14 +33,14 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Grid dimension in x-direction.
             sort: bool
                 Whether to sort the eigenvalues and eigenvectors.
-            fold_back: bool
-                Whether to fold back the Bloch modes into the 1. BZ.
             return_velocities: bool
                 Whether to return eigenvalues and group velocities.
             return_eigenvectors: bool
                 Whether to return eigenvalues and eigenvectors.
             verbose: bool
                 Print additional output.
+            neumann: bool
+                Whether to use Neumann or Dirichlet boundary conditions.
 
         Returns:
         --------
@@ -63,7 +63,10 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
         r_nx = xml_params.get("r_nx")
 
     # get k_x values for both modes
-    k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
+    if neumann:
+        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
+    else:
+        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (1, 2) ]
     kr = k0 - k1
 
     # get reciprocal lattice vector G
