@@ -58,6 +58,7 @@ def find_outliers(eps):
 
     return mask
 
+
 def interpolate_on_grid(X, Y, Z, nx=100, ny=100):
     from scipy.interpolate import interp2d
 
@@ -78,7 +79,7 @@ def interpolate_on_grid(X, Y, Z, nx=100, ny=100):
 @argh.arg("-I", "--interpolate")
 def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
-                     sort=False, png=None, full=False, dryrun=False, 
+                     sort=False, png=None, full=False, dryrun=False,
                      interpolate=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
@@ -183,7 +184,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 pass
 
             # eps, delta, e = interpolate_on_grid(eps.real, delta.real, e.real)
-            
             mlab.figure(0, bgcolor=(0.5,0.5,0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
             m1.actor.actor.scale = (5,1,1)
