@@ -55,16 +55,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         print "Building potential based on mode {}...".format(write_peaks)
         if peak_function == 'local':
             peaks = get_local_peaks(Z, peak_type='minimum')
-
             # remove minma due to boundary conditions at walls
             peaks[np.logical_or(Y > 0.95*W, Y < 0.05*W)] = 0.0
 
         elif peak_function == 'cut':
-            Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
+            # Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
+            Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
             peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
 
         elif peak_function == 'points':
-            Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
+            Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
             peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
             Z_pot = np.zeros_like(X)
             Z_pot[np.where(peaks)] = 1.0
