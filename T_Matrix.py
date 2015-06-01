@@ -50,8 +50,9 @@ class T_Matrix(object):
         self.T = self.t.conj().T.dot(self.t)
 
         eigenvalues, eigenstates = scipy.linalg.eig(self.T)
-        self.eigenvalues = eigenvalues
-        self.eigenstates = eigenstates
+        idx = eigenvalues.argsort()
+        self.eigenvalues = eigenvalues[idx]
+        self.eigenstates = eigenstates[:, idx]
 
         self.coeff_file = coeff_file
         self.evals_file = evals_file
