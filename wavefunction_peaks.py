@@ -3,6 +3,7 @@
 import json
 from matplotlib import pyplot as plt
 import numpy as np
+from scipy.ndimage.filters import gaussian_filter
 
 import argh
 
@@ -53,6 +54,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             Z = Z_2
 
         print "Building potential based on mode {}...".format(write_peaks)
+        Z_pot = np.zeros_like(X)
+
         if peak_function == 'local':
             peaks = get_local_peaks(Z, peak_type='minimum')
             # remove minma due to boundary conditions at walls
@@ -65,9 +68,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
 
         elif peak_function == 'points':
             Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
-            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
-            Z_pot = np.zeros_like(X)
-            Z_pot[np.where(peaks)] = 1.0
+            # peaks = np.logical_and(Z < 5e4*Z.min(), Y_mask)
+            peaks = np.logical_and(Z < 1e-3*Z.max(), Y_mask)
+            Z_pot[np.where(peaks)] = -1.0
+            sigma = Z_pot.shape[0]/30.  # sigma is W/30 (caveat: P = P(y,x)
+            Z_pot = gaussian_filter(Z_pot, sigma)
+            Z_pot[Z_pot < -0.1] = -0.1
+            Z_pot /= -Z_pot.min()
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -75,7 +82,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
 
         if peak_function == 'local' or peak_function == 'cut':
             # build Gaussian potential at peaks
-            Z_pot = np.zeros_like(X)
             sigma *= W  # scale sigma with waveguide dimensions
             for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
                 if n % 500 == 0:
