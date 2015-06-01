@@ -193,10 +193,15 @@ class Jordan(object):
         np.savetxt("upper.profile", zip(WG.t, xi_upper))
 
         N_file = len(WG.t)
-        replacements = {'L"> L':           'L"> {}'.format(L),
-                        'wave"> pphw':     'wave"> {}'.format(self.pphw),
-                        'N_file"> N_file': 'N_file"> {}'.format(N_file),
-                        'Gamma0"> Gamma0': 'Gamma0"> {}'.format(eta)}
+        replacements = {'LENGTH': str(L),
+                        'WIDTH': str(W),
+                        'MODES': str(N),
+                        'PPHW': str(self.pphw),
+                        'GAMMA0': str(eta),
+                        'NEUMANN': '0',
+                        'N_FILE_BOUNDARY': str(N_file),
+                        'BOUNDARY_UPPER': 'upper.boundary',
+                        'BOUNDARY_LOWER': 'lower.boundary'}
 
         replace_in_file(self.template, self.xml, **replacements)
 

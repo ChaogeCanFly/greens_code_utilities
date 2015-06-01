@@ -19,9 +19,9 @@ from helper_functions import convert_to_complex
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
-def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=None,
+def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, peak_function='local', processes=1):
+         potential=None, peak_function='local', processes=1,savez=False):
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -58,11 +58,17 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
             peaks = get_local_peaks(Z, peak_type='minimum')
 
             # remove minma due to boundary conditions at walls
-            peaks[np.logical_or(Y > 0.95, Y < 0.05)] = 0.0
+            peaks[np.logical_or(Y > 0.95*W, Y < 0.05*W)] = 0.0
 
         elif peak_function == 'cut':
-            Y_mask = np.logical_and(0.05 < Y, Y < 0.95)
+            Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
             peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
+
+        elif peak_function == 'points':
+            Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
+            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
+            Z_pot = np.zeros_like(X)
+            Z_pot[np.where(peaks)] = 1.0
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -73,20 +79,23 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
         #             for (xn, yn) in  split_array(]
         # results = [ p.get() for p in results ]
 
-        # build Gaussian potential at peaks
-        Z_pot = np.zeros_like(X)
-        for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
-            if n % 500 == 0:
-                print "iteration step n=", n
-            Z_pot -= gauss(X, xn, sigma) * gauss(Y, yn, sigma)
-        print "done."
+        if peak_function == 'local' or peak_function == 'cut':
+            # build Gaussian potential at peaks
+            Z_pot = np.zeros_like(X)
+            sigma *= W  # scale sigma with waveguide dimensions
+            for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
+                if n % 500 == 0:
+                    print "iteration step n=", n
+                Z_pot -= np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/(2.*np.pi*sigma**2)
+            print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
-        np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
-                 X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
-                 X_nodes=X[idx], Y_nodes=Y[idx])
+        if savez:
+            np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
+                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
+                     X_nodes=X[idx], Y_nodes=Y[idx])
         print "done."
 
     if plot:
@@ -113,7 +122,8 @@ def main(pphw=50, N=2.5, L=100, W=1, sigma=0.01, plot=False, r_nx=None, r_ny=Non
             ax.set_ylim(Y.min(), Y.max())
 
         plt.savefig('wavefunction.png', bbox_inches='tight')
-        np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
+        if savez:
+            np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
 
