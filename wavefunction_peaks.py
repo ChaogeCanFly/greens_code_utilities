@@ -9,6 +9,7 @@ import argh
 
 from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks, get_local_minima
+from ep.plot import get_colors
 from ep.potential import gauss
 from helper_functions import convert_to_complex
 
@@ -102,7 +103,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
     if plot:
         print "Plotting wavefunctions..."
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
-        cmap = plt.cm.jet
+        get_colors()
+        cmap = plt.cm.get_cmap('parula')
 
         # scattering wavefunction
         ax1.pcolormesh(X, Y, Z_1, cmap=cmap)
@@ -131,7 +133,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         try:
             from mayavi import mlab
             extent = (0, 1, 0, 5, 0, 1)
-            mlab.surf(-Z_pot, extent=extent)
+            p = mlab.surf(-Z_pot, extent=extent)
+            p.module_manager.scalar_lut_manager.lut.table = cmap(np.arange(256))*255.
             mlab.savefig('potential.png')
         except:
             print "Error: potential.png not written."
