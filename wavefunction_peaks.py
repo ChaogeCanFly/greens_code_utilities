@@ -127,6 +127,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
+        print "Plotting potential..."
+        try:
+            from mayavi import mlab
+            extent = (0, 1, 0, 5, 0, 1)
+            mlab.surf(-Z_pot, extent=extent)
+            mlab.savefig('potential.png')
+        except:
+            print "Error: potential.png not written."
+        print "done."
+
 
 if __name__ == '__main__':
     argh.dispatch_command(main)
