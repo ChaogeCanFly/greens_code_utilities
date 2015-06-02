@@ -75,7 +75,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             sigma = Z_pot.shape[0]*sigma/100.  # caveat: P = P(y,x)
             Z_pot = gaussian_filter(Z_pot, sigma)
             Z_pot[Z_pot < -0.1] = -0.1
-            Z_pot /= -Z_pot.min()
+            Z_pot /= -Z_pot.min()  # normalize potential
 
         # get array-indices of peaks
         idx = np.where(peaks)
