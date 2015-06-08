@@ -21,6 +21,8 @@ class T_Matrix(object):
                 Eigenstates output file.
             evals_file: str
                 Eigenvalues output file.
+            from_right: bool
+                 Whether to use the S-matrix for injection from right.
 
         Attributes:
         -----------
@@ -34,9 +36,9 @@ class T_Matrix(object):
                 t*^T t eigenstates.
     """
 
-    def __init__(self, infile=None, coeff_file=None, evals_file=None):
+    def __init__(self, infile=None, coeff_file=None, evals_file=None, from_right=False):
 
-        S = S_Matrix(infile=infile)
+        S = S_Matrix(infile=infile, from_right=from_right)
 
         modes = S.modes
         self.S = S
@@ -118,6 +120,9 @@ def parse_arguments():
                         type=str, help="t*^T t eigenstates output file.")
     parser.add_argument("-e", "--evals-file", default='evals.T_states.dat',
                         type=str, help="t*^T t eigenvalues output file.")
+    parser.add_argument("-r", "--from-right", action="store_true",
+                        help=("Whether to use the S-matrix for injection "
+                              "from right."))
 
     parse_args = parser.parse_args()
     args = vars(parse_args)

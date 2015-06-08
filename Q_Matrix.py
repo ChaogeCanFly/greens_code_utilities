@@ -29,6 +29,8 @@ class Time_Delay_Matrix(object):
 
                 has to be supplied manually. Apart from dP, the S-matrix at
                 different values S(P_n) is read from the Smat.*.dat.
+            from_right: bool
+                 Whether to use the S-matrix for injection from right.
 
         Attributes:
         -----------
@@ -45,9 +47,9 @@ class Time_Delay_Matrix(object):
     """
 
     def __init__(self, infile=None, coeff_file=None, evals_file=None,
-                 derivative_stepsize=None):
+                 derivative_stepsize=None, from_right=False):
 
-        S = S_Matrix(infile=infile)
+        S = S_Matrix(infile=infile, from_right=from_right)
         S0, S1, S2 = [ S.S[n,...] for n in 0, 1, 2 ]
         self.S1 = S1
 
@@ -145,6 +147,9 @@ def parse_arguments():
     parser.add_argument("-d", "--derivative-stepsize", default=None, type=float,
                         help=("Derivative-step for which to calculate"
                               "the Q-matrix."))
+    parser.add_argument("-r", "--from-right", action="store_true",
+                        help=("Whether to use the S-matrix for injection "
+                              "from right."))
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
