@@ -105,7 +105,7 @@ class S_Matrix(object):
             # r'_nm -> r_nm
             self.S[:, N:, N:] = tmp[:, :N, :N]
             # t'_nm -> t_nm
-            self.S[:, :N, N:] = tmp[:, :N, N:]
+            self.S[:, :N, N:] = tmp[:, N:, :N]
 
 
 def natural_sorting(text, args="delta", delimiter="_"):
