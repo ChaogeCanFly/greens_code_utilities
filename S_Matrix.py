@@ -27,9 +27,12 @@ class S_Matrix(object):
                     Input file to read S-matrix from.
                 probabilities: bool
                     Whether to calculate abs(S)^2.
+                from_right: bool
+                    Whether to use the S-matrix for injection from right.
     """
 
-    def __init__(self, infile=None, indir=".", probabilities=False):
+    def __init__(self, infile=None, indir=".", probabilities=False,
+                 from_right=False):
 
         self.indir = indir
         if not infile:
@@ -47,6 +50,7 @@ class S_Matrix(object):
             self.infile = os.path.join(indir, infile)
 
         self.probabilities = probabilities
+        self.from_right = from_right
         self._get_amplitudes()
 
     def _get_amplitudes(self):
@@ -91,6 +95,18 @@ class S_Matrix(object):
         self.ndims = int(ndims)
         self.modes = int(ndims) // 2
 
+        if self.from_right:
+            tmp = 1.*self.S
+            N = self.modes
+            # r_nm -> r'_nm
+            self.S[:, :N, :N] = tmp[:, N:, N:]
+            # t_nm -> t'_nm
+            self.S[:, N:, :N] = tmp[:, :N, N:]
+            # r'_nm -> r_nm
+            self.S[:, N:, N:] = tmp[:, :N, :N]
+            # t'_nm -> t_nm
+            self.S[:, :N, N:] = tmp[:, :N, N:]
+
 
 def natural_sorting(text, args="delta", delimiter="_"):
     """Sort text with respect to the argument value.
@@ -126,11 +142,17 @@ class Write_S_Matrix(object):
                 Directory parsing parameters.
             delimiter: str
                 Directory parsing delimiter.
+            from_right: bool
+                 Whether to use the S-matrix for injection from right.
+            full_smatrix: bool
+                 Whether to return the full S-matrix.
+            total_probabilities: bool
+                 Whether to return the total mode probabilities.
     """
 
     def __init__(self, infile=None, probabilities=False,
                  outfile="S_matrix.dat", directories=[], glob_args=[],
-                 delimiter="_", full_smatrix=False,
+                 delimiter="_", from_right=False, full_smatrix=False,
                  total_probabilities=False, **s_matrix_kwargs):
 
         self.outfile = outfile
@@ -142,9 +164,31 @@ class Write_S_Matrix(object):
         self.full_smatrix = full_smatrix
         self.total_probabilities = total_probabilities
         self.s_matrix_kwargs = {'infile': infile,
-                                'probabilities': probabilities}
+                                'probabilities': probabilities,
+                                'from_right': from_right}
 
         self._process_directories()
+
+    def _process_directories(self):
+        """Loop through all directories satisfying the globbing pattern or the
+        supplied list of directories."""
+
+        if self.directories:
+            dirs = self.directories
+        elif self.glob_args:
+            dirs = sorted(glob.glob("*" + self.glob_args[0] + "*"))
+        else:
+            dirs = [os.getcwd()]
+
+        dirs = natural_sorting(dirs, args=self.glob_args,
+                               delimiter=self.delimiter)
+
+        with open(self.outfile, "w") as f:
+            for (n, dir) in enumerate(dirs):
+                self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
+                if not n:
+                    f.write(self._get_header(dir) + "\n")
+                f.write(self._get_data(dir) + "\n")
 
     def _parse_directory(self, dir):
         """Extract running variables from directory name."""
@@ -243,27 +287,6 @@ class Write_S_Matrix(object):
 
         return data
 
-    def _process_directories(self):
-        """Loop through all directories satisfying the globbing pattern or the
-        supplied list of directories."""
-
-        if self.directories:
-            dirs = self.directories
-        elif self.glob_args:
-            dirs = sorted(glob.glob("*" + self.glob_args[0] + "*"))
-        else:
-            dirs = [os.getcwd()]
-
-        dirs = natural_sorting(dirs, args=self.glob_args,
-                               delimiter=self.delimiter)
-
-        with open(self.outfile, "w") as f:
-            for (n, dir) in enumerate(dirs):
-                self.S = S_Matrix(indir=dir, **self.s_matrix_kwargs)
-                if not n:
-                    f.write(self._get_header(dir) + "\n")
-                f.write(self._get_data(dir) + "\n")
-
 
 def get_S_matrix_difference(a, b):
     """Print differences between input files.
@@ -311,6 +334,9 @@ def parse_arguments():
                         help="Directory parsing variables.")
     parser.add_argument("-l", "--delimiter", default="_",
                         type=str, help="Directory parsing delimiters.")
+    parser.add_argument("-r", "--from-right", action="store_true",
+                        help=("Whether to use the S-matrix for injection "
+                              "from right."))
     parser.add_argument("-o", "--outfile", default="S_matrix.dat",
                         type=str, help="S-matrix output file.")
 
