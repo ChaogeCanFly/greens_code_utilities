@@ -30,7 +30,7 @@ def prepare_calc(x, N=None, L=None, W=None, pphw=None, linearized=None,
     ep.potential.write_potential(N=N, pphw=pphw, L=L, W=W,
                                  x_R0=eps, y_R0=delta, init_phase=phase,
                                  loop_type=loop_type, boundary_only=True,
-                                 shape='RAP', verbose=False,
+                                 shape='RAP', verbose=False, plot=False,
                                  linearized=linearized)
     N_file = int(L*(pphw*N+1))
     replacements = {'LENGTH': str(L),
