@@ -1,7 +1,6 @@
 #!/usr/bin/env python2.7
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 import argh
 
@@ -55,6 +54,7 @@ def main(ascii_file, pphw=50, N=2.5, L=100, W=1, plot=False, pic_ascii=False,
     print "done."
 
     if plot:
+        from matplotlib import pyplot as plt
         print "Plotting..."
         f, ax1 = plt.subplots(nrows=1, figsize=(2*L, L/2))
         cmap = plt.cm.jet

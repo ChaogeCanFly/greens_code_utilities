@@ -8,7 +8,6 @@ import argh
 
 from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks, get_local_minima
-from ep.plot import get_colors
 from ep.potential import gauss
 from helper_functions import convert_to_complex
 
@@ -102,6 +101,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
     if plot:
         print "Plotting wavefunctions..."
         from matplotlib import pyplot as plt
+        from ep.plot import get_colors
 
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
         get_colors()
