@@ -1,7 +1,6 @@
 #!/usr/bin/env python2.7
 
 import json
-from matplotlib import pyplot as plt
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 
@@ -70,7 +69,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         elif peak_function == 'points':
             Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
             # peaks = np.logical_and(Z < 5e4*Z.min(), Y_mask)
-            peaks = np.logical_and(Z < 1e-3*Z.max(), Y_mask)
+            peaks = np.logical_and(Z < 5.0e-3*Z.max(), Y_mask)
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W
             sigma = Z_pot.shape[0]*sigma/100.  # caveat: P = P(y,x)
@@ -102,6 +101,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
 
     if plot:
         print "Plotting wavefunctions..."
+        from matplotlib import pyplot as plt
+
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
         get_colors()
         cmap = plt.cm.get_cmap('parula')
