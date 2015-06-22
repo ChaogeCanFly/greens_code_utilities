@@ -20,7 +20,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--r-ny', type=int)
 def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, peak_function='local', savez=False):
+         potential=None, peak_function='local', savez=False, threshold=5e-3):
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -68,7 +68,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         elif peak_function == 'points':
             Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
             # peaks = np.logical_and(Z < 5e4*Z.min(), Y_mask)
-            peaks = np.logical_and(Z < 5.0e-3*Z.max(), Y_mask)
+            peaks = np.logical_and(Z < threshold*Z.max(), Y_mask)
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W
             sigma = Z_pot.shape[0]*sigma/100.  # caveat: P = P(y,x)
