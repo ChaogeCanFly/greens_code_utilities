@@ -312,6 +312,17 @@ def get_S_matrix_difference(a, b):
     print a - b
 
 
+def test_S_matrix_symmetry():
+    """Test if S-matrix is transposition symmetric, S^T = S."""
+    S = abs(S_Matrix().S[0])**2
+    ST = abs(S_Matrix().S[0].T)**2
+    print "|S|^2:"
+    print S
+    print
+    print "|S|^2 - |S^T|^2:"
+    print S - ST
+
+
 def parse_arguments():
     """Parse command-line arguments and call Write_S_matrix."""
 
@@ -343,6 +354,9 @@ def parse_arguments():
     parser.add_argument("-D", "--diff", default=[], nargs="*",
                         help="Print difference between input files.")
 
+    parser.add_argument("-S", "--symmetric", action="store_true",
+                        help="Test if S-matrix is transposition symmetric.")
+
     parse_args = parser.parse_args()
     args = vars(parse_args)
 
@@ -351,6 +365,9 @@ def parse_arguments():
     else:
         del args['diff']
         Write_S_Matrix(**args)
+
+    if parse_args.symmetric:
+        test_S_matrix_symmetry()
 
 
 if __name__ == '__main__':
