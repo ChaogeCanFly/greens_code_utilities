@@ -55,27 +55,25 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         print "Building potential based on mode {}...".format(write_peaks)
         Z_pot = np.zeros_like(X)
 
+        X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
+        Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
+        WG_mask = np.logical_and(X_mask, Y_mask)
+        sigma /= 100.  # sigma in %
+
         if peak_function == 'local':
             peaks = get_local_peaks(Z, peak_type='minimum')
             # remove minma due to boundary conditions at walls
-            peaks[np.logical_or(Y > 0.95*W, Y < 0.05*W)] = 0.0
-            # sigma here is in % of waveguide width W
-            sigma = W*sigma/100.
+            peaks[~Y_mask] = 0.0
 
         elif peak_function == 'cut':
-            # Y_mask = np.logical_and(0.125*W < Y, Y < 0.875*W)
-            Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
-            peaks = np.logical_and(Z < 1e4*Z.min(), Y_mask)
-            # sigma here is in % of waveguide width W
-            sigma = W*sigma/100.
+            peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
         elif peak_function == 'points':
-            Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
-            peaks = np.logical_and(Z < threshold*Z.max(), Y_mask)
+            peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
             Z_pot[np.where(peaks)] = -1.0
-            # sigma here is in % of waveguide width W
-            sigma = Z_pot.shape[0]*sigma/100.  # caveat: P = P(y,x)
-            Z_pot = gaussian_filter(Z_pot, sigma)
+            # sigma here is in % of waveguide width W (r_ny)
+            sigma = Z_pot.shape[0]*sigma  # caveat: Z_pot = Z_pot(y,x)
+            Z_pot = gaussian_filter(Z_pot, sigma, mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
 
@@ -86,10 +84,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
         if peak_function == 'local' or peak_function == 'cut':
             # build Gaussian potential at peaks
             sigma *= W  # scale sigma with waveguide dimensions
-            for n, (xn, yn) in enumerate(zip(X[idx].flatten(), Y[idx].flatten())):
-                if n % 500 == 0:
+            for n, (xn, yn) in enumerate(zip(X[idx].flatten(),
+                                             Y[idx].flatten())):
+                if n % 100 == 0:
                     print "iteration step n=", n
-                Z_pot -= np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/(2.*np.pi*sigma**2)
+                Z_pot -= (np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/
+                            (2.*np.pi*sigma**2))
             print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
