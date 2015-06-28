@@ -77,6 +77,22 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
 
+        elif peak_function == 'fermi':
+            peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
+            Z_pot[np.where(peaks)] = -1.0
+            # sigma here is in % of waveguide width W (r_ny)
+            sigma = Z_pot.shape[0]*sigma  # caveat: Z_pot = Z_pot(y,x)
+            Z_pot = gaussian_filter(Z_pot, sigma, mode='constant')
+            Z_pot[Z_pot < -0.1] = -0.1
+            Z_pot /= -Z_pot.min()  # normalize potential
+
+            def fermi(x, sigma):
+                return 1./(1. + np.exp(-x/sigma))
+
+            s = 0.500
+            Z_pot = fermi(Z_pot-4.*s, s)*fermi(L-Z_pot-4.*s, s)
+
+
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
