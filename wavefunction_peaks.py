@@ -73,18 +73,20 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W (r_ny)
             sigma = Z_pot.shape[0]*sigma  # caveat: Z_pot = Z_pot(y,x)
-            Z_pot = gaussian_filter(Z_pot, sigma, mode='constant')
+            Z_pot = gaussian_filter(Z_pot, (sigma/5., sigma), mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
+            np.savez("zpot.npz", X=X, Y=Y, P=Z_pot)
 
         if peak_function == 'fermi':
 
             def fermi(x, sigma):
                 return 1./(1. + np.exp(-x/sigma))
 
-            s = 0.400
+            s = 0.24
             s *= W
             mask = fermi(X-3.*s, s)*fermi(L-X-3.*s, s)
+            mask = fermi(X-L/3-3.*s, s)*fermi(L-X-3.*s, s)
             # mask = np.sin(np.pi*X/L)
             # L = 10.0; x = np.linspace(0, L, 1000); s = 0.4; clf(); plot(x, sin(pi*x/L), "r-", x, 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
             np.savez("mask.npz", X=X, Y=Y, Z=mask, P=Z_pot)
