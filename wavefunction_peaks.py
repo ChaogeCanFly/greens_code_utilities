@@ -18,7 +18,8 @@ from helper_functions import convert_to_complex
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
-def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=None,
+def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, sigmax=1., sigmay=1.,
+         plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, peak_function='local', savez=False, threshold=5e-3):
 
@@ -73,16 +74,14 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, plot=False, r_nx=None, r_ny=N
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W (r_ny)
             sigma = Z_pot.shape[0]*sigma  # caveat: Z_pot = Z_pot(y,x)
-            Z_pot = gaussian_filter(Z_pot, (sigma/5., sigma), mode='constant')
+            Z_pot = gaussian_filter(Z_pot, (sigmay*sigma, sigmax*sigma),
+                                    mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
-            np.savez("zpot.npz", X=X, Y=Y, P=Z_pot)
 
         if peak_function == 'fermi':
-
             def fermi(x, sigma):
                 return 1./(1. + np.exp(-x/sigma))
-
             s = 0.24
             s *= W
             mask = fermi(X-3.*s, s)*fermi(L-X-3.*s, s)
