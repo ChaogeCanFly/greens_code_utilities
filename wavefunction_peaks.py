@@ -59,7 +59,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
         Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
-        sigmax, sigmay = [s/100 for s in sigmax, sigmay]  # sigma in %
+        sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
         if peak_function == 'local':
             peaks = get_local_peaks(Z, peak_type='minimum')
@@ -69,7 +69,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         elif peak_function == 'cut':
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
-        elif peak_function == 'points' or peak_function == 'fermi':
+        elif 'points' in peak_function or peak_function == 'fermi':
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W (r_ny)
@@ -79,6 +79,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                                     mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
+
+        if peak_function == 'points_double':
+            Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
+                                    mode='constant')
 
         if peak_function == 'fermi':
             def fermi(x, sigma):
