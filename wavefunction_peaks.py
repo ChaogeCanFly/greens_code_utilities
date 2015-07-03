@@ -18,7 +18,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
-def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, sigmax=1., sigmay=1.,
+def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, peak_function='local', savez=False, threshold=5e-3):
@@ -59,7 +59,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, sigmax=1., sigmay=1.,
         X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
         Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
-        sigma /= 100.  # sigma in %
+        sigmax, sigmay = [s/100 for s in sigmax, sigmay]  # sigma in %
 
         if peak_function == 'local':
             peaks = get_local_peaks(Z, peak_type='minimum')
@@ -73,8 +73,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, sigmax=1., sigmay=1.,
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W (r_ny)
-            sigma = Z_pot.shape[0]*sigma  # caveat: Z_pot = Z_pot(y,x)
-            Z_pot = gaussian_filter(Z_pot, (sigmay*sigma, sigmax*sigma),
+            # caveat: Z_pot = Z_pot(y,x)
+            sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
+            Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
                                     mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
@@ -97,13 +98,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigma=0.01, sigmax=1., sigmay=1.,
 
         if peak_function == 'local' or peak_function == 'cut':
             # build Gaussian potential at peaks
-            sigma *= W  # scale sigma with waveguide dimensions
+            sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
             for n, (xn, yn) in enumerate(zip(X[idx].flatten(),
                                              Y[idx].flatten())):
                 if n % 100 == 0:
                     print "iteration step n=", n
-                Z_pot -= (np.exp(-0.5*((X-xn)**2+(Y-yn)**2)/sigma**2)/
-                            (2.*np.pi*sigma**2))
+                Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
+                            (2.*np.pi*sx*sy))
             print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
