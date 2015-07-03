@@ -169,6 +169,9 @@ class Write_S_Matrix(object):
 
         self._process_directories()
 
+        # write full S-matrix
+        np.savetxt("S_matrix.full", abs(S_Matrix(infile=infile).S[0])**2)
+
     def _process_directories(self):
         """Loop through all directories satisfying the globbing pattern or the
         supplied list of directories."""
@@ -316,16 +319,19 @@ def test_S_matrix_symmetry(infile):
     """Test if S-matrix is transposition symmetric, S^T = S."""
     S = abs(S_Matrix(infile=infile).S[0])**2
     ST = abs(S_Matrix(infile=infile).S[0].T)**2
-    F = (S[0,0] + S[0,1] + S[1,0] + S[1,1] + S[0,2] + S[0,3] +
-         1./S[1,2] + S[1,3] + S[2,2] + S[2,3] + S[3,2] + S[3,3])
+    T12 = S[1,2]
+    print
     print "|S|^2:"
     print S
     print
-    print "Figure of merit:"
-    print F
-    print
     print "|S|^2 - |S^T|^2:"
     print S - ST
+    print
+    print "Figure of merit:"
+    S[1,2] = np.nan
+    S[2,1] = np.nan
+    F = np.nansum(S) + 2.*(1.-T12)
+    print F
 
 
 def parse_arguments():
