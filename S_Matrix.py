@@ -312,12 +312,17 @@ def get_S_matrix_difference(a, b):
     print a - b
 
 
-def test_S_matrix_symmetry():
+def test_S_matrix_symmetry(infile):
     """Test if S-matrix is transposition symmetric, S^T = S."""
-    S = abs(S_Matrix().S[0])**2
-    ST = abs(S_Matrix().S[0].T)**2
+    S = abs(S_Matrix(infile=infile).S[0])**2
+    ST = abs(S_Matrix(infile=infile).S[0].T)**2
+    F = (S[0,0] + S[0,1] + S[1,0] + S[1,1] + S[0,2] + S[0,3] +
+         1./S[1,2] + S[1,3] + S[2,2] + S[2,3] + S[3,2] + S[3,3])
     print "|S|^2:"
     print S
+    print
+    print "Figure of merit:"
+    print F
     print
     print "|S|^2 - |S^T|^2:"
     print S - ST
@@ -367,7 +372,7 @@ def parse_arguments():
         Write_S_Matrix(**args)
 
     if parse_args.symmetric:
-        test_S_matrix_symmetry()
+        test_S_matrix_symmetry(infile=args['infile'])
 
 
 if __name__ == '__main__':
