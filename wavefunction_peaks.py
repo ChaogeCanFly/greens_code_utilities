@@ -19,7 +19,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
-         plot=False, r_nx=None, r_ny=None,
+         amplitude=1., plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, peak_function='local', savez=False, threshold=5e-3):
 
@@ -112,6 +112,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
+        Z_pot *= amplitude
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
         if savez:
