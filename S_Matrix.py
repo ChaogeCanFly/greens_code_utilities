@@ -170,7 +170,7 @@ class Write_S_Matrix(object):
         self._process_directories()
 
         # write full S-matrix
-        np.savetxt("S_matrix.full", abs(S_Matrix(infile=infile).S[0])**2)
+        np.savetxt("S_matrix.full", abs(S_Matrix(infile=infile).S[0])**2, fmt='%.5e')
 
     def _process_directories(self):
         """Loop through all directories satisfying the globbing pattern or the
