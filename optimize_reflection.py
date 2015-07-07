@@ -35,7 +35,7 @@ def optimize(thresh0=1e-2, sx0=6.5, sy0=1.05, ampl0=2e4,
 
     opt_func = run_single_job
 
-    BOUNDS = ((0.0, 5e-2), (0.0, 30.0), (0.0, 30.0), (0.0, 1e5))
+    BOUNDS = ((1e-3, 5e-2), (0.1, 30.0), (0.1, 30.0), (1e1, 1e5))
 
     if algorithm == 'minimize':
         x0 = (thresh0, sx0, sy0, ampl0)
