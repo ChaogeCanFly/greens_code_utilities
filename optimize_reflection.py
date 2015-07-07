@@ -22,7 +22,7 @@ def run_single_job(x):
     with open("optimize.log", "a") as f:
         np.savetxt(f, np.concatenate([x, [F]]), newline=" ", fmt='%+3.8f')
         f.write("\n")
-        np.savetxt(f, S, fmt='# %+3.8f')
+        np.savetxt(f, S, fmt='# %+3.5e')
         f.write("\n")
 
     return F
