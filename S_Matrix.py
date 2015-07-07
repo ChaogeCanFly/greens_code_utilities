@@ -318,6 +318,7 @@ def get_S_matrix_difference(a, b):
 def test_S_matrix_symmetry(infile):
     """Test if S-matrix is transposition symmetric, S^T = S."""
     S = abs(S_Matrix(infile=infile).S[0])**2
+    S0 = abs(S_Matrix(infile=infile).S[0])**2
     ST = abs(S_Matrix(infile=infile).S[0].T)**2
     T12 = S[1,2]
     print
@@ -330,8 +331,10 @@ def test_S_matrix_symmetry(infile):
     print "Figure of merit:"
     S[1,2] = np.nan
     S[2,1] = np.nan
-    F = np.nansum(S) + 2.*(1.-T12)
+    F = np.sqrt(np.nansum(S) + 2.*(1.-T12))
     print F
+
+    return S0, F
 
 
 def parse_arguments():
