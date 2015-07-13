@@ -69,7 +69,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         elif peak_function == 'cut':
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
-        elif 'points' in peak_function or peak_function == 'fermi':
+        elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
             Z_pot[np.where(peaks)] = -1.0
             # sigma here is in % of waveguide width W (r_ny)
@@ -84,7 +84,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
                                     mode='constant')
 
-        if peak_function == 'fermi':
+        if peak_function == 'points_sine':
+            Z_pot *= np.sin(np.pi*X/L)
+
+        if peak_function == 'points_fermi':
             def fermi(x, sigma):
                 return 1./(1. + np.exp(-x/sigma))
             s = 0.24
