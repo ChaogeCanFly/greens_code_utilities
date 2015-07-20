@@ -15,13 +15,15 @@ from helper_functions import convert_to_complex
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
 @argh.arg('--potential', type=str)
+@argh.arg('--txt-potential', type=str)
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, peak_function='local', savez=False, threshold=5e-3):
+         potential=None, txt_potential=None, peak_function='local',
+         savez=False, threshold=5e-3):
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -105,6 +107,15 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if peak_function == 'local' or peak_function == 'cut':
             # build Gaussian potential at peaks
+            x, y = [V[idx].flatten() for V in (X, Y)]
+            sort = np.argsort(x)
+            x, y = [V[sort] for V in (x, y)]
+
+            if txt_potential:
+                x, y = np.loadtxt(txt_potential, unpack=True)
+            else:
+                np.savetxt("node_positions.dat", zip(x, y))
+
             sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
             for n, (xn, yn) in enumerate(zip(X[idx].flatten(),
                                              Y[idx].flatten())):
