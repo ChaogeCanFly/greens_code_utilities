@@ -122,7 +122,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
                 # Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
                 #             (2.*np.pi*sx*sy))
-            # Z_pot[Z_pot < -0.1] = -0.1
+            Z_pot[Z_pot < -1.0] = -1.0
             Z_pot /= -Z_pot.min()  # normalize potential
             print "done."
 
