@@ -119,8 +119,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             for n, (xn, yn) in enumerate(zip(x, y)):
                 if n % 100 == 0:
                     print "iteration step n=", n
-                Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
-                            (2.*np.pi*sx*sy))
+                Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
+                # Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
+                #             (2.*np.pi*sx*sy))
+            # Z_pot[Z_pot < -0.1] = -0.1
+            Z_pot /= -Z_pot.min()  # normalize potential
             print "done."
 
         if peak_function == 'local_sine':
