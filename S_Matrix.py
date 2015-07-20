@@ -291,7 +291,7 @@ class Write_S_Matrix(object):
         return data
 
 
-def get_S_matrix_difference(a, b):
+def get_S_matrix_difference(a, b, **s_matrix_kwargs):
     """Print differences between input files.
 
         Parameters:
@@ -300,10 +300,12 @@ def get_S_matrix_difference(a, b):
                 Relative paths of S-matrix input files.
     """
 
-    params = {'unpack': True,
+    params = {'unpack': False,
+              'usecols': (2, 3),
               'skiprows': 4}
 
-    a, b = [np.loadtxt(i, **params) for i in (a, b)]
+    np.set_printoptions(linewidth=200, precision=5)
+    a, b = [S_Matrix(infile=i, **s_matrix_kwargs).S[0] for i in (a, b)]
 
     print "File a:"
     print a
@@ -320,7 +322,7 @@ def test_S_matrix_symmetry(infile):
     S = abs(S_Matrix(infile=infile).S[0])**2
     S0 = abs(S_Matrix(infile=infile).S[0])**2
     ST = abs(S_Matrix(infile=infile).S[0].T)**2
-    T12 = S[1,2]
+    T12 = S[1, 2]
     print
     print "|S|^2:"
     print S
@@ -329,8 +331,8 @@ def test_S_matrix_symmetry(infile):
     print S - ST
     print
     print "Figure of merit:"
-    S[1,2] = np.nan
-    S[2,1] = np.nan
+    S[1, 2] = np.nan
+    S[2, 1] = np.nan
     F = np.sqrt(np.nansum(S) + 2.*(1.-T12))
     print F
 
@@ -341,7 +343,6 @@ def parse_arguments():
     """Parse command-line arguments and call Write_S_matrix."""
 
     parser = argparse.ArgumentParser(formatter_class=default_help)
-
     parser.add_argument("-i", "--infile", default=None,
                         type=str, help="Input file to read S-matrix from.")
     parser.add_argument("-p", "--probabilities", action="store_true",
@@ -365,24 +366,41 @@ def parse_arguments():
     parser.add_argument("-o", "--outfile", default="S_matrix.dat",
                         type=str, help="S-matrix output file.")
 
-    parser.add_argument("-D", "--diff", default=[], nargs="*",
-                        help="Print difference between input files.")
+    subparsers = parser.add_subparsers(help='')
 
-    parser.add_argument("-S", "--symmetric", action="store_true",
-                        help="Test if S-matrix is transposition symmetric.")
+    # full S-matrix
+    # full = subparsers.add_parser('full',
+    #                              help='Return the full S-matrix.')
+    # diff two S-matrices
+    diff = subparsers.add_parser('diff', help='Print diff between input files.')
+    diff.set_defaults(diff=True)
+    diff.add_argument("-i", default=[], nargs="*",
+                      help="Print difference between input files.")
 
+    # parser.add_argument("-D", "--diff", default=[], nargs="*",
+    #                     help="Print difference between input files.")
+    #
+    # parser.add_argument("-S", "--symmetric", action="store_true",
+    #                     help="Test if S-matrix is transposition symmetric.")
+
+    # parse_args, full_args, diff_args = [p.parse_args() for p in parser, full, diff]
+    # diff_args = diff.parse_args()
     parse_args = parser.parse_args()
+    print parse_args
+
     args = vars(parse_args)
 
+    Write_S_Matrix(**args)
+
     if parse_args.diff:
-        get_S_matrix_difference(*parse_args.diff)
-    else:
-        del args['diff']
-        Write_S_Matrix(**args)
+        get_S_matrix_difference(*parse_args.i, **args)
+    # else:
+    #     del args['diff']
+    #     Write_S_Matrix(**args)
 
-    if parse_args.symmetric:
-        test_S_matrix_symmetry(infile=args['infile'])
-
+    # if parse_args.symmetric:
+    #     test_S_matrix_symmetry(infile=args['infile'])
+    #
 
 if __name__ == '__main__':
     parse_arguments()
