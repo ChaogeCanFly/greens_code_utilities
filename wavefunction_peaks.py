@@ -63,7 +63,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         WG_mask = np.logical_and(X_mask, Y_mask)
         sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
-        if peak_function == 'local':
+        if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
             # remove minma due to boundary conditions at walls
             peaks[~Y_mask] = 0.0
@@ -92,20 +92,19 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if peak_function == 'points_fermi':
             def fermi(x, sigma):
                 return 1./(1. + np.exp(-x/sigma))
-            s = 0.24
-            s *= W
-            mask = fermi(X-3.*s, s)*fermi(L-X-3.*s, s)
+            s = 0.24*W
             mask = fermi(X-L/3-3.*s, s)*fermi(L-X-3.*s, s)
-            # mask = np.sin(np.pi*X/L)
-            # L = 10.0; x = np.linspace(0, L, 1000); s = 0.4; clf(); plot(x, sin(pi*x/L), "r-", x, 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
-            np.savez("mask.npz", X=X, Y=Y, Z=mask, P=Z_pot)
+            # L = 10.0; x = np.linspace(0, L, 1000); s = 0.4; clf();
+            # plot(x, sin(pi*x/L), "r-", x,
+            # 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
+            np.savez("mask.npz", X=X, Y=Y, mask=mask, P=Z_pot)
             Z_pot *= mask
 
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
 
-        if peak_function == 'local' or peak_function == 'cut':
+        if 'local' in peak_function:
             # build Gaussian potential at peaks
             x, y = [V[idx].flatten() for V in (X, Y)]
             sort = np.argsort(x)
@@ -117,13 +116,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 np.savetxt("node_positions.dat", zip(x, y))
 
             sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
-            for n, (xn, yn) in enumerate(zip(X[idx].flatten(),
-                                             Y[idx].flatten())):
+            for n, (xn, yn) in enumerate(zip(x, y)):
                 if n % 100 == 0:
                     print "iteration step n=", n
                 Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
                             (2.*np.pi*sx*sy))
             print "done."
+
+        if peak_function == 'local_sine':
+            Z_pot /= abs(Z_pot).max()
+            Z_pot *= np.sin(np.pi*X/L)
 
         print "Writing potential based on mode {}...".format(write_peaks)
         Z_pot *= amplitude
@@ -149,8 +151,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         ax2.pcolormesh(X, Y, Z_2, cmap=cmap)
 
         if write_peaks:
-            ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
-            ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+            try:
+                ax1.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
+                ax2.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
+            except:
+                ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+                ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
 
         if potential:
             X_nodes = P_npz['X_nodes']
