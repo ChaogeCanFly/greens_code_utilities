@@ -133,7 +133,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if peak_function == 'local_sine_truncated':
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
-            XP[np.sin(np.pi*2.*(X-L/4.)/L) < 0.] = L/4.
+            Xp[np.sin(np.pi*2.*(X-L/4.)/L) < 0.] = L/4.
             Z_pot *= np.sin(np.pi*2.*(Xp-L/4.)/L)
 
         print "Writing potential based on mode {}...".format(write_peaks)
