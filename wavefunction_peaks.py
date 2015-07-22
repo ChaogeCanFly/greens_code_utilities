@@ -61,7 +61,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
         Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
         if pic_ascii:
-            Y_mask = np.logical_and(0.23*W < Y, Y < 0.75*W)
+            Y_mask = np.logical_and(0.2375*W < Y, Y < 0.75*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
         sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
