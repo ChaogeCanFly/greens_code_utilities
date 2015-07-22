@@ -60,6 +60,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
         Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
+        if pic_ascii:
+            Y_mask = np.logical_and(0.23*W < Y, Y < 0.75*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
         sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
@@ -115,13 +117,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             else:
                 np.savetxt("node_positions.dat", zip(x, y))
 
-            sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
-            for n, (xn, yn) in enumerate(zip(x, y)):
-                if n % 100 == 0:
-                    print "iteration step n=", n
-                Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
-                # Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
-                #             (2.*np.pi*sx*sy))
+            # sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
+            # for n, (xn, yn) in enumerate(zip(x, y)):
+            #     if n % 100 == 0:
+            #         print "iteration step n=", n
+            #     Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
+            #     # Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
+            #     #             (2.*np.pi*sx*sy))
+            sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
+            Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
+                                    mode='constant')
             Z_pot[Z_pot < -1.0] = -1.0
             Z_pot /= -Z_pot.min()  # normalize potential
             print "done."
