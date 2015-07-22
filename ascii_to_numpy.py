@@ -33,7 +33,7 @@ def read_ascii_array(ascii_file, L=None, W=None, pphw=None, N=None, r_nx=None,
         ydim = m[-1] + 1
         N, M, Z_RE, Z_IM = [ x.reshape(xdim, ydim, order='C') for x in n, m, Z_re, Z_im ]
         X = N/N.max()*L
-        Y = M/M.max()*W
+        Y = M/M.max()*W  # should be W + 2.*epsilon
         Z = Z_RE + 1j*Z_IM
 
     if return_abs:
