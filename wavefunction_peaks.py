@@ -97,9 +97,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             s = 0.24*W
             mask = fermi(X-L/3-3.*s, s)*fermi(L-X-3.*s, s)
             # L = 10.0; x = np.linspace(0, L, 1000); s = 0.4; clf();
-            # plot(x, sin(pi*x/L), "r-", x,
-            # 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
-            np.savez("mask.npz", X=X, Y=Y, mask=mask, P=Z_pot)
+            # plot(x, 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
+            np.savez("fermi_mask.npz", X=X, Y=Y, mask=mask, P=Z_pot)
             Z_pot *= mask
 
         # get array-indices of peaks
@@ -138,8 +137,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if peak_function == 'local_sine_truncated':
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
-            Xp[np.sin(np.pi*2.*(X-L/4.)/L) < 0.] = L/4.
-            Z_pot *= np.sin(np.pi*2.*(Xp-L/4.)/L)
+            X0 = L/5.
+            Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = L/4.
+            Z_pot *= np.sin(np.pi*2.*(Xp-X0)/L)
 
         print "Writing potential based on mode {}...".format(write_peaks)
         Z_pot *= amplitude
