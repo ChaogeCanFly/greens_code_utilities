@@ -51,21 +51,16 @@ class XML(object):
         dx = params.get("W")/(nyout + 1.)
         dy = dx
         r_nx = int(params.get("L")/dx)
-        try:
-            r_nx_fixed = params.get("r_nx")
-            print "r_nx_fixed", r_nx_fixed
-        except:
-            pass
-
         r_ny = int(params.get("W")/dy)
+        pot_len = r_nx*r_ny
 
         values = {
                 'nyout': nyout,
                 'dx': dx,
                 'dy': dy,
                 'r_nx': r_nx,
-                'r_nx_fixed': r_nx_fixed,
-                'r_ny': r_ny}
+                'r_ny': r_ny,
+                'pot_len': pot_len}
 
         params.update(values)
 
@@ -79,15 +74,16 @@ def parse_xml(infile='input.xml'):
     print """
         XML-Settings from {0}
 
-            modes:  {modes}
-            pphw:   {points_per_halfwave:n}
-            W:      {W}
-            L:      {L:.6f}
-            nyout:  {nyout:n}
-            dx:     {dx:.6f}
-            dy:     {dy:.6f}
-            r_nx:   {r_nx}
-            r_ny:   {r_ny}
+            modes:     {modes}
+            pphw:      {points_per_halfwave:n}
+            W:         {W}
+            L:         {L:.6f}
+            nyout:     {nyout:n}
+            dx:        {dx:.6f}
+            dy:        {dy:.6f}
+            r_nx:      {r_nx}
+            r_ny:      {r_ny}
+            r_nx*r_ny: {pot_len}
         """.format(infile, **xml.params)
 
 
