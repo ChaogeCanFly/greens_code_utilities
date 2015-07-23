@@ -350,8 +350,7 @@ def parse_arguments():
     parser.add_argument("-f", "--full-smatrix", action="store_true",
                         help=("Whether to write the full S-matrix (including "
                               "the primed matrices t' and r)'."))
-    parser.add_argument("-t", "--total-probabilities",
-                        action="store_true",
+    parser.add_argument("-t", "--total-probabilities", action="store_true",
                         help=("Whether to add the total mode transmission and "
                               "reflection to the output file."))
     parser.add_argument("-d", "--directories", default=[], nargs="*",
