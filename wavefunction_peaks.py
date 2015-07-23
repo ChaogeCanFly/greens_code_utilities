@@ -27,7 +27,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
-    with open("potential.cfg", "w") as f:
+    with open("wavefunction_peaks.cfg", "w") as f:
         f.write(settings)
 
     print "\nReading .ascii files..."
