@@ -138,7 +138,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
             X0 = L/5.
-            Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = L/4.
+            Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
             Z_pot *= np.sin(np.pi*2.*(Xp-X0)/L)
 
         print "Writing potential based on mode {}...".format(write_peaks)
