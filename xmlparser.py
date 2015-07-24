@@ -79,8 +79,8 @@ def parse_xml(infile='input.xml'):
             W:         {W}
             L:         {L:.6f}
             nyout:     {nyout:n}
-            dx:        {dx:.6f}
-            dy:        {dy:.6f}
+            dx:        {dx:.10f}
+            dy:        {dy:.10f}
             r_nx:      {r_nx}
             r_ny:      {r_ny}
             r_nx*r_ny: {pot_len}
