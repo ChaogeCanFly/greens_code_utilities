@@ -45,7 +45,7 @@ def read_ascii_array(ascii_file, L=None, W=None, pphw=None, N=None, r_nx=None,
 
 
 @argh.arg('ascii-file', type=str)
-def main(ascii_file, pphw=50, N=2.5, L=100, W=1, plot=False, pic_ascii=False,
+def main(ascii_file, pphw=50, N=2.5, L=100., W=1., plot=False, pic_ascii=False,
          output="ascii_to_numpy"):
 
     X, Y, Z = read_ascii_array(ascii_file, pphw=pphw, N=N, L=L, W=W,
