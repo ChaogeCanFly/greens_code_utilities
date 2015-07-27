@@ -79,10 +79,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
                                      description=get_runtime.__doc__)
 
-    parser.add_argument("-p", "--pphw", default=None, type=int)
-    parser.add_argument("-m", "--modes", default=None, type=float)
-    parser.add_argument("-l", "--length", default=None, type=float)
-    parser.add_argument("-w", "--width", default=None, type=float)
+    parser.add_argument("-p", "--pphw", default=None, type=int, required=True)
+    parser.add_argument("-m", "--modes", default=None, type=float, required=True)
+    parser.add_argument("-l", "--length", default=None, type=float, required=True)
+    parser.add_argument("-w", "--width", default=None, type=float, required=True)
     parser.add_argument("-x", "--nx", default=None, type=int)
     parser.add_argument("-y", "--ny", default=None, type=int)
     parser.add_argument("-N", "--Ncores", default=None, type=int)
