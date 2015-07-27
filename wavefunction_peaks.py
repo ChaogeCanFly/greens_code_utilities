@@ -19,11 +19,43 @@ from helper_functions import convert_to_complex
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
+@argh.arg('--shift', type=str)
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., plot=False, r_nx=None, r_ny=None,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
-         savez=False, threshold=5e-3):
+         savez=False, threshold=5e-3, shift=None):
+    """Generate greens_code potentials from *.ascii files.
+
+        Parameters:
+        -----------
+            pphw: int
+            N: int
+            L: float
+            W: float
+            sigmax: float
+            sigmay: float
+            amplitude: float
+            plot: bool
+            r_nx: int
+            r_ny: int
+            pic_ascii: bool
+            write_peaks: bool
+            mode1: str
+            mode2: str
+            potential: str
+            txt_potential: str
+            peak_function: str
+                determines how the potential is constructed from the
+                wavefunction intensity
+            savez: bool
+                whether to save the output arrays in .npz format
+            threshold: float
+                use values < threshold*max(|psi|^2) to construct the potential
+            shift: str
+                use lower.dat to shift the mesh indices such that the potential
+                is not distorted
+    """
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -140,6 +172,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             X0 = L/5.
             Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
             Z_pot *= np.sin(np.pi*2.*(Xp-X0)/L)
+
+        if shift:
+            print "Shifting indices of target array..."
+            _, v = np.loadtxt(shift, unpack=True)
+            for i, vi in enumerate(v):
+                Z_pot[:, i] = np.roll(Z_pot[:, i], -int(vi), axis=0)
+            print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
         Z_pot *= amplitude
