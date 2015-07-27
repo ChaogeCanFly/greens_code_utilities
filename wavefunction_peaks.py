@@ -125,19 +125,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
                                     mode='constant')
 
-        if peak_function == 'points_sine':
-            Z_pot *= np.sin(np.pi*X/L)
-
-        if peak_function == 'points_fermi':
-            def fermi(x, sigma):
-                return 1./(1. + np.exp(-x/sigma))
-            s = 0.24*W
-            mask = fermi(X-L/3-3.*s, s)*fermi(L-X-3.*s, s)
-            # L = 10.0; x = np.linspace(0, L, 1000); s = 0.4; clf();
-            # plot(x, 1./(1. + exp(-(x-3.*s)/s))*1./(1. + exp(-(L-x-3*s)/s)), "g-")
-            np.savez("fermi_mask.npz", X=X, Y=Y, mask=mask, P=Z_pot)
-            Z_pot *= mask
-
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
@@ -167,6 +154,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z_pot /= -Z_pot.min()  # normalize potential
             print "done."
 
+        if peak_function == 'points_sine':
+            Z_pot *= np.sin(np.pi*X/L)
+
         if peak_function == 'local_sine':
             Z_pot /= abs(Z_pot).max()
             Z_pot *= np.sin(np.pi*X/L)
@@ -174,9 +164,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if peak_function == 'local_sine_truncated':
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
-            X0 = L/5.
+            X0 = L/4.
             Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
-            Z_pot *= np.sin(np.pi*2.*(Xp-X0)/L)
+            f = np.sin(np.pi*2*(Xp-X0)/L)
+            f /= f.max()
+            Z_pot *= f
 
         if shift:
             print "Shifting indices of target array..."
