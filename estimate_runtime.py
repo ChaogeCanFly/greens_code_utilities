@@ -5,6 +5,7 @@ from __future__ import division
 import argparse
 from argparse import RawDescriptionHelpFormatter
 import math
+import sys
 
 
 def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
@@ -53,6 +54,8 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
         ny = int(width/dy)
 
     if machine == 'VSC2':
+        print ("Warning: VSC2 parameters have not yet been determined. Using "
+               "VSC3 predictions in the following.")
         a = 6.
         b = 3.5
     elif machine == 'VSC3':
@@ -76,10 +79,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
                                      description=get_runtime.__doc__)
 
-    parser.add_argument("-p", "--pphw", default=None, type=int, required=True)
-    parser.add_argument("-m", "--modes", default=None, type=float, required=True)
-    parser.add_argument("-l", "--length", default=None, type=float, required=True)
-    parser.add_argument("-w", "--width", default=None, type=float, required=True)
+    parser.add_argument("-p", "--pphw", default=None, type=int)
+    parser.add_argument("-m", "--modes", default=None, type=float)
+    parser.add_argument("-l", "--length", default=None, type=float)
+    parser.add_argument("-w", "--width", default=None, type=float)
     parser.add_argument("-x", "--nx", default=None, type=int)
     parser.add_argument("-y", "--ny", default=None, type=int)
     parser.add_argument("-N", "--Ncores", default=None, type=int)
@@ -98,4 +101,7 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
-    parse_arguments()
+    if len(sys.argv) == 1:
+        print "No command line arguments found. Use estimate_runtime.py -h for help"
+    else:
+        parse_arguments()
