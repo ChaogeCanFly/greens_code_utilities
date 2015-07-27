@@ -32,7 +32,7 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
             Ncores: int
                 Number of cores.
             machine: str
-                Machine on which greens_code is run (VSC1|VSC2|VSC3).
+                Machine on which greens_code is run (VSC2|VSC3).
 
         Returns:
         --------
@@ -52,10 +52,7 @@ def get_runtime(pphw=None, modes=None, length=None, width=None, nx=None,
         nx = int(length/dx)
         ny = int(width/dy)
 
-    if machine == 'VSC1':
-        a = 6.
-        b = 3.5
-    elif machine == 'VSC2':
+    if machine == 'VSC2':
         a = 6.
         b = 3.5
     elif machine == 'VSC3':
