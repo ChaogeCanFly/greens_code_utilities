@@ -40,11 +40,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             r_nx: int
             r_ny: int
             pic_ascii: bool
-            write_peaks: bool
+            write_peaks: int (1|2)
+                whether to construct a potential from mode 1 or 2
             mode1: str
+                *.ascii file of mode 1
             mode2: str
+                *.ascii file of mode 2
             potential: str
+                if supplied, use as input
             txt_potential: str
+                use peaks from external file
             peak_function: str
                 determines how the potential is constructed from the
                 wavefunction intensity
