@@ -21,7 +21,7 @@ from helper_functions import convert_to_complex
 @argh.arg('--r-ny', type=int)
 @argh.arg('--shift', type=str)
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
-         amplitude=1., plot=False, r_nx=None, r_ny=None,
+         amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None):
@@ -36,10 +36,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             sigmax: float
             sigmay: float
             amplitude: float
-            plot: bool
+                potential amplitude
             r_nx: int
             r_ny: int
+            plot: bool
             pic_ascii: bool
+                build potential from pic.*.ascii files
             write_peaks: int (1|2)
                 whether to construct a potential from mode 1 or 2
             mode1: str
@@ -115,8 +117,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
             Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
                                     mode='constant')
-            Z_pot[Z_pot < -0.1] = -0.1
-            Z_pot /= -Z_pot.min()  # normalize potential
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -133,32 +133,28 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             else:
                 np.savetxt("node_positions.dat", zip(x, y))
 
-            sx, sy = [W*s for s in sigmax, sigmay]  # scale sigma with waveguide dimensions
+            # scale sigma with waveguide dimensions
+            sx, sy = [W*s for s in sigmax, sigmay]
             for n, (xn, yn) in enumerate(zip(x, y)):
                 if n % 100 == 0:
-                    print "iteration step n=", n
+                    print "peak number ", n
                 Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
-                # Z_pot -= (np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))/
-                #             (2.*np.pi*sx*sy))
-            # sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
-            # Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
-            #                         mode='constant')
-            Z_pot[Z_pot < -1.0] = -1.0
-            Z_pot /= -Z_pot.min()  # normalize potential
-            print "done."
 
-        if 'sine' in peak_function:
-            Z_pot /= abs(Z_pot).max()
-            Z_pot *= np.sin(np.pi*X/L)
+        # normalize potential
+        Z_pot[Z_pot < -1.0] = -1.0
+        Z_pot /= -Z_pot.min()
+        print "done."
 
-        if 'truncated' in peak_function:
+        if 'sine_truncated' in peak_function:
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
             X0 = L/4.
             Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
             f = np.sin(np.pi*2*(Xp-X0)/L)
-            f /= f.max()
-            Z_pot *= f
+            Z_pot *= f/f.max()
+        elif 'sine' in peak_function:
+            Z_pot /= abs(Z_pot).max()
+            Z_pot *= np.sin(np.pi*X/L)
 
         if shift:
             print "Shifting indices of target array..."
