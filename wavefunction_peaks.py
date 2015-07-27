@@ -107,9 +107,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             # remove minma due to boundary conditions at walls
             peaks[~Y_mask] = 0.0
 
-        elif peak_function == 'cut':
-            peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
-
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
             Z_pot[np.where(peaks)] = -1.0
@@ -120,10 +117,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                                     mode='constant')
             Z_pot[Z_pot < -0.1] = -0.1
             Z_pot /= -Z_pot.min()  # normalize potential
-
-        if peak_function == 'points_double':
-            Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
-                                    mode='constant')
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -154,14 +147,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z_pot /= -Z_pot.min()  # normalize potential
             print "done."
 
-        if peak_function == 'points_sine':
-            Z_pot *= np.sin(np.pi*X/L)
-
-        if peak_function == 'local_sine':
+        if 'sine' in peak_function:
             Z_pot /= abs(Z_pot).max()
             Z_pot *= np.sin(np.pi*X/L)
 
-        if peak_function == 'local_sine_truncated':
+        if 'truncated' in peak_function:
             Z_pot /= abs(Z_pot).max()
             Xp = 1.*X
             X0 = L/4.
