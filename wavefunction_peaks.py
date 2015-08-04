@@ -7,9 +7,16 @@ from scipy.ndimage.filters import gaussian_filter
 import argh
 
 from ascii_to_numpy import read_ascii_array
-from ep.helpers import get_local_peaks, get_local_minima
-from ep.potential import gauss
-from helper_functions import convert_to_complex
+from ep.helpers import get_local_peaks
+
+# CONSTANTS
+FILE_NAME = "wavefunction_peaks"
+PIC_ASCII_YMIN = 0.2375
+PIC_ASCII_YMAX = 0.7500
+POT_MIN_CUTOFF = -0.1
+POT_CUTOFF_VALUE = -1.0
+INTERPOLATE_XY_EPS = 1e-3
+PLOT_FIGSIZE = (200, 100)
 
 
 @argh.arg('--mode1', type=str)
@@ -24,7 +31,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
-         savez=False, threshold=5e-3, shift=None, interpolate=0):
+         savez=False, threshold=5e-3, shift=None, interpolate=0,
+         limits=[1e-2, 0.99, 5e-2, 0.95]):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -65,14 +73,17 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             interpolate: int
                 if > 0, interpolate the peaks data with n points to obtain a
                 smooth potential landscape
+            limits: list of floats
+                determines the X- and Y-masks in percent:
+                    x in [X*limits[0], X*limits[1]]
+                    y in [Y*limits[2], Y*limits[4]]
     """
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
-    with open("wavefunction_peaks.cfg", "w") as f:
+    with open(FILE_NAME + '.cfg', 'w') as f:
         f.write(settings)
 
-    print "\nReading .ascii files..."
     ascii_array_kwargs = {'L': L,
                           'W': W,
                           'pphw': pphw,
@@ -81,6 +92,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                           'r_ny': r_ny,
                           'pic_ascii': pic_ascii,
                           'return_abs': True}
+    print "\nReading .ascii files..."
     X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
     _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
     print "done."
@@ -98,12 +110,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             Z = Z_2
 
         print "Building potential based on mode {}...".format(write_peaks)
-        Z_pot = np.zeros_like(X)
+        P = np.zeros_like(X)
 
-        X_mask = np.logical_and(0.01*L < X, X < 0.99*L)
-        Y_mask = np.logical_and(0.05*W < Y, Y < 0.95*W)
+        if len(limits) != 4:
+            raise Exception("Error: len(limits) != 4.")
+        X_mask = np.logical_and(limits[0]*L < X, X < limits[1]*L)
+        Y_mask = np.logical_and(limits[2]*W < Y, Y < limits[3]*W)
         if pic_ascii:
-            Y_mask = np.logical_and(0.2375*W < Y, Y < 0.75*W)
+            Y_mask = np.logical_and(PIC_ASCII_YMIN*W < Y,
+                                    Y < PIC_ASCII_YMAX*W)
+
         WG_mask = np.logical_and(X_mask, Y_mask)
         sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
@@ -114,28 +130,34 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
-            # Z_pot[np.where(peaks)] = -1.0
+            idx = np.where(peaks)
+            x, y = [u[idx].flatten() for u in (X, Y)]
+            P[idx] = -1.0
+
             if interpolate:
                 from scipy.interpolate import interp1d
 
-                idx = np.where(peaks)
-                x, y = [V[idx].flatten() for V in (X, Y)]
-                np.savetxt("interpolate.dat", zip(x, y))
+                if txt_potential:
+                    x, y = np.loadtxt(txt_potential, unpack=True)
+
                 f = interp1d(x, y, kind='linear')
-                Z_pot[...] = 0.0
-                x = np.linspace(x.min(), x.max(), 100)
+                x = np.linspace(x.min(), x.max(), interpolate)
                 y = f(x)
+
+                if not txt_potential:
+                    np.savetxt("node_positions.dat", zip(x, y))
+
+                P[...] = 0.0
                 for xi, yi in zip(x, y):
-                    eps = 1e-3
+                    eps = INTERPOLATE_XY_EPS
                     zi = np.where(np.logical_and(abs(X-xi) < eps,
                                                  abs(Y-yi) < eps))
-                    Z_pot[zi] = -2.0
+                    P[zi] = POT_CUTOFF_VALUE
 
             # sigma here is in % of waveguide width W (r_ny)
-            # caveat: Z_pot = Z_pot(y,x)
-            sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
-            Z_pot = gaussian_filter(Z_pot, (sigmay, sigmax),
-                                    mode='constant')
+            # caveat: P = P(y,x)
+            sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
+            P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         # get array-indices of peaks
         idx = np.where(peaks)
@@ -143,9 +165,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if 'local' in peak_function:
             # build Gaussian potential at peaks
-            x, y = [V[idx].flatten() for V in (X, Y)]
+            x, y = [u[idx].flatten() for u in (X, Y)]
             sort = np.argsort(x)
-            x, y = [V[sort] for V in (x, y)]
+            x, y = [u[sort] for u in (x, y)]
 
             if txt_potential:
                 x, y = np.loadtxt(txt_potential, unpack=True)
@@ -157,38 +179,39 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             for n, (xn, yn) in enumerate(zip(x, y)):
                 if n % 100 == 0:
                     print "peak number ", n
-                Z_pot -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
+                P -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
 
         # normalize potential
-        Z_pot[Z_pot < -1.0] = -1.0
-        Z_pot /= -Z_pot.min()
+        P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
+        P /= -P.min()
         print "done."
 
         if 'sine_truncated' in peak_function:
-            Z_pot /= abs(Z_pot).max()
+            P /= abs(P).max()
             Xp = 1.*X
             X0 = L/4.
             Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
             f = np.sin(np.pi*2*(Xp-X0)/L)
-            Z_pot *= f/f.max()
+            P *= f/f.max()
         elif 'sine' in peak_function:
-            Z_pot /= abs(Z_pot).max()
-            Z_pot *= np.sin(np.pi*X/L)
+            P /= abs(P).max()
+            P *= np.sin(np.pi*X/L)
 
         if shift:
             print "Shifting indices of target array..."
             _, v = np.loadtxt(shift, unpack=True)
             for i, vi in enumerate(v):
-                Z_pot[:, i] = np.roll(Z_pot[:, i], -int(vi), axis=0)
+                P[:, i] = np.roll(P[:, i], -int(vi), axis=0)
             print "done."
 
         print "Writing potential based on mode {}...".format(write_peaks)
-        Z_pot *= amplitude
+        P *= amplitude
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
-                   zip(range(len(Z_pot.flatten('F'))), Z_pot.flatten('F')))
+                   # zip(range(len(P.flatten('F'))), P.flatten('F')))
+                   list(enumerate(P.flatten('F'))))
         if savez:
             np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
-                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=Z_pot,
+                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P,
                      X_nodes=X[idx], Y_nodes=Y[idx])
         print "done."
 
@@ -197,7 +220,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         from matplotlib import pyplot as plt
         from ep.plot import get_colors
 
-        f, (ax1, ax2) = plt.subplots(nrows=2, figsize=(200, 100))
+        f, (ax1, ax2) = plt.subplots(nrows=2, figsize=PLOT_FIGSIZE)
         get_colors()
         cmap = plt.cm.get_cmap('parula')
 
@@ -223,17 +246,18 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig('wavefunction.png', bbox_inches='tight')
+        plt.savefig(FILE_NAME + '.png', bbox_inches='tight')
         if savez:
-            np.savez('wavefunction.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
+            np.savez(FILE_NAME + '.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
         print "Plotting potential..."
         try:
             from mayavi import mlab
             extent = (0, 1, 0, 5, 0, 1)
-            p = mlab.surf(-Z_pot, extent=extent)
-            p.module_manager.scalar_lut_manager.lut.table = cmap(np.arange(256))*255.
+            p = mlab.surf(-P, extent=extent)
+            cmap = cmap(np.arange(256))*255.
+            p.module_manager.scalar_lut_manager.lut.table = cmap
             mlab.savefig('potential.png')
         except:
             print "Error: potential.png not written."
