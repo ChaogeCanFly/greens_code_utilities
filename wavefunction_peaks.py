@@ -127,7 +127,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
             # remove minma due to boundary conditions at walls
-            peaks[~Y_mask] = 0.0
+            peaks[~WG_mask] = 0.0
 
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
