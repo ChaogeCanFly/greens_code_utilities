@@ -27,6 +27,7 @@ PLOT_FIGSIZE = (200, 100)
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
 @argh.arg('--shift', type=str)
+@argh.arg('--limits', type=float, nargs='+')
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
