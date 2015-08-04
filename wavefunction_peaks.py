@@ -173,17 +173,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
         P = gaussian_filter(P, (sigmay/10., sigmax), mode='constant')
 
-        # if 'local' in peak_function:
-        #     # build Gaussian potential at peaks
-        #     x, y = [u[idx].flatten() for u in (X, Y)]
-        #
-        #     # scale sigma with waveguide dimensions
-        #     sx, sy = [W*s for s in sigmax, sigmay]
-        #     for n, (xn, yn) in enumerate(zip(x, y)):
-        #         if n % 100 == 0:
-        #             print "peak number ", n
-        #         P -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
-
         if 'sine_truncated' in peak_function:
             P /= abs(P).max()
             Xp = 1.*X
@@ -210,8 +199,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                    # zip(range(len(P.flatten('F'))), P.flatten('F')))
                    list(enumerate(P.flatten('F'))))
         print "done."
-        print "Writing .npz file based on mode {}...".format(write_peaks)
         if savez:
+            print "Writing .npz file based on mode {}...".format(write_peaks)
             np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
                      X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P,
                      X_nodes=X[idx], Y_nodes=Y[idx])
