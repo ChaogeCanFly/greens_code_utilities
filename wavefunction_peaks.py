@@ -123,8 +123,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                                     Y < PIC_ASCII_YMAX*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
 
-        sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
-
         if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
             # remove minma due to boundary conditions at walls
@@ -157,14 +155,14 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if not txt_potential:
             np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
-        # write potential to grid-points
+        # write potential on grid-points
         for xi, yi in zip(x, y):
             zi = np.where(np.logical_and(abs(X - xi) < INTERPOLATE_XY_EPS,
                                          abs(Y - yi) < INTERPOLATE_XY_EPS))
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
-        sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
+        sigmax, sigmay = [P.shape[0]*s/100. for s in sigmax, sigmay]
 
         # decorate data points with filter
         # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
