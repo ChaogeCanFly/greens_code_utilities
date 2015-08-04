@@ -24,7 +24,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
-         savez=False, threshold=5e-3, shift=None):
+         savez=False, threshold=5e-3, shift=None, interpolate=0):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -62,6 +62,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             shift: str
                 use lower.dat to shift the mesh indices such that the potential
                 is not distorted
+            interpolate: int
+                if > 0, interpolate the peaks data with n points to obtain a
+                smooth potential landscape
     """
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
@@ -111,7 +114,23 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
-            Z_pot[np.where(peaks)] = -1.0
+            # Z_pot[np.where(peaks)] = -1.0
+            if interpolate:
+                from scipy.interpolate import interp1d
+
+                idx = np.where(peaks)
+                x, y = [V[idx].flatten() for V in (X, Y)]
+                np.savetxt("interpolate.dat", zip(x, y))
+                f = interp1d(x, y, kind='linear')
+                Z_pot[...] = 0.0
+                x = np.linspace(x.min(), x.max(), 100)
+                y = f(x)
+                for xi, yi in zip(x, y):
+                    eps = 1e-3
+                    zi = np.where(np.logical_and(abs(X-xi) < eps,
+                                                 abs(Y-yi) < eps))
+                    Z_pot[zi] = -2.0
+
             # sigma here is in % of waveguide width W (r_ny)
             # caveat: Z_pot = Z_pot(y,x)
             sigmax, sigmay = [Z_pot.shape[0]*s for s in sigmax, sigmay]
