@@ -115,13 +115,14 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if len(limits) != 4:
             raise Exception("Error: len(limits) != 4.")
+        # define waveguide geometry
         X_mask = np.logical_and(limits[0]*L < X, X < limits[1]*L)
         Y_mask = np.logical_and(limits[2]*W < Y, Y < limits[3]*W)
         if pic_ascii:
             Y_mask = np.logical_and(PIC_ASCII_YMIN*W < Y,
                                     Y < PIC_ASCII_YMAX*W)
-
         WG_mask = np.logical_and(X_mask, Y_mask)
+
         sigmax, sigmay = [s/100. for s in sigmax, sigmay]  # sigma in %
 
         if 'local' in peak_function:
