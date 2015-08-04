@@ -80,7 +80,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                     x in [X*limits[0], X*limits[1]]
                     y in [Y*limits[2], Y*limits[4]]
     """
-
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
     with open(FILE_NAME + '.json', 'w') as f:
@@ -118,7 +117,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if len(limits) != 4:
             raise Exception("Error: len(limits) != 4.")
-        # define waveguide geometry
+        # define waveguide geometry (avoid minima due to boundary conditions
+        # at walls)
         X_mask = np.logical_and(limits[0]*L < X, X < limits[1]*L)
         Y_mask = np.logical_and(limits[2]*W < Y, Y < limits[3]*W)
         if pic_ascii:
@@ -128,7 +128,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
-            # remove minma due to boundary conditions at walls
             peaks[~WG_mask] = 0.0
 
         elif 'points' in peak_function:
