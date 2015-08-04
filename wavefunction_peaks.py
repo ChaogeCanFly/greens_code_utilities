@@ -12,7 +12,7 @@ from ep.helpers import get_local_peaks
 FILE_NAME = "wavefunction_peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
-POT_MIN_CUTOFF = -0.1
+POT_MIN_CUTOFF = -0.05
 POT_CUTOFF_VALUE = -1.0
 POT_PLOT_NAME = "wavefunction_potential.png"
 INTERPOLATE_XY_EPS = 1e-3
