@@ -9,7 +9,6 @@ import argh
 from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks
 
-# CONSTANTS
 FILE_NAME = "wavefunction_peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
