@@ -102,7 +102,8 @@ def convert_json_to_cfg(infile=None, outfile="out.cfg"):
     exceptions = ('None', 'False')
     with open(outfile, "w") as f:
         for key, value in config.iteritems():
-            # TODO: input only correct if --option is an ON-switch!
+            # input only correct if --option is an ON-switch!
+            # use --no-option for OFF-switch
             if str(value) not in exceptions:
                 if "_" in key:
                     key = key.replace("_", "-")
