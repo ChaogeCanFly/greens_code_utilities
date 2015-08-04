@@ -133,7 +133,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
-        # P[idx] = -1.0
 
         x, y = [u[idx].flatten() for u in (X, Y)]
         sort = np.argsort(x)
@@ -142,6 +141,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             x, y = np.loadtxt(txt_potential, unpack=True)
 
         if interpolate:
+            print "Interpolating data points..."
             from scipy.interpolate import interp1d
 
             if txt_potential:
@@ -150,6 +150,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             f = interp1d(x, y, kind='linear')
             x = np.linspace(x.min(), x.max(), interpolate)
             y = f(x)
+            print "done."
 
         if not txt_potential:
             np.savetxt("node_positions.dat", zip(x, y))
@@ -164,7 +165,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         # normalize potential
         P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
         P /= -P.min()
-        print "done."
 
         # sigma here is in % of waveguide width W (r_ny)
         # caveat: P = P(y,x)
@@ -181,7 +181,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         #         if n % 100 == 0:
         #             print "peak number ", n
         #         P -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
-
 
         if 'sine_truncated' in peak_function:
             P /= abs(P).max()
