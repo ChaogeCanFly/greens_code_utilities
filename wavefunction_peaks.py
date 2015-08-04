@@ -129,61 +129,59 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
-            idx = np.where(peaks)
-            x, y = [u[idx].flatten() for u in (X, Y)]
-            P[idx] = -1.0
-
-            if interpolate:
-                from scipy.interpolate import interp1d
-
-                if txt_potential:
-                    x, y = np.loadtxt(txt_potential, unpack=True)
-
-                f = interp1d(x, y, kind='linear')
-                x = np.linspace(x.min(), x.max(), interpolate)
-                y = f(x)
-
-                if not txt_potential:
-                    np.savetxt("node_positions.dat", zip(x, y))
-
-                P[...] = 0.0
-                for xi, yi in zip(x, y):
-                    eps = INTERPOLATE_XY_EPS
-                    zi = np.where(np.logical_and(abs(X-xi) < eps,
-                                                 abs(Y-yi) < eps))
-                    P[zi] = POT_CUTOFF_VALUE
-
-            # sigma here is in % of waveguide width W (r_ny)
-            # caveat: P = P(y,x)
-            sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
-            P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         # get array-indices of peaks
         idx = np.where(peaks)
         print "...found {} peaks...".format(len(idx[0]))
+        # P[idx] = -1.0
 
-        if 'local' in peak_function:
-            # build Gaussian potential at peaks
-            x, y = [u[idx].flatten() for u in (X, Y)]
-            sort = np.argsort(x)
-            x, y = [u[sort] for u in (x, y)]
+        x, y = [u[idx].flatten() for u in (X, Y)]
+        sort = np.argsort(x)
+        x, y = [u[sort] for u in (x, y)]
+        if txt_potential:
+            x, y = np.loadtxt(txt_potential, unpack=True)
+
+        if interpolate:
+            from scipy.interpolate import interp1d
 
             if txt_potential:
                 x, y = np.loadtxt(txt_potential, unpack=True)
-            else:
-                np.savetxt("node_positions.dat", zip(x, y))
 
-            # scale sigma with waveguide dimensions
-            sx, sy = [W*s for s in sigmax, sigmay]
-            for n, (xn, yn) in enumerate(zip(x, y)):
-                if n % 100 == 0:
-                    print "peak number ", n
-                P -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
+            f = interp1d(x, y, kind='linear')
+            x = np.linspace(x.min(), x.max(), interpolate)
+            y = f(x)
+
+        if not txt_potential:
+            np.savetxt("node_positions.dat", zip(x, y))
+
+        # write potential to grid-points
+        P[...] = 0.0
+        for xi, yi in zip(x, y):
+            zi = np.where(np.logical_and(abs(X - xi) < INTERPOLATE_XY_EPS,
+                                         abs(Y - yi) < INTERPOLATE_XY_EPS))
+            P[zi] = POT_CUTOFF_VALUE
 
         # normalize potential
         P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
         P /= -P.min()
         print "done."
+
+        # sigma here is in % of waveguide width W (r_ny)
+        # caveat: P = P(y,x)
+        sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
+        P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
+
+        # if 'local' in peak_function:
+        #     # build Gaussian potential at peaks
+        #     x, y = [u[idx].flatten() for u in (X, Y)]
+        #
+        #     # scale sigma with waveguide dimensions
+        #     sx, sy = [W*s for s in sigmax, sigmay]
+        #     for n, (xn, yn) in enumerate(zip(x, y)):
+        #         if n % 100 == 0:
+        #             print "peak number ", n
+        #         P -= np.exp(-0.5*((X-xn)**2/sx**2+(Y-yn)**2/sy**2))
+
 
         if 'sine_truncated' in peak_function:
             P /= abs(P).max()
@@ -203,11 +201,15 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 P[:, i] = np.roll(P[:, i], -int(vi), axis=0)
             print "done."
 
-        print "Writing potential based on mode {}...".format(write_peaks)
+        # scale potential
         P *= amplitude
+
+        print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    # zip(range(len(P.flatten('F'))), P.flatten('F')))
                    list(enumerate(P.flatten('F'))))
+        print "done."
+        print "Writing .npz file based on mode {}...".format(write_peaks)
         if savez:
             np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
                      X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P,
