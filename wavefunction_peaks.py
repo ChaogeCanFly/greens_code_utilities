@@ -2,7 +2,7 @@
 
 import json
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.filters import gaussian_filter, uniform_filter
 
 import argh
 
@@ -14,6 +14,7 @@ PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
 POT_MIN_CUTOFF = -0.1
 POT_CUTOFF_VALUE = -1.0
+POT_PLOT_NAME = "wavefunction_potential.png"
 INTERPOLATE_XY_EPS = 1e-3
 PLOT_FIGSIZE = (200, 100)
 
@@ -135,8 +136,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         print "...found {} peaks...".format(len(idx[0]))
 
         x, y = [u[idx].flatten() for u in (X, Y)]
-        sort = np.argsort(x)
-        x, y = [u[sort] for u in (x, y)]
+        x, y = [u[np.argsort(x)] for u in (x, y)]
         if txt_potential:
             x, y = np.loadtxt(txt_potential, unpack=True)
 
@@ -153,10 +153,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             print "done."
 
         if not txt_potential:
-            np.savetxt("node_positions.dat", zip(x, y))
+            np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential to grid-points
-        P[...] = 0.0
         for xi, yi in zip(x, y):
             zi = np.where(np.logical_and(abs(X - xi) < INTERPOLATE_XY_EPS,
                                          abs(Y - yi) < INTERPOLATE_XY_EPS))
@@ -169,7 +168,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         # sigma here is in % of waveguide width W (r_ny)
         # caveat: P = P(y,x)
         sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
-        P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
+
+        # decorate data points with filter
+        # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
+        P = gaussian_filter(P, (sigmay/10., sigmax), mode='constant')
 
         # if 'local' in peak_function:
         #     # build Gaussian potential at peaks
@@ -254,13 +256,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         print "Plotting potential..."
         try:
             from mayavi import mlab
+
+            mlab.figure(size=(1024, 756))
             extent = (0, 1, 0, 5, 0, 1)
             p = mlab.surf(-P, extent=extent)
             cmap = cmap(np.arange(256))*255.
             p.module_manager.scalar_lut_manager.lut.table = cmap
-            mlab.savefig('potential.png')
+            mlab.view(distance=7.5)
+            mlab.savefig(POT_PLOT_NAME)
         except:
-            print "Error: potential.png not written."
+            print "Error: potential image not written."
         print "done."
 
 
