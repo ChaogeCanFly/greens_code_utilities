@@ -161,17 +161,16 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                                          abs(Y - yi) < INTERPOLATE_XY_EPS))
             P[zi] = POT_CUTOFF_VALUE
 
-        # normalize potential
-        P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
-        P /= -P.min()
-
-        # sigma here is in % of waveguide width W (r_ny)
-        # caveat: P = P(y,x)
+        # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
         sigmax, sigmay = [P.shape[0]*s for s in sigmax, sigmay]
 
         # decorate data points with filter
         # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
         P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
+
+        # normalize potential
+        P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
+        P /= -P.min()
 
         if 'sine_truncated' in peak_function:
             P /= abs(P).max()
