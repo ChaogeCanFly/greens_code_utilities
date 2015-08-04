@@ -171,7 +171,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # decorate data points with filter
         # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
-        P = gaussian_filter(P, (sigmay/10., sigmax), mode='constant')
+        P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         if 'sine_truncated' in peak_function:
             P /= abs(P).max()
