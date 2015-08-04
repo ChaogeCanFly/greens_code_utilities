@@ -8,6 +8,7 @@ import argh
 
 from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks
+from helper_functions import convert_json_to_cfg
 
 FILE_NAME = "wavefunction_peaks"
 PIC_ASCII_YMIN = 0.2375
@@ -82,8 +83,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
-    with open(FILE_NAME + '.cfg', 'w') as f:
+    with open(FILE_NAME + '.json', 'w') as f:
         f.write(settings)
+    convert_json_to_cfg(infile=FILE_NAME + '.json',
+                        outfile=FILE_NAME + '.cfg')
 
     ascii_array_kwargs = {'L': L,
                           'W': W,
