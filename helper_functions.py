@@ -17,7 +17,11 @@
 
     get_git_log(lines=5):
         Return the 'git log' output of the calling file.
+
+    convert_json_to_cfg(infile=None, outfile="out.cfg"):
+        Convert a JSON file to a config file that is expandable by the shell.
 """
+import json
 import numpy as np
 import os
 import subprocess
@@ -87,3 +91,25 @@ def get_git_log(lines=5, relative_git_path="", outfile=None):
             return " ".join(gitlog_abbrev)
     except:
         sys.exit("No .git directory found.")
+
+
+def convert_json_to_cfg(infile=None, outfile="out.cfg"):
+    """Convert a JSON file to a config file that is expandable by the shell."""
+
+    with open(infile, "r") as f:
+        config = json.load(f)
+
+    exceptions = ('None', 'False')
+    with open(outfile, "w") as f:
+        for key, value in d.iteritems():
+            # TODO: input only correct if --option is an ON-switch!
+            if str(value) not in exceptions:
+                if "_" in key:
+                    key = key.replace("_", "-")
+                f.write("--{}\n".format(key))
+
+                if type(value) == list:
+                    f.write(" ".join(map(str, value)) + "\n")
+                else:
+                    if str(value) != 'True':
+                        f.write(str(value) + "\n")
