@@ -12,7 +12,7 @@ from ascii_to_numpy import read_ascii_array
 from ep.helpers import get_local_peaks
 from helper_functions import convert_json_to_cfg
 
-FILE_NAME = "wavefunction_peaks"
+FILE_NAME = "peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
 POT_MIN_CUTOFF = -0.05
@@ -227,8 +227,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
 
         if potential:
-            X_nodes = P_npz['X_nodes']
-            Y_nodes = P_npz['Y_nodes']
+            X_nodes = P_npz['x']
+            Y_nodes = P_npz['y']
             ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
             ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
 
