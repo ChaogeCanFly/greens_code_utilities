@@ -247,12 +247,18 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-        plt.savefig(FILE_NAME + '.png', bbox_inches='tight')
+        plt.savefig(FILE_NAME + '_wavefunction.png', bbox_inches='tight')
         if savez:
             np.savez(FILE_NAME + '.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
         print "done."
 
         print "Plotting potential..."
+        f = plt.figure(figsize=PLOT_FIGSIZE)
+        p = plt.pcolormesh(X, Y, P, cmap=cmap)
+        plt.colorbar(p)
+        plt.xlim(X.min(), X.max())
+        plt.ylim(Y.min(), Y.max())
+        plt.savefig(FILE_NAME + '_potential_2D.png')
         try:
             from mayavi import mlab
 
@@ -263,12 +269,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             p.module_manager.scalar_lut_manager.lut.table = cmap
             mlab.view(distance=7.5)
             mlab.savefig(FILE_NAME + '_potential_3D.png')
-
-            f = plt.figure()
-            plt.pcolormesh(X, Y, P)
-            plt.xlim(X.min(), X.max())
-            plt.ylim(Y.min(), Y.max())
-            plt.savefig(FILE_NAME + '_potential_2D.png')
         except:
             print "Error: potential image not written."
         print "done."
