@@ -3,6 +3,7 @@
 import json
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
+import sys
 
 import argh
 
@@ -33,7 +34,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
-         limits=[1e-2, 0.99, 5e-2, 0.95]):
+         limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -78,6 +79,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 determines the X- and Y-masks in percent:
                     x in [X*limits[0], X*limits[1]]
                     y in [Y*limits[2], Y*limits[4]]
+            dryrun: bool
+                write settings files and exit
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -85,6 +88,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         f.write(settings)
     convert_json_to_cfg(infile=FILE_NAME + '.json',
                         outfile=FILE_NAME + '.cfg')
+
+    if dryrun:
+        sys.exit()
 
     ascii_array_kwargs = {'L': L,
                           'W': W,
