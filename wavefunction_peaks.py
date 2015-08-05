@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 
 import json
+# import multiprocessing
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
 import sys
@@ -103,6 +104,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     print "\nReading .ascii files..."
     X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
     _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
+    # pool = multiprocessing.Pool(processes=2)
+    # R = [pool.apply_async(read_ascii_array, args=(m,),
+    #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
+    # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
     print "done."
 
     if potential:
@@ -127,8 +132,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         X_mask = np.logical_and(limits[0]*L < X, X < limits[1]*L)
         Y_mask = np.logical_and(limits[2]*W < Y, Y < limits[3]*W)
         if pic_ascii:
-            Y_mask = np.logical_and(PIC_ASCII_YMIN*W < Y,
-                                    Y < PIC_ASCII_YMAX*W)
+            Y_mask = np.logical_and(PIC_ASCII_YMIN*W < Y, Y < PIC_ASCII_YMAX*W)
         WG_mask = np.logical_and(X_mask, Y_mask)
 
         if 'local' in peak_function:
