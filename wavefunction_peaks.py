@@ -108,7 +108,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     # R = [pool.apply_async(read_ascii_array, args=(m,),
     #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
     # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
-    print "done."
 
     if potential:
         P_npz = np.load(potential)
@@ -161,7 +160,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             f = interp1d(x, y, kind='linear')
             x = np.linspace(x.min(), x.max(), interpolate)
             y = f(x)
-            print "done."
 
         if not txt_potential:
             np.savetxt(FILE_NAME + '.dat', zip(x, y))
@@ -199,22 +197,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             _, v = np.loadtxt(shift, unpack=True)
             for i, vi in enumerate(v):
                 P[:, i] = np.roll(P[:, i], -int(vi), axis=0)
-            print "done."
 
         # scale potential
         P *= amplitude
 
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
-                   # zip(range(len(P.flatten('F'))), P.flatten('F')))
                    list(enumerate(P.flatten('F'))))
-        print "done."
-        if savez:
-            print "Writing .npz file based on mode {}...".format(write_peaks)
-            np.savez("mode_{}_peaks_potential.npz".format(write_peaks),
-                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P,
-                     X_nodes=X[idx], Y_nodes=Y[idx])
-        print "done."
 
     if plot:
         print "Plotting wavefunctions..."
@@ -249,15 +238,17 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         plt.savefig(FILE_NAME + '_wavefunction.png', bbox_inches='tight')
         if savez:
-            np.savez(FILE_NAME + '.npz', X=X, Y=Y, Z_1=Z_1, Z_2=Z_2)
-        print "done."
+            print "Writing .npz file..."
+            np.savez(FILE_NAME + '.npz',
+                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P, x=x, y=y)
 
         print "Plotting potential..."
         f = plt.figure(figsize=PLOT_FIGSIZE)
-        p = plt.pcolormesh(X, Y, P, cmap=cmap)
-        plt.colorbar(p)
-        plt.xlim(X.min(), X.max())
-        plt.ylim(Y.min(), Y.max())
+        ax = plt.gca()
+        p = ax.pcolormesh(X, Y, P, cmap=cmap)
+        plt.colorbar(p, ax=ax)
+        ax.set_xlim(X.min(), X.max())
+        ax.set_ylim(Y.min(), Y.max())
         plt.savefig(FILE_NAME + '_potential_2D.png')
         try:
             from mayavi import mlab
@@ -271,7 +262,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             mlab.savefig(FILE_NAME + '_potential_3D.png')
         except:
             print "Error: potential image not written."
-        print "done."
 
 
 if __name__ == '__main__':
