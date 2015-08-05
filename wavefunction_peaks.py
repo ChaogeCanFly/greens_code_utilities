@@ -262,7 +262,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             cmap = cmap(np.arange(256))*255.
             p.module_manager.scalar_lut_manager.lut.table = cmap
             mlab.view(distance=7.5)
-            mlab.savefig(FILE_NAME + '_potential.png')
+            mlab.savefig(FILE_NAME + '_potential_3D.png')
+
+            f = plt.figure()
+            plt.pcolormesh(X, Y, P)
+            plt.xlim(X.min(), X.max())
+            plt.ylim(Y.min(), Y.max())
+            plt.savefig(FILE_NAME + '_potential_2D.png')
         except:
             print "Error: potential image not written."
         print "done."
