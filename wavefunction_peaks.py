@@ -246,7 +246,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         f = plt.figure(figsize=PLOT_FIGSIZE)
         ax = plt.gca()
         p = ax.pcolormesh(X, Y, P, cmap=cmap)
-        plt.colorbar(p, ax=ax)
+        f.colorbar(p, ax=ax)
         ax.set_xlim(X.min(), X.max())
         ax.set_ylim(Y.min(), Y.max())
         plt.savefig(FILE_NAME + '_potential_2D.png')
