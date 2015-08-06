@@ -143,7 +143,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # get array-indices of peaks
         idx = np.where(peaks)
-        print "...found {} peaks...".format(len(idx[0]))
+        print "Found {} peaks...".format(len(idx[0]))
 
         x, y = [u[idx].flatten() for u in (X, Y)]
         x, y = [u[np.argsort(x)] for u in (x, y)]
@@ -204,11 +204,18 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    list(enumerate(P.flatten('F'))))
+        if savez:
+            print "Writing .npz file..."
+            np.savez(FILE_NAME + '.npz',
+                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P, x=x, y=y)
 
     if plot:
         print "Plotting wavefunctions..."
+        import matplotlib
         from matplotlib import pyplot as plt
         from ep.plot import get_colors
+
+        matplotlib.rcParams.update({'font.size': 100})
 
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=PLOT_FIGSIZE)
         get_colors()
@@ -237,18 +244,19 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax.set_ylim(Y.min(), Y.max())
 
         plt.savefig(FILE_NAME + '_wavefunction.png', bbox_inches='tight')
-        if savez:
-            print "Writing .npz file..."
-            np.savez(FILE_NAME + '.npz',
-                     X=X, Y=Y, Z_1=Z_1, Z_2=Z_2, P=P, x=x, y=y)
 
         print "Plotting potential..."
-        f = plt.figure(figsize=PLOT_FIGSIZE)
-        ax = plt.gca()
-        p = ax.pcolormesh(X, Y, P, cmap=cmap)
-        f.colorbar(p, ax=ax)
-        ax.set_xlim(X.min(), X.max())
-        ax.set_ylim(Y.min(), Y.max())
+        plt.gcf().clear()
+        # f = plt.figure(figsize=PLOT_FIGSIZE)
+        # ax = plt.gca()
+        # ax.set_xlim(X.min(), X.max())
+        # ax.set_ylim(Y.min(), Y.max())
+        # ax.grid(True)
+        plt.xlim(X.min(), X.max())
+        plt.ylim(Y.min(), Y.max())
+        plt.grid(True)
+        p = plt.pcolormesh(X, Y, P, cmap=cmap)
+        f.colorbar(p)
         plt.savefig(FILE_NAME + '_potential_2D.png')
         try:
             from mayavi import mlab
