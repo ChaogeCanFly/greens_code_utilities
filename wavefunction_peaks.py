@@ -3,6 +3,7 @@
 import json
 # import multiprocessing
 import numpy as np
+import os
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
 import sys
 
@@ -24,12 +25,17 @@ PICKER_TOLERANCE = 5
 
 def on_pick(event):
     xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
+    print "x, y:", xmouse, ymouse
     with open(FILE_NAME + '_interactive.dat', 'a') as f:
-        f.write('{} {}'.format(xmouse, ymouse))
+        f.write('{} {}\n'.format(xmouse, ymouse))
+
 
 def on_key(event):
     if event.key in 'q':
-        sys.exit()
+        plt.close()
+    if event.key in 'r':
+        os.mknod(FILE_NAME + '_interactive.dat')
+
 
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
@@ -125,8 +131,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
     # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
 
-
-
     if potential:
         P_npz = np.load(potential)
         P = P_npz['P']
@@ -172,7 +176,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             from matplotlib import pyplot as plt
             fig, ax = plt.subplots()
             ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE)
-            ax.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
+            ax.scatter(x, y, s=5e1, c="w", edgecolors=None)
+            ax.set_xlim(X.min(), X.max())
+            ax.set_ylim(Y.min(), Y.max())
             fig.canvas.callbacks.connect('pick_event', on_pick)
             fig.canvas.callbacks.connect('key_press_event', on_key)
             plt.show()
@@ -271,17 +277,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         print "Plotting potential..."
         plt.gcf().clear()
-        # f = plt.figure(figsize=PLOT_FIGSIZE)
-        # ax = plt.gca()
-        # ax.set_xlim(X.min(), X.max())
-        # ax.set_ylim(Y.min(), Y.max())
-        # ax.grid(True)
         plt.xlim(X.min(), X.max())
         plt.ylim(Y.min(), Y.max())
         plt.grid(True)
         p = plt.pcolormesh(X, Y, P, cmap=cmap)
         f.colorbar(p)
         plt.savefig(FILE_NAME + '_potential_2D.png')
+
         if not no_mayavi:
             try:
                 from mayavi import mlab
