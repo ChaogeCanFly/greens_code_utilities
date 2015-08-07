@@ -19,7 +19,17 @@ POT_MIN_CUTOFF = -0.01
 POT_CUTOFF_VALUE = -1.0
 INTERPOLATE_XY_EPS = 1e-3
 PLOT_FIGSIZE = (200, 100)
+PICKER_TOLERANCE = 5
 
+
+def on_pick(event):
+    xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
+    with open(FILE_NAME + '_interactive.dat', 'a') as f:
+        f.write('{} {}'.format(xmouse, ymouse))
+
+def on_key(event):
+    if event.key in 'q':
+        sys.exit()
 
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
@@ -35,7 +45,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
-         limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False):
+         limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
+         interactive=False):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -82,6 +93,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                     y in [Y*limits[2], Y*limits[4]]
             dryrun: bool
                 write settings files and exit
+            no_mayavi: bool
+                whether to produce a 3D plot of the potential
+            interactive: bool
+                whether to open an interactive plot window to select indiviual
+                points
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -108,6 +124,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     # R = [pool.apply_async(read_ascii_array, args=(m,),
     #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
     # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
+
+
 
     if potential:
         P_npz = np.load(potential)
@@ -150,12 +168,22 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if txt_potential:
             x, y = np.loadtxt(txt_potential, unpack=True)
 
+        if interactive:
+            from matplotlib import pyplot as plt
+            fig, ax = plt.subplots()
+            ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE)
+            ax.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
+            fig.canvas.callbacks.connect('pick_event', on_pick)
+            fig.canvas.callbacks.connect('key_press_event', on_key)
+            plt.show()
+            x, y = np.loadtxt(FILE_NAME + '_interactive.dat', unpack=True)
+
         if interpolate:
             print "Interpolating data points..."
             from scipy.interpolate import interp1d
 
-            if txt_potential:
-                x, y = np.loadtxt(txt_potential, unpack=True)
+            # if txt_potential:
+            #     x, y = np.loadtxt(txt_potential, unpack=True)
 
             f = interp1d(x, y, kind='linear')
             x = np.linspace(x.min(), x.max(), interpolate)
