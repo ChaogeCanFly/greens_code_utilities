@@ -35,7 +35,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
-         limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False):
+         limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -258,18 +258,19 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         p = plt.pcolormesh(X, Y, P, cmap=cmap)
         f.colorbar(p)
         plt.savefig(FILE_NAME + '_potential_2D.png')
-        try:
-            from mayavi import mlab
+        if not no_mayavi:
+            try:
+                from mayavi import mlab
 
-            mlab.figure(size=(1024, 756))
-            extent = (0, 1, 0, 5, 0, 1)
-            p = mlab.surf(-P, extent=extent)
-            cmap = cmap(np.arange(256))*255.
-            p.module_manager.scalar_lut_manager.lut.table = cmap
-            mlab.view(distance=7.5)
-            mlab.savefig(FILE_NAME + '_potential_3D.png')
-        except:
-            print "Error: potential image not written."
+                mlab.figure(size=(1024, 756))
+                extent = (0, 1, 0, 5, 0, 1)
+                p = mlab.surf(-P, extent=extent)
+                cmap = cmap(np.arange(256))*255.
+                p.module_manager.scalar_lut_manager.lut.table = cmap
+                mlab.view(distance=7.5)
+                mlab.savefig(FILE_NAME + '_potential_3D.png')
+            except:
+                print "Error: potential image not written."
 
 
 if __name__ == '__main__':
