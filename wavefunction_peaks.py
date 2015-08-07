@@ -15,7 +15,7 @@ from helper_functions import convert_json_to_cfg
 FILE_NAME = "peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
-POT_MIN_CUTOFF = -0.05
+POT_MIN_CUTOFF = -0.01
 POT_CUTOFF_VALUE = -1.0
 INTERPOLATE_XY_EPS = 1e-3
 PLOT_FIGSIZE = (200, 100)
