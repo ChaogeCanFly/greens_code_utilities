@@ -181,16 +181,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
         P /= -P.min()
 
-        if 'sine_truncated' in peak_function:
+        if 'sine' in peak_function:
             P /= abs(P).max()
-            Xp = 1.*X
-            X0 = L/4.
-            Xp[np.sin(np.pi*2.*(X-X0)/L) < 0.] = X0
-            f = np.sin(np.pi*2*(Xp-X0)/L)
+            L0 = L*(limits[1] - limits[0])/2.
+            f = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
+            f[~X_mask] = 0.
             P *= f/f.max()
-        elif 'sine' in peak_function:
-            P /= abs(P).max()
-            P *= np.sin(np.pi*X/L)
 
         if shift:
             print "Shifting indices of target array..."
