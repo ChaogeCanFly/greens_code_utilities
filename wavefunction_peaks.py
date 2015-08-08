@@ -199,11 +199,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             if segmented_linspace:
                 dx, dy = [np.diff(c) for c in (x, y)]
                 segments = np.hypot(dx, dy)
-
                 x_seg = []
                 for n, xn in enumerate(x):
                     if n < len(x)-1:
-                        num = interactive/len(segments)*segments[n]
+                        num = interpolate/len(segments)*segments[n]/W
                         x_seg.append(np.linspace(xn, xn + dx[n],
                                                  num, endpoint=False))
                 x_seg.append([x[-1]])
@@ -212,8 +211,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 x = np.linspace(x.min(), x.max(), interpolate)
             y = f(x)
 
-        if not txt_potential:
-            np.savetxt(FILE_NAME + '.dat', zip(x, y))
+        # if not txt_potential:
+        np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential on grid-points
         for xi, yi in zip(x, y):
