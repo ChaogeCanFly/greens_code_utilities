@@ -191,23 +191,26 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if interpolate:
             print "Interpolating data points..."
-            from scipy.interpolate import interp1d
+            from scipy.interpolate import interp1d, splprep, splev
 
-            f = interp1d(x, y, kind='linear')
-            if segmented_linspace:
-                dx, dy = [np.diff(c) for c in (x, y)]
-                segments = np.hypot(dx, dy)
-                x_seg = []
-                for n, xn in enumerate(x):
-                    if n < len(x)-1:
-                        num = interpolate/len(segments)*segments[n]/W
-                        x_seg.append(np.linspace(xn, xn + dx[n],
-                                                 num, endpoint=False))
-                x_seg.append([x[-1]])
-                x = np.concatenate(x_seg)
-            else:
-                x = np.linspace(x.min(), x.max(), interpolate)
-            y = f(x)
+            tck, _ = splprep([x, y], s=0.0, k=1)
+            x, y = splev(np.linspace(0, 1, interpolate), tck)
+
+            # if segmented_linspace:
+            #     # dx, dy = [np.diff(c) for c in (x, y)]
+            #     # segments = np.hypot(dx, dy)
+            #     # x_seg = []
+            #     # for n, xn in enumerate(x):
+            #     #     if n < len(x)-1:
+            #     #         num = interpolate/len(segments)*segments[n]/W
+            #     #         x_seg.append(np.linspace(xn, xn + dx[n],
+            #     #                                  num, endpoint=False))
+            #     # x_seg.append([x[-1]])
+            #     # x = np.concatenate(x_seg)
+            # else:
+            #     f = interp1d(x, y, kind='linear')
+            #     x = np.linspace(x.min(), x.max(), interpolate)
+            #     y = f(x)
 
         # always write the potential points
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
@@ -296,6 +299,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         plt.grid(True)
         p = plt.pcolormesh(X, Y, P, cmap=cmap)
         f.colorbar(p)
+        ax = plt.gca()
+        ax.set_aspect('equal', 'datalim')
         plt.savefig(FILE_NAME + '_potential_2D.png')
 
         if not no_mayavi:
