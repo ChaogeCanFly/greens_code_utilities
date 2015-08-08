@@ -20,6 +20,7 @@ POT_MIN_CUTOFF = -0.01
 POT_CUTOFF_VALUE = -1.0
 INTERPOLATE_XY_EPS = 1e-3
 PLOT_FIGSIZE = (200, 100)
+PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
 
@@ -192,9 +193,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             print "Interpolating data points..."
             from scipy.interpolate import interp1d
 
-            # if txt_potential:
-            #     x, y = np.loadtxt(txt_potential, unpack=True)
-
             f = interp1d(x, y, kind='linear')
             if segmented_linspace:
                 dx, dy = [np.diff(c) for c in (x, y)]
@@ -211,7 +209,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 x = np.linspace(x.min(), x.max(), interpolate)
             y = f(x)
 
-        # if not txt_potential:
+        # always write the potential points
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential on grid-points
@@ -261,7 +259,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         from matplotlib import pyplot as plt
         from ep.plot import get_colors
 
-        matplotlib.rcParams.update({'font.size': 100})
+        matplotlib.rcParams.update({'font.size': PLOT_FONTSIZE})
 
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=PLOT_FIGSIZE)
         get_colors()
