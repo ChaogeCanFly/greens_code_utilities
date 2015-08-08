@@ -52,7 +52,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False):
+         interactive=False, segmented_linspace=False):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -104,6 +104,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             interactive: bool
                 whether to open an interactive plot window to select indiviual
                 points
+            segmented_linspace: bool
+                whether to evenly space the datapoints obtained from the
+                interpolating function
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -169,6 +172,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         x, y = [u[idx].flatten() for u in (X, Y)]
         x, y = [u[np.argsort(x)] for u in (x, y)]
+
         if txt_potential:
             x, y = np.loadtxt(txt_potential, unpack=True)
 
@@ -192,7 +196,20 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             #     x, y = np.loadtxt(txt_potential, unpack=True)
 
             f = interp1d(x, y, kind='linear')
-            x = np.linspace(x.min(), x.max(), interpolate)
+            if segmented_linspace:
+                dx, dy = [np.diff(c) for c in (x, y)]
+                segments = np.hypot(dx, dy)
+
+                x_seg = []
+                for n, xn in enumerate(x):
+                    if n < len(x)-1:
+                        num = interactive/len(segments)*segments[n]
+                        x_seg.append(np.linspace(xn, xn + dx[n],
+                                                 num, endpoint=False))
+                x_seg.append([x[-1]])
+                x = np.concatenate(x_seg)
+            else:
+                x = np.linspace(x.min(), x.max(), interpolate)
             y = f(x)
 
         if not txt_potential:
