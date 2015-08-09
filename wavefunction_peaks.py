@@ -172,9 +172,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         x, y = [u[np.argsort(x)] for u in (x, y)]
 
         if txt_potential:
+            print "Loading txt_potential..."
             x, y = np.loadtxt(txt_potential, unpack=True)
 
         if interactive:
+            print "Starting interactive session..."
             from matplotlib import pyplot as plt
             fig, ax = plt.subplots()
             ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE)
@@ -192,6 +194,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
             tck, _ = splprep([x, y], s=0.0, k=1)
             x, y = splev(np.linspace(0, 1, interpolate), tck)
+
+        # reapply limits
+        x_mask = np.logical_and(x > L*limits[0], x < L*limits[1])
+        x, y = [u[x_mask] for u in x, y]
 
         # always write the potential coordinates
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
@@ -217,9 +223,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             print "Applying sine envelope..."
             # P /= abs(P).max()
             L0 = L*(limits[1] - limits[0])/2.
-            f = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
-            f[~X_mask] = 0.
-            P *= f #/f.max()
+            envelope = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
+            # envelope[~X_mask] = 0.
+            P *= envelope #/f.max()
 
         if shift:
             print "Shifting indices of target array..."
