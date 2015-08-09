@@ -141,8 +141,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     if potential:
         P_npz = np.load(potential)
         P = P_npz['P']
-        # transform maxima to minima
-        P = P.max() - P
 
     if write_peaks:
         if write_peaks == '1':
