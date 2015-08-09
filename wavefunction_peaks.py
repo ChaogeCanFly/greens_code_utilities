@@ -21,7 +21,7 @@ PIC_ASCII_YMAX = 0.7500
 POT_CUTOFF_VALUE = -1.0
 # INTERPOLATE_XY_EPS = 5e-4
 PLOT_FIGSIZE = (200, 100)
-PLOT_FIGSIZE_SCALING = 300
+PLOT_FIGSIZE_SCALING = 250
 PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
@@ -63,26 +63,27 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         Parameters:
         -----------
             pphw: int
+                points per halfwave
             N: int
-            L: float
-            W: float
-            sigmax: float
-            sigmay: float
+                number of open modes
+            L, W: float
+                system length, width
+            sigmax, sigmay: float
+                potential extension in x- and y-direction in % of width W
             amplitude: float
                 potential amplitude
-            r_nx: int
-            r_ny: int
+            r_nx, r_ny: int
+                number of gridpoints in x- and y-direction
             plot: bool
+                whether to plot wavefunctions and potentials
             pic_ascii: bool
                 build potential from pic.*.ascii files
             write_peaks: int (1|2)
                 whether to construct a potential from mode 1 or 2
-            mode1: str
-                *.ascii file of mode 1
-            mode2: str
-                *.ascii file of mode 2
+            mode1, mode2: str
+                *.ascii file of mode 1 and 2
             potential: str
-                if supplied, use as input
+                if supplied, use .npz file as input
             txt_potential: str
                 use peaks from external file
             peak_function: str
