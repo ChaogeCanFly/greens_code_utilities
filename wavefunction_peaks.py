@@ -5,6 +5,7 @@ import json
 import numpy as np
 import os
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
+from scipy import stats
 import sys
 
 import argh
@@ -16,15 +17,17 @@ from helper_functions import convert_json_to_cfg
 FILE_NAME = "peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
-#POT_MIN_CUTOFF = 1.0
+# POT_MIN_CUTOFF = 1.0
 POT_CUTOFF_VALUE = -1.0
-#INTERPOLATE_XY_EPS = 5e-4
+# INTERPOLATE_XY_EPS = 5e-4
 PLOT_FIGSIZE = (200, 100)
+PLOT_FIGSIZE_SCALING = 500
 PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
 
 def on_pick(event):
+    """Record (x, y) coordinates at each click and print to file."""
     xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
     print "x, y:", xmouse, ymouse
     with open(FILE_NAME + '_interactive.dat', 'a') as f:
@@ -32,6 +35,7 @@ def on_pick(event):
 
 
 def on_key(event):
+    """Quit the interactive session or reset output file based on a keypress event."""
     if event.key in 'q':
         plt.close()
     if event.key in 'r':
@@ -164,12 +168,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             peaks[~WG_mask] = 0.0
 
         elif 'points' in peak_function:
+            # TODO: not necessary anymore with interactive mode?
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
-        # get array-indices of peaks
+        # get array-indices of peaks and sort coordinates
         idx = np.where(peaks)
         print "Found {} peaks...".format(len(idx[0]))
-
         x, y = [u[idx].flatten() for u in (X, Y)]
         x, y = [u[np.argsort(x)] for u in (x, y)]
 
@@ -180,19 +184,22 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if interactive:
             print "Starting interactive session..."
             from matplotlib import pyplot as plt
+
             fig, ax = plt.subplots()
             ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE)
             ax.scatter(x, y, s=5e1, c="w", edgecolors=None)
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
+
             fig.canvas.callbacks.connect('pick_event', on_pick)
             fig.canvas.callbacks.connect('key_press_event', on_key)
+
             plt.show()
             x, y = np.loadtxt(FILE_NAME + '_interactive.dat', unpack=True)
 
         if interpolate:
             print "Interpolating data points..."
-            from scipy.interpolate import interp1d, splprep, splev
+            from scipy.interpolate import splprep, splev
 
             tck, _ = splprep([x, y], s=0.0, k=1)
             x, y = splev(np.linspace(0, 1, interpolate), tck)
@@ -202,11 +209,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         x, y = [u[x_mask] for u in x, y]
 
         # always write the potential coordinates
+        print "Writing coordinates file..."
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential on grid-points
         for xi, yi in zip(x, y):
-            eps = W/P.shape[0]*1.05
+            # TODO: factor was 1.05 - introduces bugs?
+            eps = W/P.shape[0]*1.01
             zi = np.where(np.logical_and(abs(X - xi) < eps,
                                          abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
@@ -221,18 +230,15 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         # normalize potential
-        from scipy import stats
         cutoff = stats.mode(P[P < 0.])[0][0]
         P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
         P /= -P.min()
 
         if 'sine' in peak_function:
             print "Applying sine envelope..."
-            # P /= abs(P).max()
             L0 = L*(limits[1] - limits[0])/2.
             envelope = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
-            # envelope[~X_mask] = 0.
-            P *= envelope #/f.max()
+            P *= envelope
 
         if shift:
             print "Shifting indices of target array..."
@@ -284,7 +290,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         plt.savefig(FILE_NAME + '_wavefunction.png', bbox_inches='tight')
 
         print "Plotting 2D potential..."
-        f, ax = plt.subplots(figsize=(250*L, 250*W))
+        f, ax = plt.subplots(figsize=(PLOT_FIGSIZE_SCALING*L,
+                                      PLOT_FIGSIZE_SCALING*W))
         ax.set_xlim(X.min(), X.max())
         ax.set_ylim(Y.min(), Y.max())
         ax.grid(True)
