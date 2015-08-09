@@ -212,7 +212,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             #     x = np.linspace(x.min(), x.max(), interpolate)
             #     y = f(x)
 
-        # always write the potential points
+        # always write the potential coordinates
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential on grid-points
