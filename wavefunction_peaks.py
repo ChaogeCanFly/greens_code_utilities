@@ -21,7 +21,7 @@ PIC_ASCII_YMAX = 0.7500
 POT_CUTOFF_VALUE = -1.0
 # INTERPOLATE_XY_EPS = 5e-4
 PLOT_FIGSIZE = (200, 100)
-PLOT_FIGSIZE_SCALING = 500
+PLOT_FIGSIZE_SCALING = 300
 PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
@@ -212,12 +212,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         print "Writing coordinates file..."
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
-        # write potential on grid-points
+        # write potential to grid-points
         for xi, yi in zip(x, y):
             # TODO: factor was 1.05 - introduces bugs?
-            eps = W/P.shape[0]*1.01
-            zi = np.where(np.logical_and(abs(X - xi) < eps,
-                                         abs(Y - yi) < eps))
+            # zi = np.where(np.logical_and(abs(X - xi) < eps,
+            #                              abs(Y - yi) < eps))
+            eps = W/P.shape[0]
+            zi = np.where(np.hypot(X - xi, Y - yi) <= eps)
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
@@ -229,7 +230,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         elif 'gauss' in filter:
             P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
-        # normalize potential
+        # normalize potential based on most frequent value P_ij < 0.
         cutoff = stats.mode(P[P < 0.])[0][0]
         P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
         P /= -P.min()
