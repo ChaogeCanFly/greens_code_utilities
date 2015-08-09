@@ -214,10 +214,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         # write potential to grid-points
         for xi, yi in zip(x, y):
             # TODO: factor was 1.05 - introduces bugs?
-            # zi = np.where(np.logical_and(abs(X - xi) < eps,
-            #                              abs(Y - yi) < eps))
-            eps = W/P.shape[0]
-            zi = np.where(np.hypot(X - xi, Y - yi) <= eps)
+            eps = W/P.shape[0]*1.01
+            zi = np.where(np.logical_and(abs(X - xi) < eps,
+                                         abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
