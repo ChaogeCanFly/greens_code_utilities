@@ -123,25 +123,26 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     if dryrun:
         sys.exit()
 
-    ascii_array_kwargs = {'L': L,
-                          'W': W,
-                          'pphw': pphw,
-                          'N': N,
-                          'r_nx': r_nx,
-                          'r_ny': r_ny,
-                          'pic_ascii': pic_ascii,
-                          'return_abs': True}
-    print "\nReading .ascii files..."
-    X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
-    _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
-    # pool = multiprocessing.Pool(processes=2)
-    # R = [pool.apply_async(read_ascii_array, args=(m,),
-    #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
-    # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
-
     if potential:
-        P_npz = np.load(potential)
-        P = P_npz['P']
+        npz_input = np.load(potential)
+        X, Y, Z_1, Z_2, P, x, y = [npz_input[s] for s in ('X', 'Y', 'Z_1',
+                                                          'Z_2', 'P', 'x', 'y')]
+    else:
+        ascii_array_kwargs = {'L': L,
+                            'W': W,
+                            'pphw': pphw,
+                            'N': N,
+                            'r_nx': r_nx,
+                            'r_ny': r_ny,
+                            'pic_ascii': pic_ascii,
+                            'return_abs': True}
+        print "\nReading .ascii files..."
+        X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
+        _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
+        # pool = multiprocessing.Pool(processes=2)
+        # R = [pool.apply_async(read_ascii_array, args=(m,),
+        #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
+        # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
 
     if write_peaks:
         if write_peaks == '1':
