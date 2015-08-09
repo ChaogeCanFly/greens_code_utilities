@@ -44,7 +44,7 @@ def on_key(event):
 
 @argh.arg('--mode1', type=str)
 @argh.arg('--mode2', type=str)
-@argh.arg('--potential', type=str)
+@argh.arg('--npz-potential', type=str)
 @argh.arg('--txt-potential', type=str)
 @argh.arg('--write-peaks', type=str)
 @argh.arg('--r-nx', type=int)
@@ -54,7 +54,7 @@ def on_key(event):
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
-         potential=None, txt_potential=None, peak_function='local',
+         npz_potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
          interactive=False, filter='gauss'):
