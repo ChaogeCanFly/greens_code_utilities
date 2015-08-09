@@ -16,9 +16,9 @@ from helper_functions import convert_json_to_cfg
 FILE_NAME = "peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
-POT_MIN_CUTOFF = -0.01
+#POT_MIN_CUTOFF = 1.0
 POT_CUTOFF_VALUE = -1.0
-INTERPOLATE_XY_EPS = 1e-3
+#INTERPOLATE_XY_EPS = 5e-4
 PLOT_FIGSIZE = (200, 100)
 PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
@@ -53,7 +53,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False):
+         interactive=False, filter='gauss'):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -105,6 +105,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             interactive: bool
                 whether to open an interactive plot window to select indiviual
                 points
+            filter: str (gauss|uniform)
+                chooses which filter to apply
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -204,19 +206,24 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # write potential on grid-points
         for xi, yi in zip(x, y):
-            zi = np.where(np.logical_and(abs(X - xi) < INTERPOLATE_XY_EPS,
-                                         abs(Y - yi) < INTERPOLATE_XY_EPS))
+            eps = W/P.shape[0]*1.05
+            zi = np.where(np.logical_and(abs(X - xi) < eps,
+                                         abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
         sigmax, sigmay = [P.shape[0]*s/100. for s in sigmax, sigmay]
 
         # decorate data points with filter
-        # P = uniform_filter(P, (sigmay, sigmax), mode='constant')
-        P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
+        if 'uniform' in filter:
+            P = uniform_filter(P, (sigmay, sigmax), mode='constant')
+        elif 'gauss' in filter:
+            P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         # normalize potential
-        P[P < POT_MIN_CUTOFF] = POT_CUTOFF_VALUE
+        from scipy import stats
+        cutoff = stats.mode(P[P < 0.])[0][0]
+        P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
         P /= -P.min()
 
         if 'sine' in peak_function:
