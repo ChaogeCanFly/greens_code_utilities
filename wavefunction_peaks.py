@@ -233,11 +233,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         P /= -P.min()
 
         if 'sine' in peak_function:
-            P /= abs(P).max()
+            print "Applying sine envelope..."
+            # P /= abs(P).max()
             L0 = L*(limits[1] - limits[0])/2.
             f = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
             f[~X_mask] = 0.
-            P *= f/f.max()
+            P *= f #/f.max()
 
         if shift:
             print "Shifting indices of target array..."
@@ -273,12 +274,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         ax2.pcolormesh(X, Y, Z_2, cmap=cmap)
 
         if write_peaks:
-            try:
-                ax1.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
-                ax2.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
-            except:
-                ax1.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
-                ax2.scatter(X[idx], Y[idx], s=1.5e4, c="w", edgecolors=None)
+            ax1.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
+            ax2.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
 
         if potential:
             X_nodes = P_npz['x']
@@ -292,19 +289,19 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         plt.savefig(FILE_NAME + '_wavefunction.png', bbox_inches='tight')
 
-        print "Plotting potential..."
-        plt.gcf().clear()
-        plt.xlim(X.min(), X.max())
-        plt.ylim(Y.min(), Y.max())
-        plt.grid(True)
-        p = plt.pcolormesh(X, Y, P, cmap=cmap)
+        print "Plotting 2D potential..."
+        f, ax = plt.subplots(figsize=(250*L, 250*W))
+        ax.set_xlim(X.min(), X.max())
+        ax.set_ylim(Y.min(), Y.max())
+        ax.grid(True)
+        p = ax.pcolormesh(X, Y, P, cmap=cmap)
         f.colorbar(p)
-        ax = plt.gca()
         ax.set_aspect('equal', 'datalim')
         plt.savefig(FILE_NAME + '_potential_2D.png')
 
         if not no_mayavi:
             try:
+                print "Plotting 3D potential..."
                 from mayavi import mlab
 
                 mlab.figure(size=(1024, 756))
