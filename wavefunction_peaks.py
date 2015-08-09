@@ -82,10 +82,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 whether to construct a potential from mode 1 or 2
             mode1, mode2: str
                 *.ascii file of mode 1 and 2
-            potential: str
+            npz_potential: str
                 if supplied, use .npz file as input
             txt_potential: str
-                use peaks from external file
+                use peaks from external text file
             peak_function: str
                 determines how the potential is constructed from the
                 wavefunction intensity
@@ -123,8 +123,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
     if dryrun:
         sys.exit()
 
-    if potential:
-        npz_input = np.load(potential)
+    if npz_potential:
+        npz_input = np.load(npz_potential)
         X, Y, Z_1, Z_2, P, x, y = [npz_input[s] for s in ('X', 'Y', 'Z_1',
                                                           'Z_2', 'P', 'x', 'y')]
     else:
@@ -277,9 +277,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax1.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
             ax2.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
 
-        if potential:
-            X_nodes = P_npz['x']
-            Y_nodes = P_npz['y']
+        if npz_potential:
+            X_nodes = npz_input['x']
+            Y_nodes = npz_input['y']
             ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
             ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
 
