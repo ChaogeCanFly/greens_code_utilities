@@ -53,7 +53,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False, segmented_linspace=False):
+         interactive=False):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -105,9 +105,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             interactive: bool
                 whether to open an interactive plot window to select indiviual
                 points
-            segmented_linspace: bool
-                whether to evenly space the datapoints obtained from the
-                interpolating function
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings
@@ -195,22 +192,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
             tck, _ = splprep([x, y], s=0.0, k=1)
             x, y = splev(np.linspace(0, 1, interpolate), tck)
-
-            # if segmented_linspace:
-            #     # dx, dy = [np.diff(c) for c in (x, y)]
-            #     # segments = np.hypot(dx, dy)
-            #     # x_seg = []
-            #     # for n, xn in enumerate(x):
-            #     #     if n < len(x)-1:
-            #     #         num = interpolate/len(segments)*segments[n]/W
-            #     #         x_seg.append(np.linspace(xn, xn + dx[n],
-            #     #                                  num, endpoint=False))
-            #     # x_seg.append([x[-1]])
-            #     # x = np.concatenate(x_seg)
-            # else:
-            #     f = interp1d(x, y, kind='linear')
-            #     x = np.linspace(x.min(), x.max(), interpolate)
-            #     y = f(x)
 
         # always write the potential coordinates
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
