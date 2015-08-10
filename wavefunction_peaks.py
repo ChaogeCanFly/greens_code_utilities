@@ -23,10 +23,12 @@ PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
 
-def on_pick(event, event_coordinates, fig, ax):
+def on_pick(event, event_coordinates, fig):
     """Record (x, y) coordinates at each click and print to file."""
     event = event.mouseevent
     xmouse, ymouse = event.xdata, event.ydata
+
+    ax = fig.get_axes()[0]
 
     if event.button == 1:
         print "x, y:", xmouse, ymouse
@@ -210,7 +212,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax.set_ylim(Y.min(), Y.max())
 
             event_coordinates = []
-            on_pick_lambda = lambda s: on_pick(s, event_coordinates, fig, ax)
+            on_pick_lambda = lambda s: on_pick(s, event_coordinates, fig)
             key_press_lambda = lambda s: on_key(s, plt)
             fig.canvas.callbacks.connect('pick_event', on_pick_lambda)
             fig.canvas.callbacks.connect('key_press_event', key_press_lambda)
