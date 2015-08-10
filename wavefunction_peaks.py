@@ -124,9 +124,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         sys.exit()
 
     if npz_potential:
-        npz_input = np.load(npz_potential)
-        X, Y, Z_1, Z_2, P, x, y = [npz_input[s] for s in ('X', 'Y', 'Z_1',
-                                                          'Z_2', 'P', 'x', 'y')]
+        npz_file = np.load(npz_potential)
+        X, Y, Z_1, Z_2, P, x, y = [npz_file[s] for s in ('X', 'Y', 'Z_1',
+                                                         'Z_2', 'P', 'x', 'y')]
     else:
         ascii_array_kwargs = {'L': L,
                             'W': W,
@@ -166,9 +166,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
             peaks[~WG_mask] = 0.0
-
         elif 'points' in peak_function:
-            # TODO: not necessary anymore with interactive mode?
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
         # get array-indices of peaks and sort coordinates
