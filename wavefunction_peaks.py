@@ -3,7 +3,6 @@
 import json
 import multiprocessing
 import numpy as np
-import os
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
 from scipy import stats
 import sys
@@ -17,9 +16,7 @@ from helper_functions import convert_json_to_cfg
 FILE_NAME = "peaks"
 PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
-# POT_MIN_CUTOFF = 1.0
 POT_CUTOFF_VALUE = -1.0
-# INTERPOLATE_XY_EPS = 5e-4
 PLOT_FIGSIZE = (200, 100)
 PLOT_FIGSIZE_SCALING = 250
 PLOT_FONTSIZE = 100
@@ -40,9 +37,12 @@ def on_pick(event, event_coordinates, fig, ax):
         x, y = np.asarray(event_coordinates).T
         x_close = np.isclose(x, xmouse, rtol=1e-2)
         y_close = np.isclose(y, ymouse, rtol=1e-2)
-        idx = np.where(np.logical_and(x_close, y_close))[0][0]
-        ax.scatter(x[idx], y[idx], s=1e2, c="red", marker="x")
-        del event_coordinates[idx]
+        try:
+            idx = np.where(x_close & y_close)[0][0]
+            ax.scatter(x[idx], y[idx], s=1e2, c="red", marker="x")
+            del event_coordinates[idx]
+        except:
+            print "No point found near ({}, {}).".format(xmouse, ymouse)
 
     fig.canvas.draw()
 
@@ -190,11 +190,10 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
-        # get array-indices of peaks and sort coordinates
+        # get array-indices of peaks
         idx = np.where(peaks)
         print "Found {} peaks...".format(len(idx[0]))
         x, y = [u[idx].flatten() for u in (X, Y)]
-        x, y = [u[np.argsort(x)] for u in (x, y)]
 
         if txt_potential:
             print "Loading txt_potential..."
@@ -218,6 +217,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             plt.show()
             x, y = np.asarray(event_coordinates).T
 
+        # sort coordinates wrt x-coordinate
+        x, y = [u[np.argsort(x)] for u in (x, y)]
+
         if interpolate:
             print "Interpolating data points..."
             from scipy.interpolate import splprep, splev
@@ -226,7 +228,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             x, y = splev(np.linspace(0, 1, interpolate), tck)
 
         # reapply limits
-        x_mask = np.logical_and(x > L*limits[0], x < L*limits[1])
+        # x_mask = np.logical_and(x > L*limits[0], x < L*limits[1])
+        x_mask = (x > L*limits[0]) & (x < L*limits[1])
         x, y = [u[x_mask] for u in x, y]
 
         # always write the potential coordinates
@@ -237,8 +240,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         for xi, yi in zip(x, y):
             # TODO: factor was 1.05 - introduces bugs?
             eps = W/P.shape[0]*1.10
-            zi = np.where(np.logical_and(abs(X - xi) < eps,
-                                         abs(Y - yi) < eps))
+            # zi = np.where(np.logical_and(abs(X - xi) < eps,
+            #                              abs(Y - yi) < eps))
+            zi = np.where((abs(X - xi) < eps) & (abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
