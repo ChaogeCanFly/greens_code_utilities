@@ -26,20 +26,31 @@ PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
 
-def on_pick(event):
+def on_pick(event, event_coordinates, fig, ax):
     """Record (x, y) coordinates at each click and print to file."""
-    xmouse, ymouse = event.mouseevent.xdata, event.mouseevent.ydata
-    print "x, y:", xmouse, ymouse
-    with open(FILE_NAME + '_interactive.dat', 'a') as f:
-        f.write('{} {}\n'.format(xmouse, ymouse))
+    event = event.mouseevent
+    xmouse, ymouse = event.xdata, event.ydata
+
+    if event.button == 1:
+        print "x, y:", xmouse, ymouse
+        event_coordinates.append([xmouse, ymouse])
+        x, y = np.asarray(event_coordinates).T
+        ax.scatter(x, y, s=1e2, c="k", edgecolors=None)
+    elif event.button == 3:
+        x, y = np.asarray(event_coordinates).T
+        x_close = np.isclose(x, xmouse, rtol=1e-2)
+        y_close = np.isclose(y, ymouse, rtol=1e-2)
+        idx = np.where(np.logical_and(x_close, y_close))[0][0]
+        ax.scatter(x[idx], y[idx], s=1e2, c="red", marker="x")
+        del event_coordinates[idx]
+
+    fig.canvas.draw()
 
 
-def on_key(event):
+def on_key(event, plt):
     """Quit the interactive session or reset output file based on a keypress event."""
     if event.key in 'q':
         plt.close()
-    if event.key in 'r':
-        os.mknod(FILE_NAME + '_interactive.dat')
 
 
 @argh.arg('--mode1', type=str)
@@ -185,18 +196,25 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         if interactive:
             print "Starting interactive session..."
             from matplotlib import pyplot as plt
+            from ep.plot import get_colors
 
             fig, ax = plt.subplots()
-            ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE)
+            _, cmap, _ = get_colors()
+
+            ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE, cmap=cmap)
             ax.scatter(x, y, s=5e1, c="w", edgecolors=None)
             ax.set_xlim(X.min(), X.max())
             ax.set_ylim(Y.min(), Y.max())
 
-            fig.canvas.callbacks.connect('pick_event', on_pick)
-            fig.canvas.callbacks.connect('key_press_event', on_key)
-
+            event_coordinates = []
+            on_pick_lambda = lambda s: on_pick(s, event_coordinates, fig, ax)
+            fig.canvas.callbacks.connect('pick_event', on_pick_lambda)
+            key_press_lambda = lambda s: on_key(s, plt)
+            fig.canvas.callbacks.connect('key_press_event', key_press_lambda)
             plt.show()
-            x, y = np.loadtxt(FILE_NAME + '_interactive.dat', unpack=True)
+
+            x, y = np.asarray(event_coordinates).T
+
 
         if interpolate:
             print "Interpolating data points..."
