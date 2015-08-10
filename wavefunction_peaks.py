@@ -50,7 +50,7 @@ def on_pick(event, event_coordinates, fig):
 
 
 def on_key(event, plt):
-    """Quit the interactive session or reset output file based on a keypress event."""
+    """Quit the interactive session based on a keypress event."""
     if event.key in 'q':
         plt.close()
 
