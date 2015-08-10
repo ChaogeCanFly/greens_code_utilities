@@ -275,11 +275,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             ax1.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
             ax2.scatter(x, y, s=1.5e4, c="w", edgecolors=None)
 
-        if npz_potential:
-            X_nodes = npz_input['x']
-            Y_nodes = npz_input['y']
-            ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
-            ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
+        # if npz_potential:
+        #     X_nodes = npz_file['x']
+        #     Y_nodes = npz_file['y']
+        #     ax1.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
+        #     ax2.scatter(X_nodes, Y_nodes, s=1e4, c="k", edgecolors=None)
 
         for ax in (ax1, ax2):
             ax.set_xlim(X.min(), X.max())
