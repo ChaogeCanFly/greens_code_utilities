@@ -266,9 +266,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if shift:
             print "Shifting indices of target array..."
-            _, v = np.loadtxt(shift, unpack=True)
-            for i, vi in enumerate(v):
-                P[:, i] = np.roll(P[:, i], -int(vi), axis=0)
+            for n, vn in np.loadtxt(shift):
+                P[:, n] = np.roll(P[:, n], -int(vn), axis=0)
 
         # scale potential
         P *= amplitude
