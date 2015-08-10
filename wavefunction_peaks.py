@@ -158,6 +158,13 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
             _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
 
+    if plot or interactive:
+        import matplotlib
+        from matplotlib import pyplot as plt
+        from ep.plot import get_colors
+
+        _, cmap, _ = get_colors()
+
     if write_peaks:
         if write_peaks == '1':
             Z = Z_1
@@ -195,11 +202,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         if interactive:
             print "Starting interactive session..."
-            from matplotlib import pyplot as plt
-            from ep.plot import get_colors
 
             fig, ax = plt.subplots()
-            _, cmap, _ = get_colors()
 
             ax.pcolormesh(X, Y, Z, picker=PICKER_TOLERANCE, cmap=cmap)
             ax.scatter(x, y, s=5e1, c="w", edgecolors=None)
@@ -208,13 +212,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
             event_coordinates = []
             on_pick_lambda = lambda s: on_pick(s, event_coordinates, fig, ax)
-            fig.canvas.callbacks.connect('pick_event', on_pick_lambda)
             key_press_lambda = lambda s: on_key(s, plt)
+            fig.canvas.callbacks.connect('pick_event', on_pick_lambda)
             fig.canvas.callbacks.connect('key_press_event', key_press_lambda)
             plt.show()
-
             x, y = np.asarray(event_coordinates).T
-
 
         if interpolate:
             print "Interpolating data points..."
@@ -278,15 +280,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
     if plot:
         print "Plotting wavefunctions..."
-        import matplotlib
-        from matplotlib import pyplot as plt
-        from ep.plot import get_colors
-
         matplotlib.rcParams.update({'font.size': PLOT_FONTSIZE})
 
         f, (ax1, ax2) = plt.subplots(nrows=2, figsize=PLOT_FIGSIZE)
-        get_colors()
-        cmap = plt.cm.get_cmap('parula')
 
         # scattering wavefunction
         ax1.pcolormesh(X, Y, Z_1, cmap=cmap)
