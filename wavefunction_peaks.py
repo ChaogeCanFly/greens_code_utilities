@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 import json
-# import multiprocessing
+import multiprocessing
 import numpy as np
 import os
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
@@ -129,20 +129,23 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                                                          'Z_2', 'P', 'x', 'y')]
     else:
         ascii_array_kwargs = {'L': L,
-                            'W': W,
-                            'pphw': pphw,
-                            'N': N,
-                            'r_nx': r_nx,
-                            'r_ny': r_ny,
-                            'pic_ascii': pic_ascii,
-                            'return_abs': True}
+                              'W': W,
+                              'pphw': pphw,
+                              'N': N,
+                              'r_nx': r_nx,
+                              'r_ny': r_ny,
+                              'pic_ascii': pic_ascii,
+                              'return_abs': True}
         print "\nReading .ascii files..."
-        X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
-        _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
-        # pool = multiprocessing.Pool(processes=2)
-        # R = [pool.apply_async(read_ascii_array, args=(m,),
-        #                       kwds=ascii_array_kwargs) for m in (mode1, mode2)]
-        # (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
+        try:
+            pool = multiprocessing.Pool(processes=2)
+            R = [pool.apply_async(read_ascii_array, args=(m,),
+                                  kwds=ascii_array_kwargs) for m in (mode1,
+                                                                     mode2)]
+            (X, Y, Z_1), (_, _, Z_2) = [r.get() for r in R]
+        except:
+            X, Y, Z_1 = read_ascii_array(mode1, **ascii_array_kwargs)
+            _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
 
     if write_peaks:
         if write_peaks == '1':
