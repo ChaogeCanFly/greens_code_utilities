@@ -230,7 +230,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             x, y = splev(np.linspace(0, 1, interpolate), tck)
 
         # reapply limits
-        # x_mask = np.logical_and(x > L*limits[0], x < L*limits[1])
         x_mask = (x > L*limits[0]) & (x < L*limits[1])
         x, y = [u[x_mask] for u in x, y]
 
@@ -242,8 +241,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         for xi, yi in zip(x, y):
             # TODO: factor was 1.05 - introduces bugs?
             eps = W/P.shape[0]*1.10
-            # zi = np.where(np.logical_and(abs(X - xi) < eps,
-            #                              abs(Y - yi) < eps))
             zi = np.where((abs(X - xi) < eps) & (abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
