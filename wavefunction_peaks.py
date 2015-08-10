@@ -177,7 +177,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         P = np.zeros_like(X)
 
         if len(limits) != 4:
-            raise Exception("Error: len(limits) != 4.")
+            raise Exception("Error: --limits option needs exactly 4 entries.")
         # define waveguide geometry (avoid minima due to boundary conditions
         # at walls)
         X_mask = np.logical_and(limits[0]*L < X, X < limits[1]*L)
