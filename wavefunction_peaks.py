@@ -57,7 +57,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          npz_potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=5e-3, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False, filter='gauss'):
+         filter='gauss'):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -86,9 +86,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 if supplied, use .npz file as input
             txt_potential: str
                 use peaks from external text file
-            peak_function: str
+            peak_function: str (local|points|interactive) (+_sine)
                 determines how the potential is constructed from the
-                wavefunction intensity
+                wavefunction intensity. interactive opens a plot window to
+                select individual points, appending '_sine' to the name applies
+                a sine envelope to the potential
             savez: bool
                 whether to save the output arrays in .npz format
             threshold: float
@@ -107,9 +109,6 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 write settings files and exit
             no_mayavi: bool
                 whether to produce a 3D plot of the potential
-            interactive: bool
-                whether to open an interactive plot window to select indiviual
-                points
             filter: str (gauss|uniform)
                 chooses which filter to apply
     """
@@ -169,6 +168,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         elif 'points' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
+
         # get array-indices of peaks and sort coordinates
         idx = np.where(peaks)
         print "Found {} peaks...".format(len(idx[0]))
@@ -179,7 +179,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             print "Loading txt_potential..."
             x, y = np.loadtxt(txt_potential, unpack=True)
 
-        if interactive:
+        if 'interactive' in peak_function:
             print "Starting interactive session..."
             from matplotlib import pyplot as plt
 
