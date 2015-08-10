@@ -194,6 +194,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
             plt.show()
             x, y = np.loadtxt(FILE_NAME + '_interactive.dat', unpack=True)
+            # print "nx, ny:", int(x/L*r_nx), int(y/W*r_ny)
 
         if interpolate:
             print "Interpolating data points..."
@@ -220,6 +221,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
         sigmax, sigmay = [P.shape[0]*s/100. for s in sigmax, sigmay]
+        print "P.shape[0]", P.shape[0]
+        print "r_ny", r_ny
 
         # decorate data points with filter
         if 'uniform' in filter:
