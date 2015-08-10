@@ -114,7 +114,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                 chooses which filter to apply
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
-    print settings
+    print settings + "\n"
     with open(FILE_NAME + '.json', 'w') as f:
         f.write(settings)
     convert_json_to_cfg(infile=FILE_NAME + '.json',
@@ -125,8 +125,8 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
     if npz_potential:
         npz_file = np.load(npz_potential)
-        X, Y, Z_1, Z_2, P, x, y = [npz_file[s] for s in ('X', 'Y', 'Z_1',
-                                                         'Z_2', 'P', 'x', 'y')]
+        npz_vars = ('X', 'Y', 'Z_1', 'Z_2', 'P', 'x', 'y')
+        X, Y, Z_1, Z_2, P, x, y = [npz_file[s] for s in npz_vars]
     else:
         ascii_array_kwargs = {'L': L,
                               'W': W,
@@ -136,7 +136,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
                               'r_ny': r_ny,
                               'pic_ascii': pic_ascii,
                               'return_abs': True}
-        print "\nReading .ascii files..."
+        print "Reading .ascii files..."
         try:
             pool = multiprocessing.Pool(processes=2)
             R = [pool.apply_async(read_ascii_array, args=(m,),
