@@ -64,6 +64,7 @@ def on_key(event, plt):
 @argh.arg('--r-ny', type=int)
 @argh.arg('--shift', type=str)
 @argh.arg('--threshold', type=float)
+@argh.arg('--cutoff', type=float)
 @argh.arg('--limits', type=float, nargs='+')
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
