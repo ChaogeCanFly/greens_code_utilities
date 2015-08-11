@@ -63,14 +63,15 @@ def on_key(event, plt):
 @argh.arg('--r-nx', type=int)
 @argh.arg('--r-ny', type=int)
 @argh.arg('--shift', type=str)
+@argh.arg('--threshold', type=float)
 @argh.arg('--limits', type=float, nargs='+')
 def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          npz_potential=None, txt_potential=None, peak_function='local',
-         savez=False, threshold=5e-3, shift=None, interpolate=0,
+         savez=False, threshold=None, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False, filter='gauss'):
+         interactive=False, filter='gauss', cutoff=None):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -257,14 +258,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # normalize potential based on most frequent value P_ij < 0.
         print "Normalize potential..."
-        print "Determine P_cutoff..."
-        P_cutoff = P[P < 0.]
-        print "Determine cutoff..."
-        cutoff = stats.mode(P_cutoff)[0][0]
-        print "cutoff value:", cutoff
-        print "Applying cuttoff..."
+        if not cutoff:
+            print "Determine cutoff..."
+            cutoff = stats.mode(P[P < 0.])[0][0]
+            print "cutoff value:", cutoff
         P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
-        print "Applying normalization..."
         P /= -P.min()
 
         if 'sine' in peak_function:
