@@ -235,16 +235,12 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         x_mask = (x > L*limits[0]) & (x < L*limits[1])
         x, y = [u[x_mask] for u in x, y]
 
-        # always write the potential coordinates
-        print "Writing coordinates file..."
-        np.savetxt(FILE_NAME + '.dat', zip(x, y))
-
         # write potential to grid-points
         print "Writing potential to grid-points..."
         # TODO: factor was 1.05 - introduces bugs?
         eps = W/P.shape[0]*1.10
         for xi, yi in zip(x, y):
-            zi = np.where((abs(X - xi) < eps) & (abs(Y - yi) < eps))
+            zi = np.where((np.abs(X - xi) < eps) & (np.abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
@@ -283,6 +279,11 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
                    list(enumerate(P.flatten('F'))))
+
+        # always write the potential coordinates
+        print "Writing coordinates file..."
+        np.savetxt(FILE_NAME + '.dat', zip(x, y))
+
         if savez:
             print "Writing .npz file..."
             np.savez(FILE_NAME + '.npz',
@@ -323,7 +324,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         p = ax.pcolormesh(X, Y, P, cmap=cmap)
         f.colorbar(p)
         ax.set_aspect('equal', 'datalim')
-        plt.savefig(FILE_NAME + '_potential_2D.png')
+        plt.savefig(FILE_NAME + '_potential_2D.png', bbox_inches='tight')
 
         if not no_mayavi:
             try:
