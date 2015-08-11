@@ -238,6 +238,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         np.savetxt(FILE_NAME + '.dat', zip(x, y))
 
         # write potential to grid-points
+        print "Writing potential to grid-points..."
         for xi, yi in zip(x, y):
             # TODO: factor was 1.05 - introduces bugs?
             eps = W/P.shape[0]*1.10
@@ -248,6 +249,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
         sigmax, sigmay = [P.shape[0]*s/100. for s in sigmax, sigmay]
 
         # decorate data points with filter
+        print "Applying filter..."
         if 'uniform' in filter:
             P = uniform_filter(P, (sigmay, sigmax), mode='constant')
         elif 'gauss' in filter:

@@ -1,6 +1,8 @@
 #!/usr/bin/env python2.7
 
+import itertools
 import numpy as np
+import sys
 
 import argh
 
@@ -18,16 +20,30 @@ def read_ascii_array(ascii_file, L=None, W=None, pphw=None, N=None, r_nx=None,
         if r_nx is None and r_nx is None:
             if None not in (pphw, N, L, W):
                 nyout = pphw*N
-                r_nx = int((nyout+1)*L)
-                r_ny = int((nyout+1)*W)
+                dy = W/(nyout + 1.)
+                r_nx = int(L/dy)
+                r_ny = int(W/dy)
             else:
                 raise Exception(("Error: either pphw/N or r_nx/r_ny have "
                                  "to be supplied."))
 
-        x = np.linspace(0, L, r_nx)
-        y = np.linspace(0, W, r_ny)
+        shift = (0, 1, -1, 2, -2)
+        for (xn, yn) in itertools.product(shift, repeat=2):
+            r_nx_shift = r_nx + xn
+            r_ny_shift = r_ny + yn
+            try:
+                print "Trying ({}, {})".format(r_nx_shift, r_ny_shift)
+                Z = Z.reshape(r_ny_shift, r_nx_shift, order='F')
+                print "Successfull for (xn, yn) = ({}, {})".format(xn, yn)
+                break
+            except ValueError as error:
+                warning = "Warning: {}. Cannot use (r_xn, r_yn) = ({}, {})."
+                print warning.format(error, r_nx_shift, r_ny_shift)
+
+        r_nx, r_ny = r_nx_shift, r_ny_shift
+        x = np.linspace(0., L, r_nx)
+        y = np.linspace(0., W, r_ny)
         X, Y = np.meshgrid(x, y)
-        Z = Z.reshape(r_ny, r_nx, order='F')
     else:
         n, m, Z_re, Z_im = np.loadtxt(ascii_file, unpack=True)
         xdim = n[-1] + 1
