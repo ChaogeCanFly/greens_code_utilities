@@ -239,9 +239,9 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # write potential to grid-points
         print "Writing potential to grid-points..."
+        # TODO: factor was 1.05 - introduces bugs?
+        eps = W/P.shape[0]*1.10
         for xi, yi in zip(x, y):
-            # TODO: factor was 1.05 - introduces bugs?
-            eps = W/P.shape[0]*1.10
             zi = np.where((abs(X - xi) < eps) & (abs(Y - yi) < eps))
             P[zi] = POT_CUTOFF_VALUE
 
@@ -257,8 +257,14 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
 
         # normalize potential based on most frequent value P_ij < 0.
         print "Normalize potential..."
-        cutoff = stats.mode(P[P < 0.])[0][0]
+        print "Determine P_cutoff..."
+        P_cutoff = P[P < 0.]
+        print "Determine cutoff..."
+        cutoff = stats.mode(P_cutoff)[0][0]
+        print "cutoff value:", cutoff
+        print "Applying cuttoff..."
         P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
+        print "Applying normalization..."
         P /= -P.min()
 
         if 'sine' in peak_function:
