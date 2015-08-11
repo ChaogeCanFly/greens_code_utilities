@@ -256,6 +256,7 @@ def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
             P = gaussian_filter(P, (sigmay, sigmax), mode='constant')
 
         # normalize potential based on most frequent value P_ij < 0.
+        print "Normalize potential..."
         cutoff = stats.mode(P[P < 0.])[0][0]
         P[P < 0.99*cutoff] = POT_CUTOFF_VALUE
         P /= -P.min()
