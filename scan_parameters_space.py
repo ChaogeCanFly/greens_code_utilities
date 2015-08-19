@@ -13,6 +13,9 @@ from ep.waveguide import Dirichlet
 from helper_functions import replace_in_file
 
 
+TMP = "bloch.tmp"
+
+
 def run_code():
     if os.environ.get('TMPDIR') and os.environ.get('NSLOTS'):
         print "running code on cluster..."
@@ -29,7 +32,7 @@ def run_code():
 def print_diff_warning(array, name):
     """Print a warning if consecutive values in the input array differ by
     less than 1."""
-    if np.any(np.diff(array) < 1):
+    if np.any(abs(np.diff(array)) < 1):
         print """
             WARNING: not all {1} values can be resolved.
 
@@ -106,9 +109,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         replace_in_file(xml_template, xml, **replacements)
 
     # parameters, eigenvalues and eigenvectors
-    # eps, delta, ev0, ev1, overlap = [ [] for n in range(5) ]
-    eps, delta, ev0, ev1, overlap = []*5
-    tmp = "bloch.tmp"
+    eps, delta, ev0, ev1, overlap = [[] for n in range(5)]
     for e in eps_range:
         for d in delta_range:
             update_boundary(e, d)
