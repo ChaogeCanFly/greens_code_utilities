@@ -85,7 +85,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
 
         # choose discretization such that r_nx < len(x_range)
         # r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
-        r_nx_L = (L(N*pphw + 1)).astype(int)
+        r_nx_L = (L*(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
         WG = Dirichlet(loop_type='Constant', N=N, L=L, W=W, eta=eta)
 
@@ -96,7 +96,8 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         np.savetxt("upper.boundary", zip(x_range, xi_upper))
 
         N_file_boundary = len(x_range)
-        replacements = {'LENGTH': str(L),
+        replacements = {'NAME': "complex_potential",
+                        'LENGTH': str(L),
                         'WIDTH': str(W),
                         'MODES': str(N),
                         'PPHW': str(pphw),
