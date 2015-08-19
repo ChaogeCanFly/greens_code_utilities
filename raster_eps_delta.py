@@ -18,7 +18,7 @@ def run_code():
         print "running code on cluster..."
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
-        cmd = ("time mpirun -np $SLURM_NTASKS "
+        cmd = ("time mpirun -np {SLURM_NTASKS} "
                "solve_xml_mumps_dev").format(**os.environ)
     else:
         print "running code locally..."
