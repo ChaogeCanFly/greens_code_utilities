@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 import os
 import numpy as np
@@ -17,10 +17,9 @@ TMP = "bloch.tmp"
 
 
 def run_code():
-    if os.environ.get('TMPDIR') and os.environ.get('NSLOTS'):
+    if os.environ.get('SLURM_NTASKS'):
         print "running code on cluster..."
-        print "$TMPDIR", os.environ.get('TMPDIR')
-        print "$NSLOTS", os.environ.get('NSLOTS')
+        print "$SLURM_NTASKS", os.environ.get('SLURM_NTASKS')
         cmd = ("time mpirun -np {SLURM_NTASKS} "
                "solve_xml_mumps_dev").format(**os.environ)
     else:
