@@ -110,7 +110,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         replace_in_file(xml_template, xml, **replacements)
 
     # parameters, eigenvalues and eigenvectors
-    eps, delta, ev0, ev1, overlap = [[] for n in range(5)]
+    eps, delta, ev0, ev1 = [[] for n in range(4)]
     for e in eps_range:
         for d in delta_range:
             update_boundary(e, d)
@@ -121,17 +121,14 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                 # bloch_evals = np.array(bloch_evals)[0, :2]
                 # if bloch.get_eigensystem is not called with modes, dx, etc.,
                 # these values are read from the xml file
-                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True)
-                bloch_evals, bloch_evecs = [np.array(x)[:2] for x in (bloch_evals, bloch_evecs)]
-                bloch_evecs_overlap = (np.abs(bloch_evecs[0]-bloch_evecs[1])**2).sum()
-                print "overlap", bloch_evecs_overlap
+                bloch_evals, _ = bloch.get_eigensystem(evalsfile='Evals.complex_potential.dat')
+                bloch_evals = np.array(bloch_evals)[:2]
 
                 ev0.append(bloch_evals[0])
                 ev1.append(bloch_evals[1])
-                overlap.append(bloch_evecs_overlap)
                 eps.append(e)
                 delta.append(d)
-                with open(tmp, "a") as f:
+                with open(TMP, "a") as f:
                     f.write("{} {} {} {} {} {}\n".format(e, d,
                                                          bloch_evals[0].real,
                                                          bloch_evals[0].imag,
@@ -144,8 +141,8 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                     os.remove("Evecs.complex_potential.abs")
                     xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
                     archive("input.xml", xml_file, delete=False)
-            except:
-                print "Evals, evecs or xml file not found!"
+            except Exception as ex:
+                print "Evals, evecs or xml file not found: {}".format(ex)
             # tmp.out is not written if job is part of a job-array
             tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
             archive("tmp.out", tmp_file)
@@ -153,11 +150,10 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
             jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
             archive("pic.geometry.complex_potential.1.jpg", jpg_file)
 
-    eps, delta, ev0, ev1, overlap = [np.array(x) for x in (eps, delta, ev0,
-                                                           ev1, overlap)]
+    eps, delta, ev0, ev1 = [np.array(x) for x in (eps, delta, ev0, ev1)]
     np.savetxt("bloch_modes.dat", zip(eps, delta,
                                       ev0.real, ev0.imag,
-                                      ev1.real, ev1.imag, overlap))
+                                      ev1.real, ev1.imag))
 
 if __name__ == '__main__':
     argh.dispatch_command(raster_eps_delta)
