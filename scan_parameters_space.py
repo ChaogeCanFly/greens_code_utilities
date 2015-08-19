@@ -9,7 +9,7 @@ import sys
 import argh
 
 import bloch
-from ep.waveguide import Neumann, Dirichlet
+from ep.waveguide import Dirichlet
 from helper_functions import replace_in_file
 
 
@@ -53,14 +53,10 @@ def archive(infile, outfile, delete=True):
 @argh.arg("--delta", type=float, nargs="+")
 def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                      xml_template="input.xml_template", eps=[0.01, 0.1, 30],
-                     delta=[0.3, 0.7, 50], dryrun=False, neumann=0):
+                     delta=[0.3, 0.7, 50], dryrun=False):
 
     # k_x for modes 0 and 1
-    if not neumann:
-        k0, k1 = [np.sqrt(N**2 - n**2)*np.pi for n in (1, 2)]
-    else:
-        k0, k1 = [np.sqrt(N**2 - n**2)*np.pi for n in (0, 1)]
-
+    k0, k1 = [np.sqrt(N**2 - n**2)*np.pi for n in (1, 2)]
     kr = k0 - k1
 
     # ranges
@@ -88,10 +84,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         # r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
         r_nx_L = (L(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
-        if not neumann:
-            WG = Dirichlet(loop_type='Constant', N=N, L=L, W=W, eta=eta)
-        else:
-            WG = Neumann(loop_type='Constant', N=N, L=L, W=W, eta=eta)
+        WG = Dirichlet(loop_type='Constant', N=N, L=L, W=W, eta=eta)
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
         print "lower.boundary.shape", xi_lower.shape
@@ -105,7 +98,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                         'MODES': str(N),
                         'PPHW': str(pphw),
                         'GAMMA0': str(eta),
-                        'NEUMANN': neumann,
+                        'NEUMANN': "0",
                         'N_FILE_BOUNDARY': str(N_file_boundary),
                         'BOUNDARY_UPPER': 'upper.boundary',
                         'BOUNDARY_LOWER': 'lower.boundary'}
@@ -126,8 +119,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                 # bloch_evals = np.array(bloch_evals)[0, :2]
                 # if bloch.get_eigensystem is not called with modes, dx, etc.,
                 # these values are read from the xml file
-                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True,
-                                                                       neumann=neumann)
+                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True)
                 bloch_evals, bloch_evecs = [np.array(x)[:2] for x in (bloch_evals, bloch_evecs)]
                 bloch_evecs_overlap = (np.abs(bloch_evecs[0]-bloch_evecs[1])**2).sum()
                 print "overlap", bloch_evecs_overlap
