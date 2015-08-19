@@ -18,7 +18,8 @@ PIC_ASCII_YMIN = 0.2375
 PIC_ASCII_YMAX = 0.7500
 POT_CUTOFF_VALUE = -1.0
 PLOT_FIGSIZE = (200, 100)
-PLOT_FIGSIZE_SCALING = 250
+# PLOT_FIGSIZE_SCALING = 250
+PLOT_FIGSIZE_SCALING = 25
 PLOT_FONTSIZE = 100
 PICKER_TOLERANCE = 5
 
@@ -191,7 +192,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
         if 'local' in peak_function:
             peaks = get_local_peaks(Z, peak_type='minimum')
             peaks[~WG_mask] = 0.0
-        elif 'points' in peak_function:
+        elif 'cut' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
 
         # get array-indices of peaks
@@ -219,7 +220,11 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             fig.canvas.callbacks.connect('pick_event', on_pick_lambda)
             fig.canvas.callbacks.connect('key_press_event', key_press_lambda)
             plt.show()
-            x, y = np.asarray(event_coordinates).T
+            try:
+                x, y = np.asarray(event_coordinates).T
+            except:
+                print """Warning: event_coordinates cannot be unpacked.
+                Proceeding with old (x,y) values."""
 
         # sort coordinates wrt x-coordinate
         x, y = [u[np.argsort(x)] for u in (x, y)]
