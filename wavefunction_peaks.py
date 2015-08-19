@@ -66,13 +66,13 @@ def on_key(event, plt):
 @argh.arg('--threshold', type=float)
 @argh.arg('--cutoff', type=float)
 @argh.arg('--limits', type=float, nargs='+')
-def main(pphw=50, N=2.5, L=100., W=1., sigmax=10., sigmay=1.,
+def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          npz_potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=None, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False, filter='gauss', cutoff=None):
+         interactive=False, filter='uniform', cutoff=None):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
