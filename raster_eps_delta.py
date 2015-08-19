@@ -9,7 +9,7 @@ import sys
 import argh
 
 import bloch
-from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
+from ep.waveguide import Neumann, Dirichlet
 from helper_functions import replace_in_file
 
 
@@ -18,26 +18,48 @@ def run_code():
         print "running code on cluster..."
         print "$TMPDIR", os.environ.get('TMPDIR')
         print "$NSLOTS", os.environ.get('NSLOTS')
-        cmd = ("mpirun -machinefile {TMPDIR}/machines -np {NSLOTS} "
+        cmd = ("time mpirun -np $SLURM_NTASKS "
                "solve_xml_mumps_dev").format(**os.environ)
     else:
         print "running code locally..."
-        cmd = "solve_xml_mumps"
-
+        cmd = "solve_xml_mumps_dev"
     subprocess.call(cmd.split())
+
+
+def print_diff_warning(array, name):
+    """Print a warning if consecutive values in the input array differ by
+    less than 1."""
+    if np.any(np.diff(array) < 1):
+        print """
+            WARNING: not all {1} values can be resolved.
+
+            diff(array) = {0}
+        """.format(np.diff(array), name)
+
+
+def archive(infile, outfile, delete=True):
+    """Copy infile to outfile, compress the destination file and remove the
+    source."""
+    try:
+        shutil.copy(infile, outfile)
+        subprocess.call(['gzip', outfile])
+        if delete:
+            os.remove(infile)
+    except:
+        print "WARNING: could not archive " + infile
 
 
 @argh.arg("--eps", type=float, nargs="+")
 @argh.arg("--delta", type=float, nargs="+")
-def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
+def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                      xml_template="input.xml_template", eps=[0.01, 0.1, 30],
-                     delta=[0.3, 0.7, 50], dryrun=False, neumann=1):
+                     delta=[0.3, 0.7, 50], dryrun=False, neumann=0):
 
     # k_x for modes 0 and 1
-    if neumann:
-        k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 0, 1 ]
+    if not neumann:
+        k0, k1 = [np.sqrt(N**2 - n**2)*np.pi for n in (1, 2)]
     else:
-        k0, k1 = [ np.sqrt(N**2 - n**2)*np.pi for n in 1, 2 ]
+        k0, k1 = [np.sqrt(N**2 - n**2)*np.pi for n in (0, 1)]
 
     kr = k0 - k1
 
@@ -49,73 +71,64 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
 
     # check if eps/delta values can be resolved
     r_ny_eps = (eps_range*(N*pphw+1)).astype(int)
-    r_nx_L = (abs(2*np.pi/(kr + delta_range))*(N*pphw+1)).astype(int)
+    r_nx_L = (abs(2.*np.pi/(kr + delta_range))*(N*pphw+1)).astype(int)
     print "grid-points per full amplitude eps", r_ny_eps
     print "grid-points per length L", r_nx_L
 
-    if np.any(np.diff(r_ny_eps) < 1):
-        print """
-            WARNING: not all epsilon values can be resolved.
-
-            diff(r_ny_eps) = {0}
-        """.format(np.diff(r_ny_eps))
-
-    if np.any(abs(np.diff(r_nx_L)) < 1):
-        print """
-            WARNING: not all L values can be resolved.
-
-            diff(r_nx_L) = {0}
-        """.format(abs(np.diff(r_nx_L)))
+    print_diff_warning(r_ny_eps, "epsilon")
+    print_diff_warning(r_nx_L, "length")
 
     if dryrun:
         sys.exit()
 
     def update_boundary(eps, delta):
-        L = abs(2*np.pi/(k0 - k1 + delta))
+        L = abs(2*np.pi/(kr + delta))
 
         # choose discretization such that r_nx < len(x_range)
-        r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
+        # r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
+        r_nx_L = (L(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
-        if neumann:
-            WG = Neumann(L=L, loop_type='Constant', N=N, eta=eta)
+        if not neumann:
+            WG = Dirichlet(loop_type='Constant', N=N, L=L, W=W, eta=eta)
         else:
-            WG = Dirichlet(L=L, loop_type='Constant', N=N, eta=eta)
+            WG = Neumann(loop_type='Constant', N=N, L=L, W=W, eta=eta)
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
-        print "xi_lower.shape", xi_lower.shape
+        print "lower.boundary.shape", xi_lower.shape
 
-        np.savetxt("lower.profile", zip(x_range, xi_lower))
-        np.savetxt("upper.profile", zip(x_range, xi_upper))
+        np.savetxt("lower.boundary", zip(x_range, xi_lower))
+        np.savetxt("upper.boundary", zip(x_range, xi_upper))
 
-        # N_file = len(WG.t)
-        N_file = len(x_range)
+        N_file_boundary = len(x_range)
         replacements = {'LENGTH': str(L),
                         'WIDTH': str(W),
                         'MODES': str(N),
                         'PPHW': str(pphw),
                         'GAMMA0': '0.0',
                         'NEUMANN': '0',
-                        'N_FILE_BOUNDARY': str(N_file),
+                        'N_FILE_BOUNDARY': str(N_file_boundary),
                         'BOUNDARY_UPPER': 'upper.boundary',
                         'BOUNDARY_LOWER': 'lower.boundary'}
 
         replace_in_file(xml_template, xml, **replacements)
 
     # parameters, eigenvalues and eigenvectors
-    eps, delta, ev0, ev1, overlap = [ [] for n in range(5) ]
+    # eps, delta, ev0, ev1, overlap = [ [] for n in range(5) ]
+    eps, delta, ev0, ev1, overlap = []*5
     tmp = "bloch.tmp"
     for e in eps_range:
         for d in delta_range:
             update_boundary(e, d)
             run_code()
             try:
-                ##bloch_evals = bloch.get_eigensystem()
-                # TODO: why column 0 and not 1 to access the right moving modes?
-                ##bloch_evals = np.array(bloch_evals)[0, :2]
+                # bloch_evals = bloch.get_eigensystem()
+                # TODO: why column 0 and not 1 to access right moving modes?
+                # bloch_evals = np.array(bloch_evals)[0, :2]
                 # if bloch.get_eigensystem is not called with modes, dx, etc.,
                 # these values are read from the xml file
-                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True, neumann=neumann)
-                bloch_evals, bloch_evecs = [ np.array(x)[:2] for x in bloch_evals, bloch_evecs ]
+                bloch_evals, _, bloch_evecs, _ = bloch.get_eigensystem(return_eigenvectors=True,
+                                                                       neumann=neumann)
+                bloch_evals, bloch_evecs = [np.array(x)[:2] for x in (bloch_evals, bloch_evecs)]
                 bloch_evecs_overlap = (np.abs(bloch_evecs[0]-bloch_evecs[1])**2).sum()
                 print "overlap", bloch_evecs_overlap
 
@@ -126,41 +139,28 @@ def raster_eps_delta(N=1.05, pphw=300, eta=0.1, xml="input.xml",
                 delta.append(d)
                 with open(tmp, "a") as f:
                     f.write("{} {} {} {} {} {}\n".format(e, d,
-                                                            bloch_evals[0].real,
-                                                            bloch_evals[0].imag,
-                                                            bloch_evals[1].real,
-                                                            bloch_evals[1].imag))
+                                                         bloch_evals[0].real,
+                                                         bloch_evals[0].imag,
+                                                         bloch_evals[1].real,
+                                                         bloch_evals[1].imag))
                     # backup output files
-                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
-                    shutil.copy("Evals.sine_boundary.dat", evals_file)
-                    subprocess.call(['gzip', evals_file])
-                    os.remove("Evecs.sine_boundary.dat")
-                    os.remove("Evecs.sine_boundary.abs")
-                    # evecs_file = "evecs_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
-                    # shutil.copy("Evecs.sine_boundary.dat", evecs_file)
-                    # subprocess.call(['gzip', evecs_file])
-                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e,d)
-                    shutil.copy("input.xml", xml_file)
-                    subprocess.call(['gzip', xml_file])
+                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    archive("Evals.complex_potential.dat", evals_file)
+                    os.remove("Evecs.complex_potential.dat")
+                    os.remove("Evecs.complex_potential.abs")
+                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    archive("input.xml", xml_file, delete=False)
             except:
                 print "Evals, evecs or xml file not found!"
             # tmp.out is not written if job is part of a job-array
-            try:
-                tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
-                shutil.copy("tmp.out", tmp_file)
-                subprocess.call(['gzip', tmp_file])
-            except:
-                print "Temp file not found!".format(tmp_file)
+            tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
+            archive("tmp.out", tmp_file)
             # be backwards compatible in case no jpg is written
-            try:
-                jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
-                shutil.copy("pic.geometry.sine_boundary.1.jpg", jpg_file)
-                subprocess.call(['gzip', jpg_file])
-            except:
-                print "JPG file not found!".format(jpg_file)
+            jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
+            archive("pic.geometry.complex_potential.1.jpg", jpg_file)
 
-    eps, delta, ev0, ev1, overlap = [ np.array(x) for x in
-                                       eps, delta, ev0, ev1, overlap ]
+    eps, delta, ev0, ev1, overlap = [np.array(x) for x in (eps, delta, ev0,
+                                                           ev1, overlap)]
     np.savetxt("bloch_modes.dat", zip(eps, delta,
                                       ev0.real, ev0.imag,
                                       ev1.real, ev1.imag, overlap))

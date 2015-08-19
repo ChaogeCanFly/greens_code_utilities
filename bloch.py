@@ -10,9 +10,8 @@ from xmlparser import XML
 
 def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                     evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
-                    dx=None, r_nx=None, sort=True,
-                    return_velocities=False, return_eigenvectors=False,
-                    verbose=True, neumann=1):
+                    dx=None, r_nx=None, sort=True, return_velocities=False,
+                    return_eigenvectors=False, verbose=True, neumann=0):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
