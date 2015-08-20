@@ -13,10 +13,13 @@ from ep.waveguide import Dirichlet
 from helper_functions import replace_in_file
 
 
-TMP = "bloch.tmp"
+TMP = 'bloch.tmp'
+CALC_NAME = 'complex_potential'
 
 
 def run_code():
+    """Execute greens_code on the cluster or locally, dependent on the
+    environmental variable SLURM_NTASKS."""
     if os.environ.get('SLURM_NTASKS'):
         print "running code on cluster..."
         print "$SLURM_NTASKS", os.environ.get('SLURM_NTASKS')
@@ -24,7 +27,7 @@ def run_code():
                "solve_xml_mumps_dev").format(**os.environ)
     else:
         print "running code locally..."
-        cmd = "solve_xml_mumps_dev"
+        cmd = "mpirun -np 4 solve_xml_mumps_dev"
     subprocess.call(cmd.split())
 
 
@@ -83,9 +86,10 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         L = abs(2*np.pi/(kr + delta))
 
         # choose discretization such that r_nx < len(x_range)
-        # r_nx_L = (abs(2*np.pi/(kr + delta))*(N*pphw + 1)).astype(int)
         r_nx_L = (L*(N*pphw + 1)).astype(int)
         x_range = np.linspace(0, L, r_nx_L)
+
+        # no Delta-phase necessary if looking at loop_type constant!
         WG = Dirichlet(loop_type='Constant', N=N, L=L, W=W, eta=eta)
 
         xi_lower, xi_upper = WG.get_boundary(x=x_range, eps=eps, delta=delta)
@@ -95,7 +99,7 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
         np.savetxt("upper.boundary", zip(x_range, xi_upper))
 
         N_file_boundary = len(x_range)
-        replacements = {'NAME': "complex_potential",
+        replacements = {'NAME': CALC_NAME,
                         'LENGTH': str(L),
                         'WIDTH': str(W),
                         'MODES': str(N),
@@ -120,7 +124,8 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                 # bloch_evals = np.array(bloch_evals)[0, :2]
                 # if bloch.get_eigensystem is not called with modes, dx, etc.,
                 # these values are read from the xml file
-                bloch_evals, _ = bloch.get_eigensystem(evalsfile='Evals.complex_potential.dat')
+                evalsfile = 'Evals.' + CALC_NAME + '.dat'
+                bloch_evals, _ = bloch.get_eigensystem(evalsfile=evalsfile)
                 bloch_evals = np.array(bloch_evals)[:2]
 
                 ev0.append(bloch_evals[0])
@@ -134,20 +139,15 @@ def raster_eps_delta(N=2.6, pphw=300, eta=0.1, W=1.0, xml="input.xml",
                                                          bloch_evals[1].real,
                                                          bloch_evals[1].imag))
                     # backup output files
-                    evals_file = "evals_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
-                    archive("Evals.complex_potential.dat", evals_file)
-                    os.remove("Evecs.complex_potential.dat")
-                    os.remove("Evecs.complex_potential.abs")
-                    xml_file = "xml_eps_{:.8f}_delta_{:.8f}.dat".format(e, d)
+                    eps_delta_id = "eps_{:.6f}_delta_{:.6f}".format(e, d)
+                    evals_file = "evals_" + eps_delta_id + ".dat"
+                    archive("Evals." + CALC_NAME + ".dat", evals_file)
+                    xml_file = "xml_" + eps_delta_id + ".dat"
                     archive("input.xml", xml_file, delete=False)
+                    os.remove("Evecs." + CALC_NAME + ".dat")
+                    os.remove("Evecs." + CALC_NAME + ".abs")
             except Exception as ex:
                 print "Evals, evecs or xml file not found: {}".format(ex)
-            # tmp.out is not written if job is part of a job-array
-            tmp_file = "tmp_eps_{:.8f}_delta_{:.8f}.out".format(e, d)
-            archive("tmp.out", tmp_file)
-            # be backwards compatible in case no jpg is written
-            jpg_file = "jpg_eps_{:.8f}_delta_{:.8f}.jpg".format(e, d)
-            archive("pic.geometry.complex_potential.1.jpg", jpg_file)
 
     eps, delta, ev0, ev1 = [np.array(x) for x in (eps, delta, ev0, ev1)]
     np.savetxt("bloch_modes.dat", zip(eps, delta,
