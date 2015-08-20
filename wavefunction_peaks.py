@@ -4,8 +4,8 @@ import json
 import multiprocessing
 import numpy as np
 import os
+import matplotlib
 if os.environ.get('SLURM_NTASKS'):
-    import matplotlib
     matplotlib.use("Agg")
     print "Using 'Agg' backend..."
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
