@@ -50,8 +50,8 @@ def archive(infile, outfile, delete=True):
         subprocess.call(['gzip', outfile])
         if delete:
             os.remove(infile)
-    except:
-        print "WARNING: could not archive " + infile
+    except Exception as ex:
+        print "WARNING: could not archive {}: {}".format(infile, ex)
 
 
 @argh.arg("--eps", type=float, nargs="+")
