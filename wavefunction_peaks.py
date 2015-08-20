@@ -4,7 +4,7 @@ import json
 import multiprocessing
 import numpy as np
 import os
-if os.environ['SLURM_NTASKS']:
+if os.environ.get('SLURM_NTASKS'):
     import matplotlib
     matplotlib.use("Agg")
     print "Using 'Agg' backend..."
