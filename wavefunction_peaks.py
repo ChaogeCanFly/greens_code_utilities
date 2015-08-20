@@ -3,6 +3,11 @@
 import json
 import multiprocessing
 import numpy as np
+import os
+if os.environ['SLURM_NTASKS']:
+    import matplotlib
+    matplotlib.use("Agg")
+    print "Using 'Agg' backend..."
 from scipy.ndimage.filters import gaussian_filter, uniform_filter
 from scipy import stats
 import sys
@@ -164,7 +169,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             _, _, Z_2 = read_ascii_array(mode2, **ascii_array_kwargs)
 
     if plot or interactive:
-        import matplotlib
+        # import matplotlib
         from matplotlib import pyplot as plt
         from ep.plot import get_colors
 
