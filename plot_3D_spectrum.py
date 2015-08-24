@@ -160,6 +160,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
         sys.exit()
 
     if mayavi:
+        extent = (0, 1, 0, 1, 0, 1)
         # real part
         for e in ev0, ev1:
             mask = np.zeros_like(eps).astype(bool)
@@ -171,8 +172,9 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             except:
                 pass
             mlab.figure(0, bgcolor=(0.5,0.5,0.5))
-            m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
-            m1.actor.actor.scale = (5,1,1)
+            m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask,
+                           extent=extent)
+            # m1.actor.actor.scale = (5,1,1)
 
         mlab.title("Real part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
@@ -189,8 +191,9 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 mask = np.logical_or(mask, ~limit_mask)
             except:
                 pass
-            m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask)
-            m2.actor.actor.scale = (5,1,1)
+            m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask,
+                           extent=extent)
+            # m2.actor.actor.scale = (5,1,1)
 
         mlab.title("Imaginary part", opacity=0.25)
         mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
