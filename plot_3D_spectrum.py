@@ -22,10 +22,10 @@ def reorder_file(infile="bloch.tmp"):
     ev1 = ev1r+1j*ev1i
 
     _, idx = unique_array(np.array(zip(eps, delta)))
-    eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
+    eps, delta, ev0, ev1 = [x[idx] for x in (eps, delta, ev0, ev1)]
 
     idx = np.lexsort((delta, eps))
-    eps, delta, ev0, ev1 = [ x[idx] for x in eps, delta, ev0, ev1 ]
+    eps, delta, ev0, ev1 = [x[idx] for x in (eps, delta, ev0, ev1)]
 
     return eps, delta, ev0, ev1
 
@@ -58,7 +58,7 @@ def find_outliers(eps):
 @argh.arg("-I", "--interpolate")
 def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                      reorder=False, jump=100., mayavi=False, limits=None,
-                     sort=False, png=None, full=False, dryrun=False, 
+                     sort=False, png=None, full=False, dryrun=False,
                      interpolate=False):
     """Visualize the eigenvalue spectrum with mayavi.mlab's mesh (3D) and
     matplotlib's pcolormesh (2D).
@@ -89,7 +89,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             dryrun: bool
                 Whether to only return the approximate EP position.
             interpolate: bool
-                Whether to interpolate |ev0-ev1| before determining the EP position.
+                Whether to interpolate |K0-K1| before printing the EP position.
     """
 
     eps, delta, ev0r, ev0i, ev1r, ev1i = np.loadtxt(infile).T
@@ -97,7 +97,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     ev1 = ev1r + 1j*ev1i
     # workound if precision changes for multiple runs
     delta = np.around(delta, decimals=8)
-    len_eps, len_delta = [ len(np.unique(x)) for x in eps, delta ]
+    len_eps, len_delta = [len(np.unique(x)) for x in eps, delta]
 
     if reorder:
         print "reordering..."
@@ -112,14 +112,14 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
     # get eps/delta meshgrid
     try:
-        eps, delta, ev0, ev1 = [ x.reshape(len_eps, len_delta) for
-                                                    x in eps, delta, ev0, ev1 ]
+        eps, delta, ev0, ev1 = [x.reshape(len_eps, len_delta) for
+                                x in (eps, delta, ev0, ev1)]
     except ValueError as e:
         print "Data matrix has missing values. Removing outliers:"
         mask = find_outliers(eps)
         len_masked_eps = len(np.unique(eps[mask]))
-        eps, delta, ev0, ev1 = [ x[mask].reshape(len_masked_eps, -1) for
-                                                    x in eps, delta, ev0, ev1 ]
+        eps, delta, ev0, ev1 = [x[mask].reshape(len_masked_eps, -1) for
+                                x in (eps, delta, ev0, ev1)]
 
     # set x/y limits
     if limits:
@@ -132,7 +132,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
     if outfile:
         v = (eps, delta, ev0.real, ev0.imag, ev1.real, ev1.imag)
-        v = np.array([ x.flatten() for x in v ])
+        v = np.array([x.flatten() for x in v])
         np.savetxt(outfile, v.T, fmt='%.18f')
         sys.exit()
 
@@ -144,8 +144,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     i, j = np.unravel_index(np.sqrt((ev0.real-ev1.real)**2 +
                                     (ev0.imag-ev1.imag)**2).argmin(), ev0.shape)
     print "Approximate EP location:"
-    print "eps_EP =", eps[i,j]
-    print "delta_EP =", delta[i,j]
+    print "eps_EP =", eps[i, j]
+    print "delta_EP =", delta[i, j]
 
     if dryrun and not interpolate:
         sys.exit()
@@ -162,14 +162,14 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 mask = np.logical_or(mask, ~limit_mask)
             except:
                 pass
-            mlab.figure(0, bgcolor=(0.5,0.5,0.5))
+            mlab.figure(0, bgcolor=(0.5, 0.5, 0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask,
                            extent=extent)
             # m1.actor.actor.scale = (5,1,1)
 
         mlab.title("Real part", opacity=0.25)
-        mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
-                  zlabel="Re(K)")
+        mlab.axes(color=(0, 0, 0), nb_labels=3,
+                  xlabel="epsilon", ylabel="delta", zlabel="Re(K)")
 
         # imag part
         for e in ev0, ev1:
@@ -177,7 +177,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             mask[np.abs(np.diff(e.imag, axis=0)) > jump] = True
             mask[np.abs(np.diff(e.imag, axis=1)) > jump] = True
 
-            mlab.figure(1, bgcolor=(0.5,0.5,0.5))
+            mlab.figure(1, bgcolor=(0.5, 0.5, 0.5))
             try:
                 mask = np.logical_or(mask, ~limit_mask)
             except:
@@ -187,8 +187,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             # m2.actor.actor.scale = (5,1,1)
 
         mlab.title("Imaginary part", opacity=0.25)
-        mlab.axes(color=(0,0,0), nb_labels=3, xlabel="epsilon", ylabel="delta",
-                  zlabel="Im(K)")
+        mlab.axes(color=(0, 0, 0), nb_labels=3,
+                  xlabel="epsilon", ylabel="delta", zlabel="Im(K)")
 
         mlab.show()
 
@@ -250,24 +250,25 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
         ax.set_title(r"$\sqrt{(\Re K_0 - \Re K_1)^2 + (\Im K_0 - \Im K_1)^2}$")
 
-        # add one column and row to meshgrids such that meshgrid doesn't cut 
+        # add one column and row to meshgrids such that meshgrid doesn't cut
         # away any important data
         eps_u = np.unique(eps)
         delta_u = np.unique(delta)
         eps0, delta0 = np.meshgrid(np.concatenate((eps_u, [2*eps.max()])),
                                    np.concatenate((delta_u, [2*delta.max()])))
-        Z0 = np.c_[Z, Z[:,-1]]
+        Z0 = np.c_[Z, Z[:, -1]]
         Z0 = np.vstack((Z0, Z0[-1]))
 
         if interpolate:
             from scipy.interpolate import griddata
             x = np.linspace(eps.min(), eps.max(), 500)
             y = np.linspace(delta.min(), delta.max(), 1000)
-            X, Y = np.meshgrid(x,y)
-            Z0 = griddata((eps.ravel(), delta.ravel()), Z.ravel(), (X, Y), method='cubic')
+            X, Y = np.meshgrid(x, y)
+            Z0 = griddata((eps.ravel(), delta.ravel()),
+                          Z.ravel(), (X, Y), method='cubic')
             i, j = np.unravel_index(Z0.argmin(), Z0.shape)
-            print "eps_EP_interpolated =", X[i,j]
-            print "delta_EP_interpolated =", Y[i,j]
+            print "eps_EP_interpolated =", X[i, j]
+            print "delta_EP_interpolated =", Y[i, j]
             eps0, delta0 = X.T, Y.T
 
             if dryrun:
