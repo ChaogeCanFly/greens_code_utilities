@@ -10,16 +10,7 @@ import sys
 
 import argh
 
-
-def unique_array(a):
-    """Remove duplicate entries in an array.
-    Partially taken from https://gist.github.com/jterrace/1337531
-    """
-    ncols = a.shape[1]
-    unique_a, idx = np.unique(a.view([('', a.dtype)] * ncols), return_index=True)
-    unique_a = unique_a.view(a.dtype).reshape(-1, a.shape[1])
-
-    return unique_a, idx
+from helper_functions import unique_array
 
 
 def reorder_file(infile="bloch.tmp"):

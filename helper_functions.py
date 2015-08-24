@@ -114,3 +114,14 @@ def convert_json_to_cfg(infile=None, outfile="out.cfg"):
                 else:
                     if str(value) != 'True':
                         f.write(str(value) + "\n")
+
+
+def unique_array(a):
+    """Remove duplicate entries in an array.
+    Partially taken from https://gist.github.com/jterrace/1337531
+    """
+    ncols = a.shape[1]
+    unique_a, idx = np.unique(a.view([('', a.dtype)] * ncols), return_index=True)
+    unique_a = unique_a.view(a.dtype).reshape(-1, a.shape[1])
+
+    return unique_a, idx
