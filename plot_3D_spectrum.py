@@ -142,7 +142,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
     # print minimum of eigenvalue difference
     i, j = np.unravel_index(np.sqrt((ev0.real-ev1.real)**2 +
-                                    (ev0.imag-ev1.imag)**2).argmin(), ev0.shape)
+                                    (ev0.imag-ev1.imag)**2).argmin(),
+                            ev0.shape)
     print "Approximate EP location:"
     print "eps_EP =", eps[i, j]
     print "delta_EP =", delta[i, j]
@@ -150,8 +151,10 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
     if dryrun and not interpolate:
         sys.exit()
 
+    cmap = plt.get_cmap('Blues_r')
+    cmap = plt.get_cmap('RdBu_r')
     if mayavi:
-        extent = (0, 1, 0, 1, 0, 1)
+        # extent = (0, 1, 0, 1, 0, 1)
         # real part
         for e in ev0, ev1:
             mask = np.zeros_like(eps).astype(bool)
@@ -163,8 +166,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             except:
                 pass
             mlab.figure(0, bgcolor=(0.5, 0.5, 0.5))
-            m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask,
-                           extent=extent)
+            m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
+                           # extent=extent)
             # m1.actor.actor.scale = (5,1,1)
 
         mlab.title("Real part", opacity=0.25)
@@ -182,8 +185,8 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 mask = np.logical_or(mask, ~limit_mask)
             except:
                 pass
-            m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask,
-                           extent=extent)
+            m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask)
+                           # extent=extent)
             # m2.actor.actor.scale = (5,1,1)
 
         mlab.title("Imaginary part", opacity=0.25)
@@ -198,7 +201,6 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
         plt.xticks(rotation=70)
         plt.suptitle(infile)
-        cmap = plt.get_cmap('Blues_r')
 
         ax1.set_title(r"$\Re K_0$")
         im1 = ax1.pcolormesh(eps, delta, ev0.real, cmap=cmap)
@@ -276,7 +278,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
 
         # im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
         im = ax.pcolormesh(eps0.T, delta0.T, np.log(Z0),
-                           cmap=plt.get_cmap('Blues_r'))
+                           cmap=cmap)
 
         # correct ticks
         xoffset = np.diff(eps_u).mean()/2
