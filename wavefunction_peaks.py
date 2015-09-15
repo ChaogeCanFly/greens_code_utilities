@@ -254,10 +254,14 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
         # for xi, yi in zip(x, y):
         #     zi = np.where((np.abs(X - xi) < eps) & (np.abs(Y - yi) < eps))
         #     P[zi] = POT_CUTOFF_VALUE
-        dx = L/P.shape[1]
-        xn, yn = [np.floor(u/dx) for u in x, y]
-        for xi, yi in zip(xn, yn):
-            P[yi, xi] = POT_CUTOFF_VALUE
+        if 'const' in peak_function:
+            P = 1.*peaks
+        else:
+            dx = L/P.shape[1]
+            xn, yn = [np.floor(u/dx) for u in x, y]
+            for xi, yi in zip(xn, yn):
+                P[yi, xi] = POT_CUTOFF_VALUE
+
 
         # sigma here is in % of waveguide width W (r_ny) [caveat: P = P(y,x)]
         sigmax, sigmay = [P.shape[0]*s/100. for s in sigmax, sigmay]
