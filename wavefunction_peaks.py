@@ -199,6 +199,8 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             peaks[~WG_mask] = 0.0
         elif 'cut' in peak_function:
             peaks = np.logical_and(Z < threshold*Z.max(), WG_mask)
+        elif 'const' in peak_function:
+            peaks = np.ones_like(Z)
 
         # get array-indices of peaks
         idx = np.where(peaks)
