@@ -301,7 +301,6 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
                 envelope *= envelope
             P *= envelope
 
-
         if shift:
             print "Shifting indices of target array..."
             for n, vn in np.loadtxt(shift):
