@@ -295,7 +295,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
         if 'eps_sq' in peak_function:
             print "Applying eps_sq envelope..."
             print "WARNING: using eps(x) = eps0/2 (1-cos(2pi/Lx)) parametrization!"
-            boundary_file = glob.glob("upper.boundary???")
+            boundary_file = glob.glob("upper.boundary*")[0]
             _, eps = np.loadtxt(boundary_file, unpack=True)
             eps0 = eps.max()
             print "eps0", eps0
