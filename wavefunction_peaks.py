@@ -291,13 +291,16 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             envelope = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
             P *= envelope
 
-        if 'eps_sq' in peak_function:
+        if 'eps' in peak_function:
             print "Applying eps_sq envelope..."
             print "WARNING: using eps(x)/eps0 = 0.5(1-cos(2pi/Lx)) parametrization!"
 
             L0 = L*(limits[1] - limits[0])/2.
             envelope = 0.5*(1. - np.cos(np.pi/(2.*L0)*(X - L*limits[0])))
-            P *= envelope**2
+            if 'sq' in peak_function:
+                envelope *= envelope
+            P *= envelope
+
 
         if shift:
             print "Shifting indices of target array..."
