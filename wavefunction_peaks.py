@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+import glob
 import json
 import multiprocessing
 import numpy as np
@@ -290,6 +291,18 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             L0 = L*(limits[1] - limits[0])/2.
             envelope = np.sin(np.pi/(2.*L0)*(X - L*limits[0]))
             P *= envelope
+
+        if 'eps_sq' in peak_function:
+            print "Applying eps_sq envelope..."
+            print "WARNING: using eps(x) = eps0/2 (1-cos(2pi/Lx)) parametrization!"
+            boundary_file = glob.glob("upper.boundary???")
+            _, eps = np.loadtxt(boundary_file, unpack=True)
+            eps0 = eps.max()
+            print "eps0", eps0
+
+            L0 = L*(limits[1] - limits[0])/2.
+            envelope = eps0/2.*(1. - np.cos(np.pi/(2.*L0)*(X - L*limits[0])))
+            P *= envelope**2
 
         if shift:
             print "Shifting indices of target array..."
