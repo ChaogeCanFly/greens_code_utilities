@@ -296,7 +296,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             print "WARNING: using eps(x)/eps0 = 0.5(1-cos(2pi/Lx)) parametrization!"
 
             L0 = L*(limits[1] - limits[0])/2.
-            envelope = 0.5*(1. - np.cos(np.pi/(2.*L0)*(X - L*limits[0])))
+            envelope = 0.5*(1. - np.cos(np.pi/L0*(X - L*limits[0])))
             if 'sq' in peak_function:
                 envelope *= envelope
             P *= envelope
