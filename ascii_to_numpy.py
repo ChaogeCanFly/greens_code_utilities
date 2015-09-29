@@ -27,7 +27,7 @@ def read_ascii_array(ascii_file, L=None, W=None, pphw=None, N=None, r_nx=None,
                 raise Exception(("Error: either pphw/N or r_nx/r_ny have "
                                  "to be supplied."))
 
-        shift = (0, 1, -1, 2, -2)
+        shift = (0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5)
         for (xn, yn) in itertools.product(shift, repeat=2):
             r_nx_shift = r_nx + xn
             r_ny_shift = r_ny + yn
