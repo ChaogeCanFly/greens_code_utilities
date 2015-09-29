@@ -72,6 +72,7 @@ def on_key(event, plt):
 @argh.arg('--threshold', type=float)
 @argh.arg('--cutoff', type=float)
 @argh.arg('--limits', type=float, nargs='+')
+@argh.arg('--eta0', type=float)
 def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
          amplitude=1., r_nx=None, r_ny=None, plot=False,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
