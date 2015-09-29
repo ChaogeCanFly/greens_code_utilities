@@ -78,7 +78,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
          npz_potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=None, shift=None, interpolate=0,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
-         interactive=False, filter='uniform', cutoff=None):
+         interactive=False, filter='uniform', cutoff=None, eta0=None):
     """Generate greens_code potentials from *.ascii files.
 
         Parameters:
@@ -133,6 +133,8 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
                 points
             filter: str (gauss|uniform)
                 chooses which filter to apply
+            eta0: float
+                constant absorption background
     """
     settings = json.dumps(vars(), sort_keys=True, indent=4)
     print settings + "\n"
@@ -295,6 +297,9 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
 
         # scale potential
         P *= amplitude
+
+        if eta0:
+            P += eta0
 
         print "Writing potential based on mode {}...".format(write_peaks)
         np.savetxt("mode_{}_peaks_potential.dat".format(write_peaks),
