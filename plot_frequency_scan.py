@@ -15,9 +15,6 @@ get_defaults()
 
 
 def plot_transmission(S, ax=None, swap=None):
-    # N, T11, T12, T21, T22 = np.loadtxt("S_matrix.dat", unpack=True,
-    #                                    usecols=(0,5,6,7,8))
-
     # print S_matrix.shape
     N, T11, T12, T21, T22 = S.T[[0,5,6,7,8]]
     # T12, T21 = T21, T12
@@ -102,13 +99,10 @@ def main(swap=False):
         ax.set_xticks([7.8], minor=True)
         ax.xaxis.grid(True, which='minor')
 
-        # ax.set_xlim(N.min(), N.max())
         ax.set_xlim(6.9, 8.7)
-        # ax.set_ylim(1e-8, 1)
         ax.set_ylim(1e-6, 1)
 
     # plt.tight_layout()
-    # plt.show()
     plt.savefig("S_vs_N.pdf", bbox_extra_artist=legend, bbox_inches='tight')
 
 
