@@ -160,6 +160,7 @@ def run_length_dependent_job(x, *args):
     ## L^* optimizaton
     T_mean = (T01 + T10)/2.
     T_crit = 0.995
+    L_crit = 100
 
     for idx, tn in enumerate(T_mean):
         if np.all(T_mean[idx:] >= T_crit):
