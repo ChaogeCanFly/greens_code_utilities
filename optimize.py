@@ -155,17 +155,30 @@ def run_length_dependent_job(x, *args):
     subprocess.check_call(cmd, shell=True)
     L, T01, T10 = np.loadtxt("S_matrix.dat", unpack=True, usecols=(0, 6, 7))
     T01, T10 = [np.nan_to_num(Tnm) for Tnm in (T01, T10)]
-    A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
-    A = (A01 + A10)/2.
 
-    # area fillingfactor; minimize fillingfactor
-    FF = A/max(L)
+    ###
+    ## L^* optimizaton
+    T_mean = (T01 + T10)/2.
+    T_crit = 0.995
+
+    for idx, tn in enumerate(T_mean):
+        if np.all(T_mean[idx:] >= T_crit):
+            L_crit = L[idx]
+    ###
+
+    ###
+    ## Filling factor optimization
+    # A01, A10 = [scipy.integrate.simps(T, L) for T in (T01, T10)]
+    # A = (A01 + A10)/2.
+    ## area fillingfactor; minimize fillingfactor
+    # FF = A/max(L)
+    ###
 
     # archive S_matrices
     num_smatrices = len(glob.glob("S_matrix*dat"))
     shutil.move("S_matrix.dat", "S_matrix_" + str(num_smatrices) + ".dat")
     with open("optimize.log", "a") as f:
-        data = np.concatenate(([num_smatrices], x, [FF]))
+        data = np.concatenate(([num_smatrices], x, [L_crit]))
         np.savetxt(f, data, newline=" ", fmt='%+.8e')
         f.write("\n")
     print "finished calculation of datapoint #", num_smatrices
@@ -174,7 +187,8 @@ def run_length_dependent_job(x, *args):
     for ldir in glob.glob("_L_*"):
         shutil.rmtree(ldir)
 
-    return -FF
+    # return -FF
+    return L_crit
 
 
 @argh.arg("--xml-template", type=str)
