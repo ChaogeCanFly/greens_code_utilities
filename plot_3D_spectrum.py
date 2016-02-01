@@ -168,7 +168,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
             mlab.figure(0, bgcolor=(0.5, 0.5, 0.5))
             m1 = mlab.mesh(eps.real, delta.real, e.real, mask=mask)
                            # extent=extent)
-            # m1.actor.actor.scale = (5,1,1)
+            m1.actor.actor.scale = (1,1,0.1)
 
         mlab.title("Real part", opacity=0.25)
         mlab.axes(color=(0, 0, 0), nb_labels=3,
@@ -187,7 +187,7 @@ def plot_3D_spectrum(infile="bloch.tmp", outfile=None, trajectory=None,
                 pass
             m2 = mlab.mesh(eps.real, delta.real, e.imag, mask=mask)
                            # extent=extent)
-            # m2.actor.actor.scale = (5,1,1)
+            m2.actor.actor.scale = (1,1,10)
 
         mlab.title("Imaginary part", opacity=0.25)
         mlab.axes(color=(0, 0, 0), nb_labels=3,
