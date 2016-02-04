@@ -16,7 +16,7 @@ import traceback
 import argh
 
 import ep.profile
-from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
+from ep.waveguide import Neumann, DirichletReduced, DirichletPositionDependentLossReduced
 import bloch
 
 
@@ -157,7 +157,7 @@ def run_single_job(n, xn, epsn, deltan, eta=None, pphw=None, XML=None, N=None,
     ep.profile.Generate_Profiles(**profile_kwargs)
 
     # run code
-    cmd = "solve_xml_mumps dev"
+    cmd = "solve_xml_mumps_dev"
     greens_code = subprocess.Popen(cmd.split(),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -259,7 +259,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
     if neumann:
         WG = Neumann(**wg_kwargs)
     else:
-        WG = Dirichlet(**wg_kwargs)
+        WG = DirichletReduced(**wg_kwargs)
     _, b0, b1 = WG.solve_ODE()
 
     # prepare waveguide and profile -------------------------------------------
@@ -289,7 +289,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=None,
         if neumann:
             WG = Neumann(**wg_kwargs)
         else:
-            WG = Dirichlet(**wg_kwargs)
+            WG = DirichletReduced(**wg_kwargs)
         _, b0, b1 = WG.solve_ODE()
 
         ax1.semilogy(WG.t, abs(b0[::-1]), "r--")
