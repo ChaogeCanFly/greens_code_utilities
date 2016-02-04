@@ -7,12 +7,12 @@ import numpy as np
 
 import argh
 
-from ep.waveguide import Neumann, Dirichlet, DirichletPositionDependentLoss
+from ep.waveguide import DirichletReduced, DirichletPositionDependentLossReduced
 
 
-def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
+def get_loop_eigenfunction(N=2.6, eta=0.0, L=5., W=1., eps=0.16, nx=10,
                            loop_direction="+", loop_type='Bell', init_state='a',
-                           init_phase=0.0, neumann=1):
+                           init_phase=0.0, neumann=0):
     """Return the instantaneous eigenfunctions and eigenvectors for each step
     in a parameter space loop.
 
@@ -51,7 +51,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
     if neumann:
         WG = Neumann(**wg_kwargs)
     else:
-        WG = Dirichlet(**wg_kwargs)
+        WG = DirichletReduced(**wg_kwargs)
     _, b0, b1 = WG.solve_ODE()
 
     x = np.linspace(0, L, nx)
@@ -70,7 +70,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
         if neumann:
             WGn = Neumann(**wg_kwargs)
         else:
-            WGn = Dirichlet(**wg_kwargs)
+            WGn = DirichletReduced(**wg_kwargs)
         _, b0, b1 = WGn.solve_ODE()
 
         Chi_0_eff, Chi_1_eff = WGn.eVecs_r[:,:,0], WGn.eVecs_r[:,:,1]
@@ -83,7 +83,7 @@ def get_loop_eigenfunction(N=1.05, eta=0.0, L=5., d=1., eps=0.05, nx=10,
 
         xnn = WGn.t
         yN = len(xnn)/WGn.T
-        y = np.linspace(0, WGn.d, yN)
+        y = np.linspace(0, WGn.W, yN)
         X, Y = np.meshgrid(xnn, y)
 
         # assemble effective model eigenvectors
