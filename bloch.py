@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+import glob
 import numpy as np
 
 import argh
@@ -8,10 +9,10 @@ from helper_functions import convert_to_complex
 from xmlparser import XML
 
 
-def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
-                    evecsfile='Evecs.sine_boundary.dat', modes=None, L=None,
-                    dx=None, r_nx=None, sort=True, return_velocities=False,
-                    return_eigenvectors=False, verbose=True, neumann=False):
+def get_eigensystem(xml='input.xml', evalsfile=None, evecsfile=None,
+                    modes=None, L=None, dx=None, r_nx=None, sort=True,
+                    return_velocities=False, return_eigenvectors=False,
+                    verbose=True, neumann=False):
     """Extract the eigenvalues beta and return the Bloch modes.
 
         Parameters:
@@ -19,9 +20,11 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
             xml: str
                 Input xml file.
             evalsfile: str
-                Eigenvalues input file.
+                Eigenvalues input file. Defaults to first element in working
+                directory matching Evals.*.dat.
             evecsfile: str
-                Eigenvectors input file.
+                Eigenvectors input file. Defaults to first element in working
+                directory matching Evecs.*.dat.
             modes: float
                 Number of open modes.
             L: float
@@ -51,6 +54,13 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
                 Velocities of left and right movers.
     """
 
+    if evalsfile is None:
+        evalsfile = glob.glob("Evals.*.dat")
+    if len(evalsfile) != 1:
+        print """Warning: found multiple files matching Evals.*.dat!
+                 Proceeding with file {}.""".format(evalsfile[0])
+        evalsfile = evalsfile[0]
+
     if modes is None or dx is None or r_nx is None:
         if verbose:
             print "# Parameters 'modes', 'dx' and 'r_nx' not found."
@@ -63,9 +73,9 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     # get k_x values for both modes
     if neumann:
-        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1) ]
+        k0, k1 = [np.sqrt(modes**2 - n**2)*np.pi for n in (0, 1)]
     else:
-        k0, k1 = [ np.sqrt(modes**2 - n**2)*np.pi for n in (1, 2) ]
+        k0, k1 = [np.sqrt(modes**2 - n**2)*np.pi for n in (1, 2)]
     kr = k0 - k1
 
     # get reciprocal lattice vector G
@@ -73,6 +83,12 @@ def get_eigensystem(xml='input.xml', evalsfile='Evals.sine_boundary.dat',
 
     # get eigenvectors chi_n (performance critical!)
     if return_eigenvectors:
+        if evecsfile is None:
+            evecsfile = glob.glob("Evals.*.dat")
+        if len(evecsfile) != 1:
+            print """Warning: found multiple files matching Evals.*.dat!
+                    Proceeding with file {}.""".format(evecsfile[0])
+            evecsfile = evecsfile[0]
         chi = np.loadtxt(evecsfile, dtype=str)
         chi = [ map(convert_to_complex, x) for x in chi ]
         chi = np.asarray(chi)
