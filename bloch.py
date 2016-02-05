@@ -89,7 +89,7 @@ def get_eigensystem(xml='input.xml', evalsfile=None, evecsfile=None,
         if len(evecsfile) != 1:
             print """Warning: found multiple files matching Evals.*.dat!
                     Proceeding with file {}.""".format(evecsfile[0])
-        if isinstance(evalsfile, list):
+        if isinstance(evecsfile, list):
             evecsfile = evecsfile[0]
         chi = np.loadtxt(evecsfile, dtype=str)
         chi = np.asarray([map(convert_to_complex, x) for x in chi])
