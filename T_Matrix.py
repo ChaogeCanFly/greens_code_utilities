@@ -21,6 +21,8 @@ class T_Matrix(object):
                 Eigenstates output file.
             evals_file: str
                 Eigenvalues output file.
+            evecs_file: str
+                Eigenvectors output file.
             from_right: bool
                  Whether to use the S-matrix for injection from right.
 
@@ -36,7 +38,8 @@ class T_Matrix(object):
                 t*^T t eigenstates.
     """
 
-    def __init__(self, infile=None, coeff_file=None, evals_file=None, from_right=False):
+    def __init__(self, infile=None, coeff_file=None, evals_file=None,
+                 evecs_file=None, from_right=False):
 
         S = S_Matrix(infile=infile, from_right=from_right)
 
@@ -58,6 +61,7 @@ class T_Matrix(object):
 
         self.coeff_file = coeff_file
         self.evals_file = evals_file
+        self.evecs_file = evecs_file
 
     def write_eigenstates(self):
         """Write the coefficients of the t*^T t operator eigenstate in a
@@ -97,7 +101,7 @@ class T_Matrix(object):
                     f.write('({v.real}, {v.imag})\n'.format(v=v))
 
     def write_eigenvalues(self):
-        """Write the eigenvalues of the time-delay-operator."""
+        """Write the eigenvalues of the t*^T t operator."""
 
         if not self.evals_file:
             self.evals_file = 'evals.T_states.dat'
@@ -107,6 +111,21 @@ class T_Matrix(object):
                                         self.eigenvalues.imag),
                    header=('t*^T t eigenvalues'),
                    fmt='%.8e')
+
+    def write_eigenvectors(self):
+        """Write the eigenvalues of the t*^T t operator."""
+
+        if not self.evecs_file:
+            self.evals_file = 'evecs.T_states.dat'
+
+        with open(self.evecs_file, "w") as f:
+            f.write('# Re(v_n) Im(v_n)\n')
+            for n in range(self.modes):
+                f.write('# eigenvalue {}\n'.format(self.eigenvalues[n]))
+                for m in range(self.modes):
+                    v = self.eigenstates[m,n]
+                    f.write('{v.real} {v.imag}\n'.format(v=v))
+                f.write('\n')
 
 
 def parse_arguments():
@@ -120,6 +139,8 @@ def parse_arguments():
                         type=str, help="t*^T t eigenstates output file.")
     parser.add_argument("-e", "--evals-file", default='evals.T_states.dat',
                         type=str, help="t*^T t eigenvalues output file.")
+    parser.add_argument("-v", "--evecs-file", default='evecs.T_states.dat',
+                        type=str, help="t*^T t eigenvectors output file.")
     parser.add_argument("-r", "--from-right", action="store_true",
                         help=("Whether to use the S-matrix for injection "
                               "from right."))
@@ -130,6 +151,7 @@ def parse_arguments():
     T = T_Matrix(**args)
     T.write_eigenstates()
     T.write_eigenvalues()
+    T.write_eigenvectors()
 
 
 if __name__ == '__main__':
