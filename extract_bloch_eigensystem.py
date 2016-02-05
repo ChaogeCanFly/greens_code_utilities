@@ -21,8 +21,10 @@ def get_bloch_eigensystem(plot=False):
     print "chi.shape", ev0.shape
 
     if plot:
-        plt.plot(np.abs(ev0)**2, "r-")
-        plt.plot(np.abs(ev1)**2, "g-")
+        y = np.linspace(0, 1, len(ev0))
+        plt.plot(y, np.abs(ev0)**2, "r-")
+        plt.plot(y, np.abs(ev1)**2, "g-")
+        plt.xlim(0, 1)
         plt.show()
 
     z = ev0.view(dtype=float)
