@@ -59,6 +59,7 @@ def get_eigensystem(xml='input.xml', evalsfile=None, evecsfile=None,
     if len(evalsfile) != 1:
         print """Warning: found multiple files matching Evals.*.dat!
                  Proceeding with file {}.""".format(evalsfile[0])
+    if isinstance(evalsfile, list):
         evalsfile = evalsfile[0]
 
     if modes is None or dx is None or r_nx is None:
@@ -84,14 +85,14 @@ def get_eigensystem(xml='input.xml', evalsfile=None, evecsfile=None,
     # get eigenvectors chi_n (performance critical!)
     if return_eigenvectors:
         if evecsfile is None:
-            evecsfile = glob.glob("Evals.*.dat")
+            evecsfile = glob.glob("Evecs.*.dat")
         if len(evecsfile) != 1:
             print """Warning: found multiple files matching Evals.*.dat!
                     Proceeding with file {}.""".format(evecsfile[0])
+        if isinstance(evalsfile, list):
             evecsfile = evecsfile[0]
         chi = np.loadtxt(evecsfile, dtype=str)
-        chi = [ map(convert_to_complex, x) for x in chi ]
-        chi = np.asarray(chi)
+        chi = np.asarray([map(convert_to_complex, x) for x in chi])
 
         chi_left = chi[:len(chi)//2]
         chi_right = chi[len(chi)//2:]
