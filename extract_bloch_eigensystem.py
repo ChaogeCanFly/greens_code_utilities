@@ -10,7 +10,7 @@ import argh
 import bloch
 
 
-def get_bloch_eigensystem():
+def get_bloch_eigensystem(plot=False):
     """docstring for get_bloch_eigensystem"""
     # get Bloch eigensystem
     K, _, ev, _, v, _ = bloch.get_eigensystem(return_eigenvectors=True,
@@ -20,10 +20,10 @@ def get_bloch_eigensystem():
     ev0, ev1 = ev[0,:], ev[1,:]
     print "chi.shape", ev0.shape
 
-    plt.plot(np.abs(ev0)**2, "r-")
-    plt.plot(np.abs(ev1)**2, "g-")
-    plt.show()
-    return
+    if plot:
+        plt.plot(np.abs(ev0)**2, "r-")
+        plt.plot(np.abs(ev1)**2, "g-")
+        plt.show()
 
     z = ev0.view(dtype=float)
     np.savetxt("eigensystem.dat", zip(ev0.real, ev0.imag,
