@@ -25,6 +25,8 @@ class T_Matrix(object):
                 Eigenvectors output file.
             from_right: bool
                  Whether to use the S-matrix for injection from right.
+            transmission_matrix: bool
+                 Whether to use the t-matrix instead of t^dagger t.
 
         Attributes:
         -----------
@@ -39,7 +41,7 @@ class T_Matrix(object):
     """
 
     def __init__(self, infile=None, coeff_file=None, evals_file=None,
-                 evecs_file=None, from_right=False):
+                 evecs_file=None, from_right=False, transmission_matrix=None):
 
         S = S_Matrix(infile=infile, from_right=from_right)
 
@@ -52,7 +54,10 @@ class T_Matrix(object):
         elif self.S.nruns == 3:
             self.t = S.S[1, modes:, :modes]
 
-        self.T = self.t.conj().T.dot(self.t)
+        if not transmission_matrix:
+            self.T = self.t.conj().T.dot(self.t)
+        else:
+            self.T = self.t
 
         eigenvalues, eigenstates = scipy.linalg.eig(self.T)
         idx = eigenvalues.argsort()
@@ -118,14 +123,20 @@ class T_Matrix(object):
         if not self.evecs_file:
             self.evals_file = 'evecs.T_states.dat'
 
+        # sort eigenvalues and eigenstates
+        sort_idx = np.argsort(np.abs(self.eigenvalues))[::-1]
+        self.eigenvalues = self.eigenvalues[sort_idx]
+        self.eigenstates = self.eigenstates[:, sort_idx]
+
         with open(self.evecs_file, "w") as f:
-            f.write('# Re(v_n) Im(v_n)\n')
+            f.write('# eigenvalue_n Re(v_n1) Im(v_n2) Re(v_n1) Im(v_n2)\n')
             for n in range(self.modes):
-                f.write('# eigenvalue {}\n'.format(self.eigenvalues[n]))
+                f.write('{} {} '.format(np.abs(self.eigenvalues[n]),
+                                        np.angle(self.eigenvalues[n])))
                 for m in range(self.modes):
                     v = self.eigenstates[m,n]
-                    f.write('{v.real} {v.imag}\n'.format(v=v))
-                f.write('\n')
+                    f.write('{v.real} {v.imag} '.format(v=v))
+            f.write('\n')
 
 
 def parse_arguments():
@@ -144,6 +155,8 @@ def parse_arguments():
     parser.add_argument("-r", "--from-right", action="store_true",
                         help=("Whether to use the S-matrix for injection "
                               "from right."))
+    parser.add_argument("-t", "--transmission-matrix", action="store_true",
+                        help=("Whether to use the t-matrix instead of t^dagger t."))
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
