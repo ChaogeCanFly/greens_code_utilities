@@ -27,20 +27,23 @@ def read_ascii_array(ascii_file, L=None, W=None, pphw=None, N=None, r_nx=None,
                 raise Exception(("Error: either pphw/N or r_nx/r_ny have "
                                  "to be supplied."))
 
-        shift = xrange(-150, 150)
-        for (xn, yn) in itertools.product(shift, repeat=2):
-            r_nx_shift = r_nx + xn
-            r_ny_shift = r_ny + yn
-            try:
-                print "Trying ({}, {})".format(r_nx_shift, r_ny_shift)
-                Z = Z.reshape(r_ny_shift, r_nx_shift, order='F')
-                print "Successfull for (xn, yn) = ({}, {})".format(xn, yn)
-                break
-            except ValueError as error:
-                warning = "Warning: {}. Cannot use (r_xn, r_yn) = ({}, {})."
-                print warning.format(error, r_nx_shift, r_ny_shift)
+            shift = xrange(-50, 50)
+            for (xn, yn) in itertools.product(shift, repeat=2):
+                r_nx_shift = r_nx + xn
+                r_ny_shift = r_ny + yn
+                try:
+                    print "Trying ({}, {})".format(r_nx_shift, r_ny_shift)
+                    Z = Z.reshape(r_ny_shift, r_nx_shift, order='F')
+                    print "Successfull for (xn, yn) = ({}, {})".format(xn, yn)
+                    break
+                except ValueError as error:
+                    warning = "Warning: {}. Cannot use (r_xn, r_yn) = ({}, {})."
+                    print warning.format(error, r_nx_shift, r_ny_shift)
 
-        r_nx, r_ny = r_nx_shift, r_ny_shift
+            r_nx, r_ny = r_nx_shift, r_ny_shift
+        else:
+            Z = Z.reshape(r_ny, r_nx, order='F')
+
         x = np.linspace(0., L, r_nx)
         y = np.linspace(0., W, r_ny)
         X, Y = np.meshgrid(x, y)
