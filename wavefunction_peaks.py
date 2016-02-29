@@ -78,6 +78,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
          pic_ascii=False, write_peaks=None, mode1=None, mode2=None,
          npz_potential=None, txt_potential=None, peak_function='local',
          savez=False, threshold=None, shift=None, interpolate=0,
+         spline_degree=1,
          limits=[1e-2, 0.99, 5e-2, 0.95], dryrun=False, no_mayavi=False,
          interactive=False, filter='uniform', cutoff=None, eta0=None):
     """Generate greens_code potentials from *.ascii files.
@@ -132,6 +133,8 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             interactive: bool
                 whether to open an interactive plot window to select indiviual
                 points
+            spline_degree: int
+                degree of the spline
             filter: str (gauss|uniform)
                 chooses which filter to apply
             eta0: float
@@ -245,7 +248,7 @@ def main(pphw=50, N=2.6, L=10., W=1., sigmax=10., sigmay=1.,
             print "Interpolating data points..."
             from scipy.interpolate import splprep, splev
 
-            tck, _ = splprep([x, y], s=0.0, k=1)
+            tck, _ = splprep([x, y], s=0.0, k=spline_degree)
             x, y = splev(np.linspace(0, 1, interpolate), tck)
 
         # reapply limits
