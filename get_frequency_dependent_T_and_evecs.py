@@ -32,19 +32,21 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
 
     print "distance cavity - antenna:", l
     print "eta:", eta
+    print "input_file", input_file
 
     f = np.load(frequency_file)
     T = np.load(input_file)
     # print "f.shape", f.shape
     # print "T.shape", T.shape
+    T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta) for Tn in T])
 
     data = []
     matrix_data = []
-    for n, Tn in enumerate(T):
+    for n, Tn in enumerate(T_back_propagated):
         fn = f[n]
         Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
-        matrix_data.append(np.concatenate([[fn], Tn_flat]))
-        Tn = propagate_back(Tn, l=l, eta=eta)
+        # matrix_data.append(np.concatenate([[fn], Tn_flat]))
+        # Tn = propagate_back(Tn, l=l, eta=eta)
         eigenvalues, eigenstates = scipy.linalg.eig(Tn.T)
 
         # sort eigenvalues and eigenstates
@@ -63,8 +65,11 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
             print "phase(v1/v2)", np.angle(v1/v2)
             print "phase(c1/c2)", np.angle(c1/c2)
-            print "T-matrix:"
+            print "T-matrix (back propagated):"
             print Tn
+            print "T-matrix (original):"
+            print T[n]
+
 
             np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
@@ -86,15 +91,23 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
     # np.savetxt(input_file.replace(".npy", "_arctan_data.dat"),
     #            zip(np.arctan(abs(v1/v2)), np.arctan(abs(c1/c2))))
 
-    fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(9, 8))
+    fig, (ax0, ax00, ax1, ax2) = plt.subplots(nrows=4, figsize=(9, 10))
 
-    plt.suptitle(r"Distance cavity - antenna: {}m".format(l))
+    plt.suptitle(r"Distance cavity - antenna: {}m ".format(l) + "\n"
+                 + r"eta: {}".format(eta) + "\n"
+                 + input_file)
 
-    ax0.plot(f, np.abs(T[:,0,0])**2, "r-", label=r"$|t_{11}|^2$")
-    ax0.plot(f, np.abs(T[:,1,1])**2, "b-", label=r"$|t_{22}|^2$")
-    ax0.plot(f, np.abs(T[:,0,1])**2, "g-", label=r"$|t_{12}|^2$")
-    ax0.plot(f, np.abs(T[:,1,0])**2, "-", color="orange", label=r"$|t_{21}|^2$")
+    ax0.plot(f, np.abs(T_back_propagated[:,0,0])**2, "r-", label=r"$|t_{11}|^2$")
+    ax0.plot(f, np.abs(T_back_propagated[:,1,1])**2, "b-", label=r"$|t_{22}|^2$")
+    ax0.plot(f, np.abs(T_back_propagated[:,0,1])**2, "g-", label=r"$|t_{12}|^2$")
+    ax0.plot(f, np.abs(T_back_propagated[:,1,0])**2, "-", color="orange", label=r"$|t_{21}|^2$")
     ax0.legend(loc="upper left")
+
+    ax00.plot(f, np.angle(T_back_propagated[:,0,0]), "r-", label=r"$\operatorname{Arg}(t_{11})$")
+    ax00.plot(f, np.angle(T_back_propagated[:,1,1]), "b-", label=r"$\operatorname{Arg}(t_{22})$")
+    ax00.plot(f, np.angle(T_back_propagated[:,0,1]), "g-", label=r"$\operatorname{Arg}(t_{12})$")
+    ax00.plot(f, np.angle(T_back_propagated[:,1,0]), "-", color="orange", label=r"$\operatorname{Arg}(t_{21})$")
+    ax00.legend(loc="upper left")
 
     ax1.plot(f, np.arctan(abs(v1/v2)), "r-")
     ax1.plot(f, np.arctan(abs(c1/c2)), "b-")
@@ -105,6 +118,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
     ax1.set_ylim(0, np.pi/2)
 
     ax0.set_ylabel(r"Transmission intensity")
+    ax0.set_ylabel(r"Transmission-matrix phase")
     ax1.set_ylabel(r"$\arctan(|c_1/c_2|)$")
     ax2.set_xlabel(r"Frequency $\nu$ (GHz)")
     ax2.set_ylabel(r"$\operatorname{Arg}(c_1/c_2)$")
