@@ -24,11 +24,13 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0):
 
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0, eta=0.0):
     """docstring for get_eigenvalues"""
-    # config 0: l=
-    # config 1: l=
-    # config 2: l=0.395
-    # config 3: l=0.47925
-    # config 4: l=
+    # config 0: l=0.51576837377840601 (1 wavelength)
+    # config 1: l=0.49262250087499387 (2 wavelengths)
+    # config 2: l=0.39514141195540475 (4 wavelengths)
+    # config 2 (exp): l=0.395 (4 wavelengths)
+    # config 3: l=0.4792450151610923 (4 wavelengths)
+    # config 3 (exp): l=0.47925 (4 wavelengths)
+    # config 4: l=0.53112071257820737 (4 wavelengths)
 
     print "distance cavity - antenna:", l
     print "eta:", eta
