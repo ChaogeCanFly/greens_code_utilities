@@ -22,8 +22,11 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0):
     return scipy.linalg.inv(T12).dot(T).dot(scipy.linalg.inv(T21))
 
 
-def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0, eta=0.0):
+argh.arg("-l", type=float)
+argh.arg("--config", type=int)
+def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=None, eta=0.0, config=None):
     """docstring for get_eigenvalues"""
+
     # config 0: l=0.51576837377840601 (1 wavelength)
     # config 1: l=0.49262250087499387 (2 wavelengths)
     # config 2: l=0.39514141195540475 (4 wavelengths)
@@ -31,6 +34,22 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
     # config 3: l=0.4792450151610923 (4 wavelengths)
     # config 3 (exp): l=0.47925 (4 wavelengths)
     # config 4: l=0.53112071257820737 (4 wavelengths)
+
+    config = int(config)
+
+    if not l:
+        if config == 0:
+            l = 0.51576837377840601
+        elif config == 1:
+            l = 0.49262250087499387
+        elif config == 2:
+            l = 0.39514141195540475
+        elif config == 3:
+            l = 0.4792450151610923
+        elif config == 4:
+            l = 0.53112071257820737
+        else:
+            l = 0.0
 
     print "distance cavity - antenna:", l
     print "eta:", eta
@@ -44,6 +63,10 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
 
     data = []
     matrix_data = []
+
+    # find index closest to target frequency
+    n_target = (np.abs(f - 7.8)).argmin()
+
     for n, Tn in enumerate(T_back_propagated):
         fn = f[n]
         Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
@@ -61,7 +84,9 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
 
         data.append([v1, v2, c1, c2])
 
-        if np.isclose(fn, 7.8):
+        # if np.isclose(fn, 7.8):
+        if np.isclose(fn, f[n_target]):
+        # if find_nearest(fn, 7.8):
             print "@7.8GHz:"
             print "arctan(|v1/v2|)", np.arctan(np.abs(v1/v2))
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
