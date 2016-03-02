@@ -58,10 +58,13 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=0.0
         data.append([v1, v2, c1, c2])
 
         if np.isclose(fn, 7.8):
+            print "@7.8GHz:"
             print "arctan(|v1/v2|)", np.arctan(np.abs(v1/v2))
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
             print "phase(v1/v2)", np.angle(v1/v2)
             print "phase(c1/c2)", np.angle(c1/c2)
+            print "T-matrix:"
+            print Tn
 
             np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
