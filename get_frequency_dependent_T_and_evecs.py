@@ -70,6 +70,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
 
     if exp:
         T = np.asarray([Tn.T for Tn in T])
+        print "WARNING: T-matrix transposed now!"
 
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
@@ -80,18 +81,20 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     matrix_data = []
     for n, Tn in enumerate(T_back_propagated):
         fn = f[n]
-        Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
+        # Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
         # matrix_data.append(np.concatenate([[fn], Tn_flat]))
         # Tn = propagate_back(Tn, l=l, eta=eta)
-        eigenvalues, eigenstates = scipy.linalg.eig(Tn.T)
 
-        # sort eigenvalues and eigenstates
-        sort_idx = np.argsort(np.abs(eigenvalues))[::-1]
-        eigenvalues = eigenvalues[..., sort_idx]
-        eigenstates = eigenstates[..., sort_idx]
-        modes = len(eigenvalues)
-        v1, v2 = [eigenstates[m, 0] for m in (0, 1)]
-        c1, c2 = [eigenstates[m, 1] for m in (0, 1)]
+        # eigenvalues, eigenstates = scipy.linalg.eig(Tn)
+        # # sort eigenvalues and eigenstates
+        # sort_idx = np.argsort(np.abs(eigenvalues))[::-1]
+        # eigenvalues = eigenvalues[..., sort_idx]
+        # eigenstates = eigenstates[..., sort_idx]
+        # modes = len(eigenvalues)
+        # v1, v2 = [eigenstates[m, 0] for m in (0, 1)]
+        # c1, c2 = [eigenstates[m, 1] for m in (0, 1)]
+
+        v1, v2, c1, c2, eigenvalues, eigenstates = get_eigenstate_components(Tn)
 
         data.append([v1, v2, c1, c2])
 
