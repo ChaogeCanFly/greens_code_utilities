@@ -22,8 +22,8 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0):
     return scipy.linalg.inv(T12).dot(T).dot(scipy.linalg.inv(T21))
 
 
-argh.arg("-l", type=float)
-argh.arg("--config", type=int)
+@argh.arg("-l", type=float)
+@argh.arg("-c", "--config", type=int)
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=None, eta=0.0, config=None):
     """docstring for get_eigenvalues"""
 
@@ -34,8 +34,6 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=Non
     # config 3: l=0.4792450151610923 (4 wavelengths)
     # config 3 (exp): l=0.47925 (4 wavelengths)
     # config 4: l=0.53112071257820737 (4 wavelengths)
-
-    config = int(config)
 
     if not l:
         if config == 0:
@@ -57,16 +55,13 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=Non
 
     f = np.load(frequency_file)
     T = np.load(input_file)
-    # print "f.shape", f.shape
-    # print "T.shape", T.shape
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta) for Tn in T])
-
-    data = []
-    matrix_data = []
 
     # find index closest to target frequency
     n_target = (np.abs(f - 7.8)).argmin()
 
+    data = []
+    matrix_data = []
     for n, Tn in enumerate(T_back_propagated):
         fn = f[n]
         Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
