@@ -35,7 +35,8 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0, f=None):
 
 @argh.arg("-l", type=float)
 @argh.arg("-c", "--config", type=int)
-def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=None, eta=0.0, config=None):
+def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
+                    l=None, eta=0.0, config=None, exp=False):
     """docstring for get_eigenvalues"""
 
     # config 0: l=0.51576837377840601 (1 wavelength)
@@ -66,6 +67,10 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=Non
 
     f = np.load(frequency_file)
     T = np.load(input_file)
+
+    if exp:
+        T = np.asarray([Tn.T for Tn in T])
+
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
     # find index closest to target frequency
