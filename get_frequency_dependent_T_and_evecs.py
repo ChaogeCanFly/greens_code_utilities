@@ -33,6 +33,22 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0, f=None):
     return scipy.linalg.inv(T12).dot(T).dot(scipy.linalg.inv(T21))
 
 
+
+def get_eigenstate_components(Tn):
+    eigenvalues, eigenstates = scipy.linalg.eig(Tn)
+
+    # sort eigenvalues and eigenstates
+    sort_idx = np.argsort(np.abs(eigenvalues))[::-1]
+    eigenvalues = eigenvalues[..., sort_idx]
+    eigenstates = eigenstates[..., sort_idx]
+    modes = len(eigenvalues)
+    v1, v2 = [eigenstates[m, 0] for m in (0, 1)]
+    c1, c2 = [eigenstates[m, 1] for m in (0, 1)]
+
+    return v1, v2, c1, c2, eigenvalues, eigenstates
+
+
+
 @argh.arg("-l", type=float)
 @argh.arg("-c", "--config", type=int)
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
@@ -98,10 +114,8 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
 
         data.append([v1, v2, c1, c2])
 
-        # if np.isclose(fn, 7.8):
         if np.isclose(fn, f[n_target]):
-        # if find_nearest(fn, 7.8):
-            print "@7.8GHz:"
+            print "@7.8GHz:", fn
             print "arctan(|v1/v2|)", np.arctan(np.abs(v1/v2))
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
             print "phase(v1/v2)", np.angle(v1/v2)
@@ -110,19 +124,23 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
             print Tn
             print "T-matrix (original):"
             print T[n]
-
+            print "evals"
+            print eigenvalues[0]
+            print eigenvalues[1]
+            print "evecs"
+            print eigenstates[...,0]
+            print eigenstates[...,1]
 
             np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
                 with open(evecs_file, "w") as file:
-                    for _ in range(1):
-                        for n in range(modes):
-                            file.write('{} {} '.format(np.abs(eigenvalues[n]),
-                                                    np.angle(eigenvalues[n])))
-                            for m in range(modes):
-                                v = eigenstates[m, n]
-                                file.write('{v.real} {v.imag} '.format(v=v))
-                        file.write('\n')
+                    for n in range(modes):
+                        file.write('{} {} '.format(np.abs(eigenvalues[n]),
+                                                np.angle(eigenvalues[n])))
+                        for m in range(modes):
+                            v = eigenstates[m, n]
+                            file.write('{v.real} {v.imag} '.format(v=v))
+                    file.write('\n')
 
     v1, v2, c1, c2 = np.array(data).T
 
