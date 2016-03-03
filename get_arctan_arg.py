@@ -2,14 +2,10 @@
 
 from __future__ import division
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import argh
 
-from ep.plot import get_colors
-
-colors, _, _ = get_colors()
 
 def plot_coefficients(evecs_file=None):
     (ev1_abs, ev1_phi, v1r, v1i, v2r, v2i,
@@ -19,10 +15,15 @@ def plot_coefficients(evecs_file=None):
     c1 = c1r + 1j*c1i
     c2 = c2r + 1j*c2i
 
-    print "np.arctan(abs(v1/v2))", np.arctan(abs(v1/v2))
-    print "np.arctan(abs(c1/c2))", np.arctan(abs(c1/c2))
-    print "np.angle(v1/v2)", np.angle(v1/v2)
-    print "np.angle(c1/c2)", np.angle(c1/c2)
+    print
+    print "|ev1|, phi_ev1", ev1_abs, ev1_phi
+    print "|ev2|, phi_ev2", ev2_abs, ev2_phi
+    print
+    print "arctan(abs(v1/v2))", np.arctan(abs(v1/v2))
+    print "arctan(abs(c1/c2))", np.arctan(abs(c1/c2))
+    print "angle(v1/v2)", np.angle(v1/v2)
+    print "angle(c1/c2)", np.angle(c1/c2)
+    print
 
 if __name__ == '__main__':
     argh.dispatch_command(plot_coefficients)
