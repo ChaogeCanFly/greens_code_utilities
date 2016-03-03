@@ -23,6 +23,7 @@ def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0, f=None):
     if k < 2.*np.pi/W:
         k2 = 1j*np.sqrt((2.*np.pi/W)**2 - k**2)
 
+    eta /= W
 
     phase_k1 = (k1 + 1j*eta/2.*k/k1)*l
     phase_k2 = (k2 + 1j*eta/2.*k/k2)*l
