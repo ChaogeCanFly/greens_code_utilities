@@ -9,8 +9,14 @@ import scipy.linalg
 import argh
 
 
-def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0):
-    k = N*np.pi/W
+def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0, f=None):
+    if f:
+        f *= 1e9  # frequency in GHz
+        c = 299792458  # in m/s
+        k = 2*np.pi*f/c
+    else:
+        k = N*np.pi/W
+
     k1, k2 = [np.sqrt(k**2 - (n*np.pi/W)**2) for n in (1, 2)]
 
     phase_k1 = (k1 + 1j*eta/2.*k/k1)*l
@@ -55,7 +61,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=Non
 
     f = np.load(frequency_file)
     T = np.load(input_file)
-    T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta) for Tn in T])
+    T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
     # find index closest to target frequency
     n_target = (np.abs(f - 7.8)).argmin()
