@@ -146,7 +146,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None, l=Non
     ax1.set_ylim(0, np.pi/2)
 
     ax0.set_ylabel(r"Transmission intensity")
-    ax0.set_ylabel(r"Transmission-matrix phase")
+    ax00.set_ylabel(r"Transmission-matrix phase")
     ax1.set_ylabel(r"$\arctan(|c_1/c_2|)$")
     ax2.set_xlabel(r"Frequency $\nu$ (GHz)")
     ax2.set_ylabel(r"$\operatorname{Arg}(c_1/c_2)$")
