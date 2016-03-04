@@ -64,6 +64,9 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     # config 3 (exp): l=0.47925 (4 wavelengths)
     # config 4: l=0.53112071257820737 (4 wavelengths)
 
+    if not frequency_file:
+        frequency_file = "frequency_" + input_file
+
     if not l:
         if config == 0:
             l = 0.51576837377840601

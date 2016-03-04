@@ -8,8 +8,8 @@ import numpy as np
 import argh
 
 
-def main(infile=None, outfile=None, freqfile=None):
-    f, _, _, _, _, t11, t12, t21, t22 = np.loadtxt(infile, dtype=complex, unpack=True)
+def main(input_file=None, output_file=None, frequency_file=None):
+    f, _, _, _, _, t11, t12, t21, t22 = np.loadtxt(input_file, dtype=complex, unpack=True)
     f = f.view(complex)
     t_matrix = []
     for t11n, t12n, t21n, t22n in zip(t11, t12, t21, t22):
@@ -19,8 +19,11 @@ def main(infile=None, outfile=None, freqfile=None):
 
     print "T.shape", T.shape
 
-    np.save(freqfile, f)
-    np.save(outfile, T)
+    if not frequency_file:
+        frequency_file = "frequency_" + output_file
+
+    np.save(frequency_file, f)
+    np.save(output_file, T)
 
 if __name__ == '__main__':
      argh.dispatch_command(main)
