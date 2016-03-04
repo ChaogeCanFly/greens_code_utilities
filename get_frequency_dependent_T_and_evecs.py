@@ -81,6 +81,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
         else:
             l = 0.0
 
+    print
     print "distance cavity - antenna:", l
     print "eta:", eta
     print "input_file", input_file
@@ -100,40 +101,30 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     data = []
     matrix_data = []
     for n, Tn in enumerate(T_back_propagated):
-        fn = f[n]
-        # Tn_flat = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
-        # matrix_data.append(np.concatenate([[fn], Tn_flat]))
-        # Tn = propagate_back(Tn, l=l, eta=eta)
-
-        # eigenvalues, eigenstates = scipy.linalg.eig(Tn)
-        # # sort eigenvalues and eigenstates
-        # sort_idx = np.argsort(np.abs(eigenvalues))[::-1]
-        # eigenvalues = eigenvalues[..., sort_idx]
-        # eigenstates = eigenstates[..., sort_idx]
-        # modes = len(eigenvalues)
-        # v1, v2 = [eigenstates[m, 0] for m in (0, 1)]
-        # c1, c2 = [eigenstates[m, 1] for m in (0, 1)]
-
         v1, v2, c1, c2, eigenvalues, eigenstates = get_eigenstate_components(Tn)
-
         data.append([v1, v2, c1, c2])
 
+        fn = f[n]
         if np.isclose(fn, f[n_target]):
+            print
             print "@7.8GHz:", fn
             print "arctan(|v1/v2|)", np.arctan(np.abs(v1/v2))
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
             print "phase(v1/v2)", np.angle(v1/v2)
             print "phase(c1/c2)", np.angle(c1/c2)
+            print
             print "T-matrix (back propagated):"
             print Tn
             print "T-matrix (original):"
             print T[n]
+            print
             print "evals"
             print eigenvalues[0]
             print eigenvalues[1]
             print "evecs"
             print eigenstates[...,0]
             print eigenstates[...,1]
+            print
 
             np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
@@ -148,12 +139,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
 
     v1, v2, c1, c2 = np.array(data).T
 
-    # matrix_data = np.array(matrix_data)
-    # np.savetxt(input_file.replace(".npy", "_matrix_data.dat"),
-    #            matrix_data)
-    # np.savetxt(input_file.replace(".npy", "_arctan_data.dat"),
-    #            zip(np.arctan(abs(v1/v2)), np.arctan(abs(c1/c2))))
-
+    # plot results
     fig, (ax0, ax00, ax1, ax2) = plt.subplots(nrows=4, figsize=(9, 10))
 
     plt.suptitle(r"Distance cavity - antenna: {}m ".format(l) + "\n"
