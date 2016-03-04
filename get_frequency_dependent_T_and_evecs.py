@@ -178,7 +178,22 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     ax2.plot(f, np.angle(v1/v2), "r-")
     ax2.plot(f, np.angle(c1/c2), "b-")
 
+    # for ax in (ax1, ):
+    #     ax_yticks = np.arange(0, .75, 0.25)
+    #     ax_yticklabels = [r"$0$", r"$+\frac{\pi}{4}$", r"$\frac{\pi}{2}$"]
+    #     ax.set_yticks(ax_yticks*np.pi)
+    #     ax.set_yticklabels(ax_yticklabels)
+
+    for ax in (ax00, ax2):
+        ax_yticks = np.arange(-1.0, 1.05, 0.5)
+        ax_yticklabels = [r"$-\pi$", r"$-\frac{\pi}{2}$", r"$0$",
+                        r"$+\frac{\pi}{2}$", r"$\pi$"]
+        ax.set_yticks(ax_yticks*np.pi)
+        ax.set_yticklabels(ax_yticklabels)
+
+    ax00.set_ylim(-np.pi*1.05, np.pi*1.05)
     ax1.set_ylim(0, np.pi/2)
+    ax2.set_ylim(-np.pi*1.05, np.pi*1.05)
 
     ax0.set_ylabel(r"Transmission intensity")
     ax00.set_ylabel(r"Transmission-matrix phase")
