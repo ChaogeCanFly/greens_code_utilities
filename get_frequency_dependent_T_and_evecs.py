@@ -126,6 +126,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
             print eigenstates[...,1]
             print
 
+            modes = len(eigenvalues)
             np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
                 with open(evecs_file, "w") as file:
