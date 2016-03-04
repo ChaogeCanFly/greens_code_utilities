@@ -52,8 +52,9 @@ def get_eigenstate_components(Tn):
 
 @argh.arg("-l", type=float)
 @argh.arg("-c", "--config", type=int)
+@argh.arg("-m", "--matrix-output", type=str)
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
-                    l=None, eta=0.0, config=None, exp=False):
+                    l=None, eta=0.0, config=None, exp=False, matrix_output=None):
     """docstring for get_eigenvalues"""
 
     # config 0: l=0.51576837377840601 (1 wavelength)
@@ -99,10 +100,17 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     n_target = (np.abs(f - 7.8)).argmin()
 
     data = []
-    matrix_data = []
+    matrix_data_original = []
+    matrix_data_backpropagated = []
     for n, Tn in enumerate(T_back_propagated):
         v1, v2, c1, c2, eigenvalues, eigenstates = get_eigenstate_components(Tn)
         data.append([v1, v2, c1, c2])
+
+        # save output files
+        Tn_flat_original = np.concatenate([[an.real, an.imag] for an in T[n, ...].flatten()])
+        matrix_data_original.append(np.concatenate([[f[n]], Tn_flat_original]))
+        Tn_flat_backpropagated = np.concatenate([[an.real, an.imag] for an in Tn.flatten()])
+        matrix_data_backpropagated.append(np.concatenate([[f[n]], Tn_flat_backpropagated]))
 
         fn = f[n]
         if np.isclose(fn, f[n_target]):
@@ -139,6 +147,15 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
                     file.write('\n')
 
     v1, v2, c1, c2 = np.array(data).T
+
+    if matrix_output:
+        matrix_data_original = np.asarray(matrix_data_original)
+        matrix_data_backpropagated = np.asarray(matrix_data_backpropagated)
+        header = "frequency (in GHz), Re(t11), Im(t11), Re(t12), Im(t12), Re(t21), Im(t21), Re(t22), Im(t22)"
+        np.savetxt(matrix_output.replace(".dat", "_original.dat"),
+                   matrix_data_original, header=header)
+        np.savetxt(matrix_output.replace(".dat", "_backpropagated.dat"),
+                   matrix_data_backpropagated, header=header)
 
     # plot results
     fig, (ax0, ax00, ax1, ax2) = plt.subplots(nrows=4, figsize=(9, 10))
