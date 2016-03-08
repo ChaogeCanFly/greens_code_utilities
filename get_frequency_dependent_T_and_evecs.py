@@ -91,9 +91,11 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     f = np.load(frequency_file)
     T = np.load(input_file)
 
-    if exp:
+    # convention here is like in experiment: t_nm is transmission amplitude
+    # from mode n to mode m
+    if not exp:
         T = np.asarray([Tn.T for Tn in T])
-        print "WARNING: T-matrix transposed now!"
+        print "WARNING: T-matrix transposed!"
 
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
