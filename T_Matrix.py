@@ -41,7 +41,8 @@ class T_Matrix(object):
     """
 
     def __init__(self, infile=None, coeff_file=None, evals_file=None,
-                 evecs_file=None, from_right=False, transmission_matrix=None):
+                 evecs_file=None, from_right=False, transmission_matrix=None,
+                 transpose=False):
 
         S = S_Matrix(infile=infile, from_right=from_right)
 
@@ -54,10 +55,18 @@ class T_Matrix(object):
         elif self.S.nruns == 3:
             self.t = S.S[1, modes:, :modes]
 
+        if transpose:
+            print "t-matrix original:"
+            print self.t
+            self.t = self.t.T
+            print "t-matrix transposed:"
+            print self.t
+
         if not transmission_matrix:
             self.T = self.t.conj().T.dot(self.t)
         else:
             self.T = self.t
+
 
         eigenvalues, eigenstates = scipy.linalg.eig(self.T)
         idx = eigenvalues.argsort()
@@ -157,6 +166,8 @@ def parse_arguments():
                               "from right."))
     parser.add_argument("-t", "--transmission-matrix", action="store_true",
                         help=("Whether to use the t-matrix instead of t^dagger t."))
+    parser.add_argument("-p", "--transpose", action="store_true",
+                        help=("Whether to transpose the t-matrix."))
 
     parse_args = parser.parse_args()
     args = vars(parse_args)
