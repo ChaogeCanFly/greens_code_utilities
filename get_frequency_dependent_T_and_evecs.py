@@ -54,7 +54,8 @@ def get_eigenstate_components(Tn):
 @argh.arg("-c", "--config", type=int)
 @argh.arg("-m", "--matrix-output", type=str)
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
-                    l=None, eta=0.0, config=None, exp=False, matrix_output=None):
+                    l=None, eta=0.0, config=None, exp=False, matrix_output=None,
+                    plot=False):
     """docstring for get_eigenvalues"""
 
     # config 0: l=0.51576837377840601 (1 wavelength)
@@ -209,7 +210,8 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
         ax.set_xlim(7, 8.8)
         ax.axvline(x=7.8, color="k")
 
-    plt.show()
+    if plot:
+        plt.show()
 
 
 if __name__ == '__main__':
