@@ -59,12 +59,15 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     """docstring for get_eigenvalues"""
 
     # config 0: l=0.51576837377840601 (1 wavelength)
+    # config 0: l=0.5158  (exp)       (1 wavelength)
     # config 1: l=0.49262250087499387 (2 wavelengths)
+    # config 1: l=0.4926  (exp)       (2 wavelengths)
     # config 2: l=0.39514141195540475 (4 wavelengths)
     # config 2: l=0.395  (exp)        (4 wavelengths)
     # config 3: l=0.4792450151610923  (4 wavelengths)
     # config 3: l=0.47925  (exp)      (4 wavelengths)
     # config 4: l=0.53112071257820737 (4 wavelengths)
+    # config 4: l=0.5311   (exp)      (4 wavelengths)
 
     if not frequency_file:
         frequency_file = "frequency_" + input_file
@@ -83,6 +86,20 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
         else:
             l = 0.0
 
+        if exp:
+            if config == 0:
+                l = 0.5158
+            elif config == 1:
+                l = 0.4926
+            elif config == 2:
+                l = 0.395
+            elif config == 3:
+                l = 0.47925
+            elif config == 4:
+                l = 0.5311
+            else:
+                l = 0.0
+
     print
     print "distance cavity - antenna:", l
     print "eta:", eta
@@ -95,7 +112,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     # from mode n to mode m
     if not exp:
         T = np.asarray([Tn.T for Tn in T])
-        print "WARNING: T-matrix transposed!"
+        print "WARNING: T-matrix is now transposed!"
 
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
