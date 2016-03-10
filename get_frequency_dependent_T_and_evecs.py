@@ -8,6 +8,8 @@ import scipy.linalg
 
 import argh
 
+from T_Matrix import T_Matrix
+
 
 def propagate_back(T, W=0.05, N=2.6, l=1.0, eta=0.0, f=None):
     if f:
@@ -53,23 +55,27 @@ def get_eigenstate_components(Tn):
 @argh.arg("-l", type=float)
 @argh.arg("-c", "--config", type=int)
 @argh.arg("-m", "--matrix-output", type=str)
+@argh.arg("-s", "--single-frequency", type=float)
 def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
                     l=None, eta=0.0, config=None, exp=False, matrix_output=None,
-                    plot=False):
+                    plot=False, single_frequency=None):
     """docstring for get_eigenvalues"""
 
     # config 0: l=0.51576837377840601 (1 wavelength)
-    # config 0: l=0.5158  (exp)       (1 wavelength)
+    # config 0: l=0.5157  (exp)       (1 wavelength)
     # config 1: l=0.49262250087499387 (2 wavelengths)
     # config 1: l=0.4926  (exp)       (2 wavelengths)
     # config 2: l=0.39514141195540475 (4 wavelengths)
-    # config 2: l=0.395  (exp)        (4 wavelengths)
+    # config 2: l=0.3951  (exp)       (4 wavelengths)
     # config 3: l=0.4792450151610923  (4 wavelengths)
-    # config 3: l=0.47925  (exp)      (4 wavelengths)
+    # config 3: l=0.4793  (exp)       (4 wavelengths)
     # config 4: l=0.53112071257820737 (4 wavelengths)
     # config 4: l=0.5311   (exp)      (4 wavelengths)
 
-    if not frequency_file:
+    if single_frequency:
+        input_file = "single_frequency_{}".format(single_frequency)
+
+    if not single_frequency and not frequency_file:
         frequency_file = "frequency_" + input_file
 
     if not l:
@@ -88,13 +94,13 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
 
         if exp:
             if config == 0:
-                l = 0.5158
+                l = 0.5157
             elif config == 1:
                 l = 0.4926
             elif config == 2:
-                l = 0.395
+                l = 0.3951
             elif config == 3:
-                l = 0.47925
+                l = 0.4793
             elif config == 4:
                 l = 0.5311
             else:
@@ -105,8 +111,14 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     print "eta:", eta
     print "input_file", input_file
 
-    f = np.load(frequency_file)
-    T = np.load(input_file)
+    if not single_frequency:
+        f = np.load(frequency_file)
+        T = np.load(input_file)
+    else:
+        f = [single_frequency]
+        T = [T_Matrix().t]
+
+    T_original = T
 
     # convention here is like in experiment: t_nm is transmission amplitude
     # from mode n to mode m
@@ -117,7 +129,10 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
     T_back_propagated = np.asarray([propagate_back(Tn, l=l, eta=eta, f=fn) for (Tn, fn) in zip(T, f)])
 
     # find index closest to target frequency
-    n_target = (np.abs(f - 7.8)).argmin()
+    if not single_frequency:
+        n_target = (np.abs(f - 7.8)).argmin()
+    else:
+        n_target = 0
 
     data = []
     matrix_data_original = []
@@ -136,6 +151,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
         if np.isclose(fn, f[n_target]):
             print
             print "@7.8GHz:", fn
+            print "array_index", n
             print "arctan(|v1/v2|)", np.arctan(np.abs(v1/v2))
             print "arctan(|c1/c2|)", np.arctan(np.abs(c1/c2))
             print "phase(v1/v2)", np.angle(v1/v2)
@@ -143,19 +159,23 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
             print
             print "T-matrix (back propagated):"
             print Tn
+            print np.abs(Tn)
             print "T-matrix (original):"
-            print T[n]
+            print T_original[n_target]
+            print np.abs(T_original[n_target])
             print
             print "evals"
             print eigenvalues[0]
+            print np.abs(eigenvalues[0])
             print eigenvalues[1]
+            print np.abs(eigenvalues[1])
             print "evecs"
-            print eigenstates[...,0]
-            print eigenstates[...,1]
+            print eigenstates[:, 0]
+            print eigenstates[:, 1]
             print
 
             modes = len(eigenvalues)
-            np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
+            # np.savetxt(input_file.replace(".npy", "_7.8GHz.dat"), Tn)
             if evecs_file:
                 with open(evecs_file, "w") as file:
                     for n in range(modes):
