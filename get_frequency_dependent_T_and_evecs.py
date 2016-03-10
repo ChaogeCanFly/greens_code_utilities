@@ -116,7 +116,7 @@ def get_eigenvalues(input_file=None, frequency_file=None, evecs_file=None,
         T = np.load(input_file)
     else:
         f = [single_frequency]
-        T = [T_Matrix().t]
+        T = [T_Matrix(transmission_matrix=True).t]
 
     T_original = T
 
